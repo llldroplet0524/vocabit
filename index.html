@@ -323,8 +323,9 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <button class="btn btn-s" style="font-size:.82em" onclick="stShuffle()">⇄ 섞기</button>
     <button class="btn btn-s" id="st-ap2-btn" style="font-size:.82em" onclick="toggleAutoPlay(2)">↻ ×10</button>
   </div>
-  <div style="margin-top:.4em">
+  <div style="margin-top:.4em;display:grid;grid-template-columns:1fr auto;gap:.4em">
     <button class="btn btn-s btn-full" style="font-size:.9em;padding:.65em 1em" onclick="manualSaveStudy(this)">💾 여기까지 하고 저장</button>
+    <button class="btn btn-s" style="font-size:.9em;padding:.65em 1em;white-space:nowrap" onclick="askAICurrentStudyWord()">🤖 AI 설명</button>
   </div>
 </div>
 
@@ -360,6 +361,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div id="q-expl-body"></div>
     <button id="q-mark-correct-btn" style="display:none;margin-top:.5em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--success);color:var(--success);border-radius:.5em;cursor:pointer" onclick="markTypedCorrect()">+ 정답 추가</button>
     <button id="q-mark-typo-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--warning,#d97706);color:var(--warning,#d97706);border-radius:.5em;cursor:pointer" onclick="markTypedTypo()">⌨️ 오타</button>
+    <button id="q-ai-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:.5em;cursor:pointer" onclick="askAICurrentQuizWord()">🤖 AI 설명</button>
   </div>
   <button class="btn btn-p btn-full" id="q-next" onclick="nextQ()" style="display:none">다음 →</button>
   <div style="margin-top:.5em">
@@ -2316,6 +2318,7 @@ function renderQ(){
   document.getElementById('q-counter').textContent=`${qIdx+1} / ${qQuestions.length}`;
   document.getElementById('q-prog').style.width=((qIdx+1)/qQuestions.length*100)+'%';
   document.getElementById('q-next').style.display='none';
+  document.getElementById('q-ai-btn').style.display='none';
   document.getElementById('q-expl').classList.remove('show');
   document.getElementById('q-opts').style.display='';
   document.getElementById('q-type-area').style.display='none';
@@ -2810,6 +2813,7 @@ function checkTyped(){
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
+  document.getElementById('q-ai-btn').style.display='inline-block';
   document.getElementById('q-next').style.display='flex';
 }
 function markTypedCorrect(){
@@ -3567,5 +3571,89 @@ function speak(t){
   </div>
 </div>
 <button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</button>
+
+<!-- AI 설명 모달 -->
+<div id="ai-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:1em" onclick="if(event.target===this)hideAIModal()">
+  <div style="background:var(--card);border-radius:1em;padding:1.25em;max-width:480px;width:100%;max-height:82vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <button onclick="hideAIModal()" style="position:absolute;top:.75em;right:.75em;background:none;border:none;font-size:1.25em;cursor:pointer;color:var(--muted);line-height:1">✕</button>
+    <div style="font-weight:700;font-size:.9em;color:var(--muted);margin-bottom:.25em">🤖 AI 설명</div>
+    <div id="ai-word-title" style="font-size:1.2em;font-weight:800;color:var(--primary);margin-bottom:.875em"></div>
+    <div id="ai-result" style="font-size:.88em;line-height:1.7;white-space:pre-wrap;color:var(--text)"></div>
+    <div id="ai-key-area" style="display:none;margin-top:1em;padding-top:1em;border-top:1px solid var(--border)">
+      <div style="font-size:.8em;color:var(--muted);margin-bottom:.4em">Anthropic API 키를 입력해주세요</div>
+      <input id="ai-key-input" type="password" placeholder="sk-ant-..." style="width:100%;padding:.5em .75em;border:1.5px solid var(--border);border-radius:.5em;font-size:.85em;font-family:inherit;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')saveAIKey()">
+      <button onclick="saveAIKey()" style="margin-top:.5em;width:100%;padding:.55em;border:none;background:var(--primary);color:#fff;border-radius:.5em;cursor:pointer;font-size:.88em;font-weight:600">저장 후 검색</button>
+    </div>
+    <button id="ai-change-key-btn" onclick="document.getElementById('ai-key-area').style.display='block';document.getElementById('ai-change-key-btn').style.display='none'" style="display:none;margin-top:.75em;font-size:.75em;color:var(--muted);background:none;border:none;cursor:pointer;padding:0">⚙️ API 키 변경</button>
+  </div>
+</div>
+
+<script>
+function getAIKey(){return localStorage.getItem('vocabit-ai-key')||'';}
+function saveAIKey(){
+  const key=document.getElementById('ai-key-input').value.trim();
+  if(!key)return;
+  localStorage.setItem('vocabit-ai-key',key);
+  document.getElementById('ai-key-area').style.display='none';
+  document.getElementById('ai-change-key-btn').style.display='inline';
+  const title=document.getElementById('ai-word-title').textContent;
+  const ko=_aiCurrentKo;
+  fetchAIExplain(title,ko);
+}
+let _aiCurrentKo=[];
+function showAIModal(word,ko){
+  _aiCurrentKo=ko||[];
+  const modal=document.getElementById('ai-modal');
+  modal.style.display='flex';
+  document.getElementById('ai-word-title').textContent=word;
+  document.getElementById('ai-result').textContent='';
+  const key=getAIKey();
+  if(!key){
+    document.getElementById('ai-result').textContent='API 키를 입력하면 이 단어를 AI가 설명해드립니다.';
+    document.getElementById('ai-key-area').style.display='block';
+    document.getElementById('ai-change-key-btn').style.display='none';
+    return;
+  }
+  document.getElementById('ai-key-area').style.display='none';
+  document.getElementById('ai-change-key-btn').style.display='inline';
+  document.getElementById('ai-result').textContent='불러오는 중...';
+  fetchAIExplain(word,ko);
+}
+function hideAIModal(){document.getElementById('ai-modal').style.display='none';}
+async function fetchAIExplain(word,ko){
+  const key=getAIKey();
+  const koStr=ko&&ko.length?ko.join(', '):'';
+  const prompt=`영단어 "${word}"${koStr?` (뜻: ${koStr})`:''}를 한국어로 설명해줘.\n\n다음 항목을 포함해 간결하게:\n1. 핵심 의미와 뉘앙스\n2. 예문 2개 (영어 + 한국어)\n3. 암기 팁 또는 어원`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:700,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      if(res.status===401){
+        document.getElementById('ai-result').textContent='❌ API 키가 올바르지 않습니다. 키를 다시 확인해주세요.';
+        document.getElementById('ai-key-area').style.display='block';
+      }else{
+        document.getElementById('ai-result').textContent='오류: '+(err.error?.message||'요청 실패 ('+res.status+')');
+      }
+      return;
+    }
+    const data=await res.json();
+    document.getElementById('ai-result').textContent=data.content[0].text;
+  }catch(e){
+    document.getElementById('ai-result').textContent='네트워크 오류가 발생했습니다.\n('+e.message+')';
+  }
+}
+function askAICurrentStudyWord(){
+  const w=stWords[stIdx];
+  showAIModal(w.en,w.ko);
+}
+function askAICurrentQuizWord(){
+  const q=qQuestions[qIdx];const w=q.word;
+  showAIModal(w.en,w.ko);
+}
+</script>
 </body>
 </html>
