@@ -423,6 +423,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     </span>
     <span style="display:flex;align-items:center;gap:.5em">
       최대 20회 기록
+      <button id="hist-delete-selected-btn" class="btn btn-s" style="display:none;font-size:1em;padding:.2em .5em;color:var(--danger);border-color:var(--danger)" onclick="deleteSelectedHistory()">✂ 선택 삭제</button>
       <button class="btn btn-s" style="font-size:1em;padding:.2em .5em;color:var(--danger);border-color:var(--danger)" onclick="clearHistory()">🗑 초기화</button>
     </span>
   </div>
@@ -496,6 +497,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div style="font-size:.9em;font-weight:700;color:var(--text)">오답 목록</div>
     <span style="display:flex;align-items:center;gap:.5em">
       <button id="wrong-back-btn" class="btn btn-s" style="display:none;font-size:.85em;padding:.2em .6em" onclick="goWrongBack()">← 결과로</button>
+      <button id="wrong-delete-selected-btn" class="btn btn-s" style="display:none;font-size:.76em;padding:.12em .35em;color:var(--danger);border-color:var(--danger)" onclick="deleteSelectedWrong()">✂ 선택 삭제</button>
       <button id="wrong-clear-btn" class="btn btn-s" style="display:none;font-size:.76em;padding:.12em .35em;color:var(--danger);border-color:var(--danger)" onclick="clearAllWrong()">🗑 초기화</button>
     </span>
   </div>
@@ -2480,13 +2482,36 @@ function renderWrongList(){
   const list=document.getElementById('wrong-list');
   list.innerHTML='';
   const activeMap=getActiveWrongMap();
-  const sorted=[...activeMap.values()].sort((a,b)=>b.count-a.count);
-  sorted.forEach(({word,count})=>{
+  const sorted=[...activeMap.entries()].sort((a,b)=>b[1].count-a[1].count);
+  sorted.forEach(([key,{word,count}])=>{
     const div=document.createElement('div');
     div.className='wrong-item';
-    div.innerHTML=`<div><div style="font-weight:700">${word.en}</div><div style="color:var(--muted);font-size:.82em">${word.ko.join(' / ')}</div></div><span class="wrong-cnt">${count}회 오답</span>`;
+    div.style.cssText='align-items:center;gap:.6em';
+    div.innerHTML=`<input type="checkbox" class="wrong-chk" data-key="${key}" onchange="updateWrongDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;accent-color:var(--danger)"><div style="flex:1"><div style="font-weight:700">${word.en}</div><div style="color:var(--muted);font-size:.82em">${word.ko.join(' / ')}</div></div><span class="wrong-cnt">${count}회 오답</span>`;
     list.appendChild(div);
   });
+  updateWrongDeleteBtn();
+}
+function updateWrongDeleteBtn(){
+  const checked=document.querySelectorAll('.wrong-chk:checked').length;
+  const btn=document.getElementById('wrong-delete-selected-btn');
+  if(btn)btn.style.display=checked>0?'inline-flex':'none';
+}
+function deleteSelectedWrong(){
+  const keys=[...document.querySelectorAll('.wrong-chk:checked')].map(el=>el.dataset.key);
+  if(!keys.length)return;
+  keys.forEach(key=>{
+    reviewingWrongMap.delete(key);
+    allWrong.delete(key);
+    if(wrongMap)wrongMap.delete(key);
+  });
+  updateHomeWrongBtn();
+  dbSave();
+  renderWrongList();
+  renderWrongFilterBtns();
+  const cnt=document.getElementById('wrong-count-display');
+  if(cnt)cnt.textContent=reviewingWrongMap.size;
+  document.getElementById('wrong-quiz-btn').style.visibility=reviewingWrongMap.size>0?'visible':'hidden';
 }
 function renderWrongFilterBtns(){
   const counts=[...new Set([...reviewingWrongMap.values()].map(v=>v.count))].sort((a,b)=>a-b);
@@ -2879,6 +2904,23 @@ function resetSecStats(secId){
     refreshSectionStats();
   });
 }
+function updateHistDeleteBtn(){
+  const checked=document.querySelectorAll('.hist-chk:checked').length;
+  const btn=document.getElementById('hist-delete-selected-btn');
+  if(btn)btn.style.display=checked>0?'inline-flex':'none';
+}
+function deleteSelectedHistory(){
+  const keys=[...document.querySelectorAll('.hist-chk:checked')].map(el=>el.dataset.key);
+  if(!keys.length)return;
+  keys.forEach(key=>{
+    allHistory.delete(key);
+    allWrong.delete(key);
+    if(wrongMap)wrongMap.delete(key);
+  });
+  updateHomeWrongBtn();
+  dbSave();
+  goHistory();
+}
 function clearHistory(){
   showConfirm('회독 체크 기록을 모두 초기화할까요?',()=>{
     allHistory=new Map();
@@ -2908,8 +2950,9 @@ function goHistory(){
       boxes+=`<span style="display:inline-flex;width:100%;aspect-ratio:1;border-radius:.2em;background:var(--border)"></span>`;
     }
     const div=document.createElement('div');
-    div.style.cssText='background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:.65em .9em;';
-    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2em"><span style="font-weight:700;font-size:.93em">${word.en}</span><span style="font-size:.72em;color:var(--muted);white-space:nowrap;margin-left:.5em">${wrongs}오 ${corrects}정</span></div><div style="font-size:.78em;color:var(--muted);margin-bottom:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${word.ko.slice(0,2).join(' / ')}</div><div style="display:grid;grid-template-columns:repeat(20,1fr);gap:.1em;width:100%">${boxes}</div>`;
+    div.style.cssText='background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:.65em .9em;display:flex;align-items:flex-start;gap:.6em';
+    const key=word.en.toLowerCase();
+    div.innerHTML=`<input type="checkbox" class="hist-chk" data-key="${key}" onchange="updateHistDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;margin-top:.15em;accent-color:var(--danger)"><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2em"><span style="font-weight:700;font-size:.93em">${word.en}</span><span style="font-size:.72em;color:var(--muted);white-space:nowrap;margin-left:.5em">${wrongs}오 ${corrects}정</span></div><div style="font-size:.78em;color:var(--muted);margin-bottom:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${word.ko.slice(0,2).join(' / ')}</div><div style="display:grid;grid-template-columns:repeat(20,1fr);gap:.1em;width:100%">${boxes}</div></div>`;
     list.appendChild(div);
   });
   const actionArea=document.getElementById('history-action-area');
@@ -2923,6 +2966,7 @@ function goHistory(){
     actionArea.style.display='none';
   }
   document.getElementById('history-quiz-picker').style.display='none';
+  updateHistDeleteBtn();
   showSc('history');
 }
 var histSeg='wrong';
