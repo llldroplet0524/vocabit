@@ -359,6 +359,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
   <div class="expl" id="q-expl">
     <div id="q-expl-body"></div>
     <button id="q-mark-correct-btn" style="display:none;margin-top:.5em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--success);color:var(--success);border-radius:.5em;cursor:pointer" onclick="markTypedCorrect()">+ 정답 추가</button>
+    <button id="q-mark-typo-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--warning,#d97706);color:var(--warning,#d97706);border-radius:.5em;cursor:pointer" onclick="markTypedTypo()">⌨️ 오타</button>
   </div>
   <button class="btn btn-p btn-full" id="q-next" onclick="nextQ()" style="display:none">다음 →</button>
   <div style="margin-top:.5em">
@@ -2808,6 +2809,7 @@ function checkTyped(){
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
+  document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-next').style.display='flex';
 }
 function markTypedCorrect(){
@@ -2827,6 +2829,18 @@ function markTypedCorrect(){
   document.getElementById('q-mark-correct-btn').style.display='none';
   document.getElementById('q-expl-body').querySelector('span').textContent='✓ 정답으로 처리됨';
   document.getElementById('q-expl-body').querySelector('span').style.color='var(--success)';
+}
+function markTypedTypo(){
+  const q=qQuestions[qIdx];const w=q.word;const key=w.en;
+  qScore++;
+  if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
+  if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0)allWrong.delete(key);}
+  if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
+  updateHomeWrongBtn();dbSave();
+  document.getElementById('q-mark-correct-btn').style.display='none';
+  document.getElementById('q-mark-typo-btn').style.display='none';
+  document.getElementById('q-expl-body').querySelector('span').textContent='⌨️ 오타로 정답 처리됨';
+  document.getElementById('q-expl-body').querySelector('span').style.color='var(--warning,#d97706)';
 }
 function passTyped(){
   showConfirm('이 단어를 패스할까요?\n(오답으로 처리됩니다)',function(){_doPassTyped();});
