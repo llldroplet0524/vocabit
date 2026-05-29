@@ -233,11 +233,11 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <div id="home-resume-list" style="display:grid;grid-template-columns:1fr 1fr;gap:.4em"></div>
     </div>
     <!-- 퀴즈 4열 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4em">
-      <div class="home-sec-label" style="margin-bottom:0">퀴즈</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;font-size:.72em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:.75em 0 .35em;border-bottom:1px solid var(--border);margin-bottom:.4em">
+      <span>퀴즈</span>
       <div style="display:flex;align-items:center;gap:.4em">
-        <button id="q-weighted-toggle" onclick="toggleQWeighted()" style="padding:.25em .75em;font-size:.76em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.5;transition:all .15s">오답 가중치</button>
-        <span id="q-weighted-desc" style="font-size:.74em;color:var(--muted)"></span>
+        <button id="q-weighted-toggle" onclick="toggleQWeighted()" style="padding:.25em .75em;font-size:1em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.5;transition:all .15s;text-transform:none;letter-spacing:normal">오답 가중치</button>
+        <span id="q-weighted-desc" style="font-size:.95em;color:var(--muted);text-transform:none;letter-spacing:normal"></span>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.75em">
@@ -3441,7 +3441,7 @@ function renderMemoList(){
   const listEl=document.getElementById('memo-list');
   if(!entries.length){emptyEl.style.display='';listEl.innerHTML='';return;}
   emptyEl.style.display='none';
-  listEl.innerHTML=entries.map((e,i)=>{
+  listEl.innerHTML=entries.map((e)=>{
     const koStr=e.word?e.word.ko.join(' / '):'';
     const secStr=e.sec?`<span style="font-size:.72em;color:var(--muted);margin-left:.4em">${e.sec.name}</span>`:'';
     return `<div class="card" style="margin-bottom:.5em;padding:.75em">
@@ -3453,9 +3453,13 @@ function renderMemoList(){
       <textarea data-memo-en="${e.en}" rows="2"
         style="width:100%;box-sizing:border-box;font-size:.82em;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;font-family:inherit;line-height:1.4;outline:none;transition:border-color .15s"
         onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
-        oninput="saveMemo(this.dataset.memoEn,this.value)">${e.note}</textarea>
+        oninput="saveMemo(this.dataset.memoEn,this.value)"></textarea>
     </div>`;
   }).join('');
+  // Set textarea values safely via .value (avoids </textarea> injection)
+  listEl.querySelectorAll('textarea[data-memo-en]').forEach(ta=>{
+    ta.value=wordNotes.get(ta.dataset.memoEn)||'';
+  });
 }
 function goUserAnswers(){
   uaSelectedWord=null;
