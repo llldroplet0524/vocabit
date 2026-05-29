@@ -2631,11 +2631,14 @@ function deleteSelectedWrong(){
   const now=Date.now();
   keys.forEach(key=>{
     _wrongDeleted.set(key,now);
+    _histDeleted.set(key,now);
     reviewingWrongMap.delete(key);
     allWrong.delete(key);
+    allHistory.delete(key);
     if(wrongMap)wrongMap.delete(key);
   });
   try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+  try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
   updateHomeWrongBtn();
   dbSave();
   renderWrongList();
