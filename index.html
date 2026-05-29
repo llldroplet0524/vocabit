@@ -2424,14 +2424,35 @@ function etymHTML(enKey){
   </div>`;
 }
 function distractorWords(word,type,n){
-  const pool=shuffle(merged.filter(w=>w.en!==word.en));
-  const res=[];const seen=new Set();
-  const ck=type==='en-ko'?word.ko.slice(0,Math.min(2,word.ko.length)).join(' / '):word.en;
-  seen.add(ck);
-  for(let i=0;i<pool.length&&res.length<n;i++){
-    const w=pool[i];
+  // Build pool from ALL sections (not just current study set)
+  const allPool=[];
+  const seenEn=new Set([word.en.toLowerCase().trim()]);
+  SECTIONS.forEach(sec=>{
+    sec.words.forEach(w=>{
+      const k=w.en.toLowerCase().trim();
+      if(!seenEn.has(k)){seenEn.add(k);allPool.push(w);}
+    });
+  });
+  // Score each candidate by similarity to the correct word's English
+  const enLow=word.en.toLowerCase();
+  const enLen=word.en.length;
+  const scored=allPool.map(w=>{
+    const wLow=w.en.toLowerCase();
+    let s=Math.random()*1.5; // noise for variety
+    if(wLow[0]===enLow[0])s+=3;
+    if(Math.abs(wLow.length-enLen)<=2)s+=2;
+    if(enLow.length>=2&&wLow.slice(0,2)===enLow.slice(0,2))s+=3;
+    if(enLow.length>=3&&wLow.slice(0,3)===enLow.slice(0,3))s+=4;
+    return{w,s};
+  });
+  scored.sort((a,b)=>b.s-a.s);
+  const res=[];
+  const seenKey=new Set();
+  seenKey.add(type==='en-ko'?word.ko.slice(0,Math.min(2,word.ko.length)).join(' / '):word.en);
+  for(let i=0;i<scored.length&&res.length<n;i++){
+    const w=scored[i].w;
     const key=type==='en-ko'?w.ko.slice(0,Math.min(2,w.ko.length)).join(' / '):w.en;
-    if(!seen.has(key)){seen.add(key);res.push(w);}
+    if(!seenKey.has(key)){seenKey.add(key);res.push(w);}
   }
   return res;
 }
@@ -2456,7 +2477,7 @@ function renderQ(){
     qTextEl.textContent=w.en;
     document.getElementById('q-tts').style.display='inline-flex';
     const correct=w.ko.slice(0,Math.min(2,w.ko.length)).join(' / ');
-    const dWords=distractorWords(w,'en-ko',1);
+    const dWords=distractorWords(w,'en-ko',3);
     qOptWordsMap[correct]=w;
     dWords.forEach(dw=>{qOptWordsMap[dw.ko.slice(0,Math.min(2,dw.ko.length)).join(' / ')]=dw;});
     const opts=shuffle([correct,...dWords.map(dw=>dw.ko.slice(0,Math.min(2,dw.ko.length)).join(' / '))]);
@@ -2465,7 +2486,7 @@ function renderQ(){
     badge.textContent='한국어 → 영어';
     qTextEl.textContent=w.ko.slice(0,Math.min(2,w.ko.length)).join(' / ');
     qTextEl.classList.add('q-text-ko');
-    const dWords=distractorWords(w,'ko-en',1);
+    const dWords=distractorWords(w,'ko-en',3);
     qOptWordsMap[w.en]=w;
     dWords.forEach(dw=>{qOptWordsMap[dw.en]=dw;});
     const opts=shuffle([w.en,...dWords.map(dw=>dw.en)]);
