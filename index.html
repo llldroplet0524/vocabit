@@ -1787,17 +1787,26 @@ const ETYM={
 'untouched':{'r':[{'p':'un','m':'부정'},{'p':'touch','m':'만지다'}],'t':'만지지 않은 → 손대지 않은, 원래 그대로의'}
 };
 
-// ── MERGE DUPLICATE WORD MEANINGS ACROSS ALL SECTIONS ──
+// ── DEDUPLICATE & MERGE WORD MEANINGS ACROSS ALL SECTIONS ──
 (function(){
+  // 1st pass: collect all merged meanings per unique word
   const _m=new Map();
   SECTIONS.forEach(s=>s.words.forEach(w=>{
     const k=w.en.toLowerCase().trim();
     if(!_m.has(k))_m.set(k,[...w.ko]);
     else{const a=_m.get(k);w.ko.forEach(m=>{if(!a.includes(m))a.push(m);});}
   }));
-  SECTIONS.forEach(s=>s.words.forEach(w=>{
-    w.ko=_m.get(w.en.toLowerCase().trim())||w.ko;
-  }));
+  // 2nd pass: apply merged meanings & remove duplicates (keep only first occurrence)
+  const seen=new Set();
+  SECTIONS.forEach(s=>{
+    s.words=s.words.filter(w=>{
+      const k=w.en.toLowerCase().trim();
+      if(seen.has(k))return false;
+      seen.add(k);
+      w.ko=_m.get(k)||w.ko;
+      return true;
+    });
+  });
 })();
 
 // ── STATE ──
