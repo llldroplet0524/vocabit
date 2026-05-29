@@ -1807,7 +1807,10 @@ let userAnswers=(function(){const m=new Map();try{const a=JSON.parse(localStorag
 let allWrong=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-wrong')||'[]');a.forEach(v=>m.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count}));}catch(e){}return m;})();
 let favMode='both';
 let favCount=0;
-let typeHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-type-hist')||'[]');a.forEach(v=>m.set(v.en,{results:v.results||[]}));}catch(e){}return m;})();
+let typeHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-type-hist')||'[]');a.forEach(v=>m.set(v.en,{results:v.results||[],ts:v.ts||0}));}catch(e){}return m;})();
+let _histDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-hist-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
+let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-wrong-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
+let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
 
 // ── FIREBASE ──
 const firebaseConfig = {
@@ -1833,9 +1836,22 @@ function dbSave(){
     try{
       const snap = await DOC.get();
       const r = snap.exists ? snap.data() : {};
-      // merge allHistory: newer ts wins
+      // merge tombstones first (before history/wrong merge)
+      (r.deletedHistData||[]).forEach(({en,ts})=>{
+        const cur=_histDeleted.get(en)||0;
+        if(ts>cur){_histDeleted.set(en,ts);allHistory.delete(en);}
+      });
+      (r.deletedWrongData||[]).forEach(({en,ts})=>{
+        const cur=_wrongDeleted.get(en)||0;
+        if(ts>cur){_wrongDeleted.set(en,ts);allWrong.delete(en);}
+      });
+      try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+      try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+      // merge allHistory: newer ts wins, skip tombstoned
       const rHist=new Map((r.historyData||[]).map(v=>[v.en,v]));
       rHist.forEach((v,en)=>{
+        const delTs=_histDeleted.get(en)||0;
+        if(delTs>=(v.ts||1))return;
         if(!allHistory.has(en)){allHistory.set(en,{word:{en,ko:v.ko||''},results:v.results||[],ts:v.ts||0});}
         else if((v.ts||0)>(allHistory.get(en).ts||0)){const h=allHistory.get(en);h.results=v.results||[];h.ts=v.ts||0;}
       });
@@ -1845,9 +1861,10 @@ function dbSave(){
         if(!typeHistory.has(en)){typeHistory.set(en,{results:v.results||[],ts:v.ts||0});}
         else if((v.ts||0)>(typeHistory.get(en).ts||0)){const t=typeHistory.get(en);t.results=v.results||[];t.ts=v.ts||0;}
       });
-      // merge allWrong: remote-only added, take max count
+      // merge allWrong: remote-only added, take max count, skip tombstoned
       const rWrong=new Map((r.wrongData||[]).map(v=>[v.en,v]));
       rWrong.forEach((v,en)=>{
+        if(_wrongDeleted.has(en))return;
         if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count});
         else if(v.count>allWrong.get(en).count) allWrong.get(en).count=v.count;
       });
@@ -1865,19 +1882,30 @@ function dbSave(){
         if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
+      // merge quizLog: union by ts
+      const localLogTs=new Set(quizLog.map(e=>e.ts));
+      (r.quizLogData||[]).forEach(e=>{if(!localLogTs.has(e.ts))quizLog.push(e);});
+      quizLog.sort((a,b)=>b.ts-a.ts);
+      if(quizLog.length>500)quizLog=quizLog.slice(0,500);
+      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
       // build final arrays from merged state
       const histArr=[...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||'',results:v.results||[],ts:v.ts||0}));
       const typeHistArr=[...typeHistory.entries()].map(([en,v])=>({en,results:v.results||[],ts:v.ts||0}));
       const mergedWrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}));
       const mergedUaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
       const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
+      const deletedHistArr=[..._histDeleted.entries()].map(([en,ts])=>({en,ts}));
+      const deletedWrongArr=[..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}));
       await DOC.set({
         favorites:[...favorites],
         wrongData:mergedWrongArr,
         historyData:histArr,
         userAnswersData:mergedUaArr,
         typeHistoryData:typeHistArr,
-        resumeData:resumeArr
+        resumeData:resumeArr,
+        deletedHistData:deletedHistArr,
+        deletedWrongData:deletedWrongArr,
+        quizLogData:quizLog
       });
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify(typeHistArr));}catch(e){}
       try{localStorage.setItem('vocabit-wrong',JSON.stringify(mergedWrongArr));}catch(e){}
@@ -1911,8 +1939,23 @@ function dbLoad(){
         updateHomeFavBtn();
       }
     }
+    if(d.deletedHistData){
+      d.deletedHistData.forEach(({en,ts})=>{
+        const cur=_histDeleted.get(en)||0;
+        if(ts>cur){_histDeleted.set(en,ts);allHistory.delete(en);}
+      });
+      try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+    }
+    if(d.deletedWrongData){
+      d.deletedWrongData.forEach(({en,ts})=>{
+        const cur=_wrongDeleted.get(en)||0;
+        if(ts>cur){_wrongDeleted.set(en,ts);allWrong.delete(en);}
+      });
+      try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+    }
     if(d.wrongData && d.wrongData.length){
       d.wrongData.forEach(v=>{
+        if(_wrongDeleted.has(v.en))return;
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count});
         else if(v.count>allWrong.get(v.en).count) allWrong.get(v.en).count=v.count;
       });
@@ -1920,6 +1963,8 @@ function dbLoad(){
     }
     if(d.historyData && d.historyData.length){
       d.historyData.forEach(v=>{
+        const delTs=_histDeleted.get(v.en)||0;
+        if(delTs>=(v.ts||1))return;
         let results=v.results||[];
         if(!results.length&&(v.wrongs||v.corrects)){
           for(let i=0;i<(v.wrongs||0);i++)results.push(false);
@@ -1956,6 +2001,13 @@ function dbLoad(){
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
     }
+    if(d.quizLogData && d.quizLogData.length){
+      const localTs=new Set(quizLog.map(e=>e.ts));
+      d.quizLogData.forEach(e=>{if(!localTs.has(e.ts))quizLog.push(e);});
+      quizLog.sort((a,b)=>b.ts-a.ts);
+      if(quizLog.length>500)quizLog=quizLog.slice(0,500);
+      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+    }
     refreshSectionStats();
     updateHomeResume();
   },e=>console.error('dbLoad error',e));
@@ -1969,6 +2021,7 @@ var uaSelectedWord=null;
 var isWrongStudyMode=false;
 var qSecs=[];
 var apActive=false;
+var _swSecId=null,_swWords=[];
 var apTimer=null;
 var _etymGroups=[];
 
@@ -2002,8 +2055,10 @@ var _etymGroups=[];
         '</div>':'';
       const resetBtn=hasW?
         '<button class="btn btn-s" style="font-size:.65em;padding:.15em .45em;color:var(--danger);border-color:var(--danger);flex-shrink:0" onclick="event.stopPropagation();resetSecStats(\''+sec.id+'\')">초기화</button>':'';
+      const logBtn=hasW?
+        '<button class="btn btn-s" style="font-size:.65em;padding:.15em .45em;color:var(--primary);border-color:var(--primary);flex-shrink:0" onclick="event.stopPropagation();showSecLog(\''+sec.id+'\')">기록</button>':'';
       card.innerHTML=
-        '<div class="src-card-name"><span class="src-card-name-text">'+shortName+' '+nameBadge+'</span>'+resetBtn+'</div>'+
+        '<div class="src-card-name"><span class="src-card-name-text">'+shortName+' '+nameBadge+'</span><div style="display:flex;gap:.3em">'+logBtn+resetBtn+'</div></div>'+
         btnsHtml+statsHtml;
       if(hasW)card.addEventListener('click',()=>toggle(sec.id));
       grid.appendChild(card);
@@ -2158,10 +2213,77 @@ function goWrongSec(id){
   if(!sec)return;
   const words=sec.words.filter(w=>allWrong.has(w.en));
   if(!words.length){alert('이 섹션의 오답이 없습니다.');return;}
+  _swSecId=id;_swWords=words;
+  const list=document.getElementById('sw-word-list');
+  list.innerHTML='';
+  words.forEach(w=>{
+    const cnt=allWrong.get(w.en)?.count||0;
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:.4em 0;border-bottom:1px solid var(--border)';
+    div.innerHTML='<div><div style="font-weight:700;font-size:.9em">'+w.en+'</div><div style="color:var(--muted);font-size:.78em">'+w.ko.join(' / ')+'</div></div><span style="color:var(--danger);font-size:.78em;font-weight:600;flex-shrink:0">'+cnt+'회</span>';
+    list.appendChild(div);
+  });
+  document.getElementById('sw-title').textContent=sec.name+' 오답 ('+words.length+'개)';
+  const modal=document.getElementById('sw-modal');
+  modal.style.display='flex';
+}
+function closeSWModal(){document.getElementById('sw-modal').style.display='none';}
+function goWrongSecStudy(){
+  closeSWModal();
+  if(!_swWords.length)return;
   isWrongStudyMode=false;
-  stWords=words;stIdx=0;
+  stWords=_swWords;stIdx=0;
   showSc('study');renderSt();
 }
+function goWrongSecQuiz(){
+  closeSWModal();
+  if(!_swWords.length)return;
+  isWrongQuizMode=true;
+  reviewingWrongMap=new Map(_swWords.map(w=>[w.en,{word:w,count:allWrong.get(w.en)?.count||1}]));
+  wrongFromHome=false;
+  qMode='type';qScore=0;qIdx=0;wrongMap=new Map();
+  merged=_swWords;
+  qSecs=_swSecId?[_swSecId]:[];
+  qQuestions=buildQuestions(_swWords,'type');
+  showSc('quiz');renderQ();
+}
+function showSecLog(secId){
+  const sec=SECTIONS.find(s=>s.id===secId);
+  if(!sec)return;
+  const entries=quizLog.filter(e=>e.secs&&e.secs.includes(secId));
+  const grouped={};
+  entries.forEach(e=>{
+    const d=new Date(e.ts);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!grouped[key])grouped[key]=[];
+    grouped[key].push(e);
+  });
+  const circs=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+  let html='';
+  const dates=Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).slice(0,30);
+  if(!dates.length){
+    html='<div style="color:var(--muted);text-align:center;padding:1.5em;font-size:.88em">아직 퀴즈 기록이 없습니다.</div>';
+  }else{
+    dates.forEach(date=>{
+      const dayEntries=grouped[date].sort((a,b)=>a.ts-b.ts);
+      const multi=dayEntries.length>1;
+      dayEntries.forEach((e,i)=>{
+        const pct=Math.round(e.score/e.total*100);
+        const color=pct>=80?'var(--success)':pct>=50?'var(--warning,#d97706)':'var(--danger)';
+        const label=multi?' '+circs[i]:'';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.45em 0;border-bottom:1px solid var(--border)">'+
+          '<span style="font-size:.82em;color:var(--muted)">'+date+label+'</span>'+
+          '<span style="font-weight:700;color:'+color+'">'+pct+'%</span>'+
+          '<span style="font-size:.82em;color:var(--muted)">'+e.score+'/'+e.total+'</span>'+
+        '</div>';
+      });
+    });
+  }
+  document.getElementById('sec-log-title').textContent=sec.name+' 퀴즈 기록';
+  document.getElementById('sec-log-body').innerHTML=html;
+  document.getElementById('sec-log-modal').style.display='flex';
+}
+function closeSecLog(){document.getElementById('sec-log-modal').style.display='none';}
 
 // ── STUDY ──
 function goStudy(){
@@ -2461,6 +2583,12 @@ function nextQ(){
   qIdx++;
   if(qIdx>=qQuestions.length){
     clearQuizProgress();
+    if(!isWrongQuizMode && qSecs && qSecs.length){
+      const entry={ts:Date.now(),secs:[...qSecs],score:qScore,total:qQuestions.length,mode:qMode};
+      quizLog.unshift(entry);
+      if(quizLog.length>500)quizLog=quizLog.slice(0,500);
+      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+    }
     showSc('result');
     const pct=Math.round(qScore/qQuestions.length*100);
     document.getElementById('r-score').textContent=pct+'%';
@@ -2500,11 +2628,14 @@ function updateWrongDeleteBtn(){
 function deleteSelectedWrong(){
   const keys=[...document.querySelectorAll('.wrong-chk:checked')].map(el=>el.dataset.key);
   if(!keys.length)return;
+  const now=Date.now();
   keys.forEach(key=>{
+    _wrongDeleted.set(key,now);
     reviewingWrongMap.delete(key);
     allWrong.delete(key);
     if(wrongMap)wrongMap.delete(key);
   });
+  try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
   updateHomeWrongBtn();
   dbSave();
   renderWrongList();
@@ -2912,11 +3043,16 @@ function updateHistDeleteBtn(){
 function deleteSelectedHistory(){
   const keys=[...document.querySelectorAll('.hist-chk:checked')].map(el=>el.dataset.key);
   if(!keys.length)return;
+  const now=Date.now();
   keys.forEach(key=>{
+    _histDeleted.set(key,now);
+    _wrongDeleted.set(key,now);
     allHistory.delete(key);
     allWrong.delete(key);
     if(wrongMap)wrongMap.delete(key);
   });
+  try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+  try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
   updateHomeWrongBtn();
   dbSave();
   goHistory();
@@ -3585,6 +3721,32 @@ function speak(t){
       <button class="btn btn-s" style="flex:1" onclick="confirmCancel()">취소</button>
       <button class="btn btn-danger" style="flex:1" onclick="confirmOk()">확인</button>
     </div>
+  </div>
+</div>
+
+<!-- SECTION WRONG MODAL -->
+<div id="sw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1.5em">
+  <div style="background:var(--card);border-radius:var(--radius);padding:1.5em;width:100%;max-width:22em;box-shadow:var(--shadow-md);max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75em">
+      <div id="sw-title" style="font-size:.95em;font-weight:700"></div>
+      <button onclick="closeSWModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em">✕</button>
+    </div>
+    <div id="sw-word-list" style="overflow-y:auto;flex:1;margin-bottom:.75em"></div>
+    <div style="display:flex;gap:.6em">
+      <button class="btn btn-s" style="flex:1" onclick="goWrongSecStudy()">단어학습</button>
+      <button class="btn btn-p" style="flex:1" onclick="goWrongSecQuiz()">퀴즈</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION QUIZ LOG MODAL -->
+<div id="sec-log-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1.5em">
+  <div style="background:var(--card);border-radius:var(--radius);padding:1.5em;width:100%;max-width:22em;box-shadow:var(--shadow-md);max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em">
+      <div id="sec-log-title" style="font-size:.95em;font-weight:700"></div>
+      <button onclick="closeSecLog()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em">✕</button>
+    </div>
+    <div id="sec-log-body" style="overflow-y:auto;flex:1"></div>
   </div>
 </div>
 
