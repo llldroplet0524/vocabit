@@ -1935,13 +1935,14 @@ function dbSave(){
         if(!userAnswers.has(v.en)) userAnswers.set(v.en,new Set(v.answers||[]));
         else (v.answers||[]).forEach(a=>userAnswers.get(v.en).add(a));
       });
-      // merge resumeData: remote entries added to local if not present or newer ts
+      // merge resumeData: remote entries added to local if not present or newer ts; remove local-only keys
       const rResume=new Map((r.resumeData||[]).map(v=>[v.key,v.data]));
       rResume.forEach((data,key)=>{
         const localRaw=localStorage.getItem(key);
         if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
+      getAllProgKeys().forEach(k=>{if(!rResume.has(k))localStorage.removeItem(k);});
       // merge quizLog: union by ts
       const localLogTs=new Set(quizLog.map(e=>e.ts));
       (r.quizLogData||[]).forEach(e=>{if(!localLogTs.has(e.ts))quizLog.push(e);});
@@ -2056,12 +2057,15 @@ function dbLoad(){
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify([...typeHistory.entries()].map(([en,v])=>({en,results:v.results,ts:v.ts||0}))));}catch(e){}
     }
     if(d.resumeData){
+      const fsKeys=new Set(d.resumeData.map(v=>v.key));
       d.resumeData.forEach(({key,data})=>{
         if(!data)return;
         const localRaw=localStorage.getItem(key);
         if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
+      // remove local vp: keys that no longer exist in Firebase
+      getAllProgKeys().forEach(k=>{if(!fsKeys.has(k))localStorage.removeItem(k);});
     }
     if(d.quizLogData && d.quizLogData.length){
       const localTs=new Set(quizLog.map(e=>e.ts));
