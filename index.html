@@ -1792,6 +1792,19 @@ const ETYM={
 'untouched':{'r':[{'p':'un','m':'부정'},{'p':'touch','m':'만지다'}],'t':'만지지 않은 → 손대지 않은, 원래 그대로의'}
 };
 
+// ── MERGE DUPLICATE WORD MEANINGS ACROSS ALL SECTIONS ──
+(function(){
+  const _m=new Map();
+  SECTIONS.forEach(s=>s.words.forEach(w=>{
+    const k=w.en.toLowerCase().trim();
+    if(!_m.has(k))_m.set(k,[...w.ko]);
+    else{const a=_m.get(k);w.ko.forEach(m=>{if(!a.includes(m))a.push(m);});}
+  }));
+  SECTIONS.forEach(s=>s.words.forEach(w=>{
+    w.ko=_m.get(w.en.toLowerCase().trim())||w.ko;
+  }));
+})();
+
 // ── STATE ──
 let selSecs=new Set(),merged=[],stWords=[],stIdx=0;
 let qQuestions=[],qIdx=0,qScore=0,qMode='both',qEnWord='';
@@ -2460,10 +2473,10 @@ function distractorWords(word,type,n){
   scored.sort((a,b)=>b.s-a.s);
   const res=[];
   const seenKey=new Set();
-  seenKey.add(type==='en-ko'?word.ko.slice(0,Math.min(2,word.ko.length)).join(' / '):word.en);
+  seenKey.add(type==='en-ko'?word.ko.join(' / '):word.en);
   for(let i=0;i<scored.length&&res.length<n;i++){
     const w=scored[i].w;
-    const key=type==='en-ko'?w.ko.slice(0,Math.min(2,w.ko.length)).join(' / '):w.en;
+    const key=type==='en-ko'?w.ko.join(' / '):w.en;
     if(!seenKey.has(key)){seenKey.add(key);res.push(w);}
   }
   return res;
@@ -2488,17 +2501,17 @@ function renderQ(){
     badge.textContent='영어 → 한국어';
     qTextEl.textContent=w.en;
     document.getElementById('q-tts').style.display='inline-flex';
-    const correct=w.ko.slice(0,Math.min(2,w.ko.length)).join(' / ');
-    const dWords=distractorWords(w,'en-ko',3);
+    const correct=w.ko.join(' / ');
+    const dWords=distractorWords(w,'en-ko',1);
     qOptWordsMap[correct]=w;
-    dWords.forEach(dw=>{qOptWordsMap[dw.ko.slice(0,Math.min(2,dw.ko.length)).join(' / ')]=dw;});
-    const opts=shuffle([correct,...dWords.map(dw=>dw.ko.slice(0,Math.min(2,dw.ko.length)).join(' / '))]);
+    dWords.forEach(dw=>{qOptWordsMap[dw.ko.join(' / ')]=dw;});
+    const opts=shuffle([correct,...dWords.map(dw=>dw.ko.join(' / '))]);
     renderOpts(opts,correct,w,'en-ko');
   }else if(q.type==='ko-en'){
     badge.textContent='한국어 → 영어';
-    qTextEl.textContent=w.ko.slice(0,Math.min(2,w.ko.length)).join(' / ');
+    qTextEl.textContent=w.ko.join(' / ');
     qTextEl.classList.add('q-text-ko');
-    const dWords=distractorWords(w,'ko-en',3);
+    const dWords=distractorWords(w,'ko-en',1);
     qOptWordsMap[w.en]=w;
     dWords.forEach(dw=>{qOptWordsMap[dw.en]=dw;});
     const opts=shuffle([w.en,...dWords.map(dw=>dw.en)]);
