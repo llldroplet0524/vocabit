@@ -1868,7 +1868,7 @@ let typeHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorag
 let _histDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-hist-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
 let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-wrong-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
 let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
-let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,v.note));}catch(e){}return m;})();
+let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,{note:v.note,ts:v.ts||0}));}catch(e){}return m;})();
 let qWeighted=false;
 let _memoTimer=null;
 
@@ -1956,6 +1956,7 @@ function dbSave(){
       const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
       const deletedHistArr=[..._histDeleted.entries()].map(([en,ts])=>({en,ts}));
       const deletedWrongArr=[..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}));
+      const notesArr=[...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}));
       await DOC.set({
         favorites:[...favorites],
         wrongData:mergedWrongArr,
@@ -1965,7 +1966,8 @@ function dbSave(){
         resumeData:resumeArr,
         deletedHistData:deletedHistArr,
         deletedWrongData:deletedWrongArr,
-        quizLogData:quizLog
+        quizLogData:quizLog,
+        notesData:notesArr
       });
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify(typeHistArr));}catch(e){}
       try{localStorage.setItem('vocabit-wrong',JSON.stringify(mergedWrongArr));}catch(e){}
@@ -2069,8 +2071,11 @@ function dbLoad(){
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
     }
     if(d.notesData){
-      d.notesData.forEach(({en,note})=>{if(!wordNotes.has(en))wordNotes.set(en,note);});
-      try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,note])=>({en,note}))));}catch(e){}
+      d.notesData.forEach(({en,note,ts})=>{
+        const cur=wordNotes.get(en);
+        if(!cur||(ts||0)>(cur.ts||0))wordNotes.set(en,{note,ts:ts||0});
+      });
+      try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))));}catch(e){}
     }
     refreshSectionStats();
     updateHomeResume();
@@ -2372,12 +2377,13 @@ function toggleQWeighted(){
 }
 function saveMemo(en,val){
   const k=en.toLowerCase().trim();
-  if(val.trim())wordNotes.set(k,val.trim());
+  const ts=Date.now();
+  if(val.trim())wordNotes.set(k,{note:val.trim(),ts});
   else wordNotes.delete(k);
-  try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,note])=>({en,note}))));}catch(e){}
+  try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))));}catch(e){}
   clearTimeout(_memoTimer);
   _memoTimer=setTimeout(()=>{
-    DOC.set({notesData:[...wordNotes.entries()].map(([en,note])=>({en,note}))},{merge:true}).catch(e=>console.error('saveMemo error',e));
+    DOC.set({notesData:[...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))},{merge:true}).catch(e=>console.error('saveMemo error',e));
   },1500);
 }
 
@@ -2397,7 +2403,7 @@ function renderSt(){
   document.getElementById('st-prog').style.width=((stIdx+1)/stWords.length*100)+'%';
   document.getElementById('fc-reveal').classList.remove('show');
   document.getElementById('fc-hint').style.display='block';
-  document.getElementById('st-memo').value=wordNotes.get(w.en.toLowerCase().trim())||'';
+  document.getElementById('st-memo').value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';
   updateFavBtn();
   // etymology
   const etym=ETYM[w.en.toLowerCase()];
@@ -2696,7 +2702,7 @@ function pick(sel,correct,word){
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}`;
-  document.getElementById('q-memo-input').value=wordNotes.get(word.en.toLowerCase().trim())||'';
+  document.getElementById('q-memo-input').value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';
   document.getElementById('q-memo-area').style.display='block';
   var nb=document.getElementById('q-next');nb.style.display='flex';nb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3092,7 +3098,7 @@ function checkTyped(){
   const answerLine=`<div style="margin-bottom:.375em;font-size:.88em">${ok?'뜻:':'정답:'} <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>`;
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
-  document.getElementById('q-memo-input').value=wordNotes.get(w.en.toLowerCase().trim())||'';
+  document.getElementById('q-memo-input').value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';
   document.getElementById('q-memo-area').style.display='block';
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
@@ -3430,9 +3436,9 @@ function renderMemoList(){
     });
   });
   // Gather all memo entries
-  let entries=[...wordNotes.entries()].map(([en,note])=>{
+  let entries=[...wordNotes.entries()].map(([en,v])=>{
     const info=wordMap.get(en)||null;
-    return{en,note,word:info?info.word:null,sec:info?info.sec:null,si:info?info.si:999};
+    return{en,note:v.note,word:info?info.word:null,sec:info?info.sec:null,si:info?info.si:999};
   });
   // Filter by search
   if(q){
@@ -3465,7 +3471,7 @@ function renderMemoList(){
   }).join('');
   // Set textarea values safely via .value (avoids </textarea> injection)
   listEl.querySelectorAll('textarea[data-memo-en]').forEach(ta=>{
-    ta.value=wordNotes.get(ta.dataset.memoEn)||'';
+    ta.value=(wordNotes.get(ta.dataset.memoEn)||{}).note||'';
   });
 }
 function goUserAnswers(){
