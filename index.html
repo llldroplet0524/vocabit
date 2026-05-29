@@ -180,8 +180,6 @@ h1{text-align:left;padding:1.25em 0 .875em}
 /* TTS 발음 듣기 버튼 */
 .tts-word-btn{display:inline-flex;align-items:center;gap:.35em;padding:.32em .9em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);cursor:pointer;font-size:.72em;color:var(--muted);font-family:inherit;transition:all .15s;font-weight:500}
 .tts-word-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-/* 퀴즈 뜻 박스 */
-.q-meaning-box{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:1.1em 1.25em;margin:.75em 0;text-align:center;box-shadow:var(--shadow);min-height:3.2em;display:flex;align-items:center;justify-content:center}
 /* 번호 보기 버튼 */
 .opt-mc{display:flex;align-items:center;gap:.7em;padding:.78em 1em;border-radius:.75em;border:1.5px solid var(--border);background:var(--card);cursor:pointer;font-size:.93em;font-weight:500;width:100%;text-align:left;transition:all .15s;font-family:inherit;margin-bottom:.45em;color:var(--text)}
 .opt-mc:last-child{margin-bottom:0}
@@ -342,9 +340,6 @@ h1{text-align:left;padding:1.25em 0 .875em}
   <div class="q-text" id="q-text"></div>
   <div style="text-align:center;margin:.3em 0 1.2em">
     <button class="tts-word-btn" id="q-tts" onclick="ttsQuiz()" style="display:none">🔊 발음 듣기</button>
-  </div>
-  <div class="q-meaning-box" id="q-meaning-box" style="display:none">
-    <div id="q-meaning-reveal" style="text-align:center;color:var(--muted);font-size:.9em;line-height:1.4"></div>
   </div>
   <div id="q-opts" style="margin-top:4em"></div>
   <div id="q-type-area" style="display:none;margin-top:4em">
@@ -2489,8 +2484,6 @@ function renderQ(){
   document.getElementById('q-expl').classList.remove('show');
   document.getElementById('q-opts').style.display='';
   document.getElementById('q-type-area').style.display='none';
-  document.getElementById('q-meaning-box').style.display='none';
-  document.getElementById('q-meaning-reveal').textContent='';
   document.getElementById('q-tts').style.display='none';
   qOptWordsMap={};qEnWord=w.en;
   const badge=document.getElementById('q-badge');
@@ -2609,14 +2602,9 @@ function pick(sel,correct,word){
     else if(v===sel&&!ok)b.classList.add('bad');
   });
   const qType=qQuestions[qIdx].type;
-  const mr=document.getElementById('q-meaning-reveal');
   if(qType==='en-ko'){
-    mr.textContent=word.ko.join(' / ');
-    document.getElementById('q-meaning-box').style.display='flex';
     document.querySelectorAll('.opt-en-reveal').forEach(s=>s.style.display='flex');
   }else if(qType==='ko-en'){
-    mr.textContent=word.en;
-    document.getElementById('q-meaning-box').style.display='flex';
     document.querySelectorAll('.opt-ko-reveal').forEach(s=>s.style.display='');
   }
   const etym=etymHTML(word.en);
