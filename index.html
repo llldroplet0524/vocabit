@@ -240,6 +240,10 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('en-ko')">🎯 영어→한글</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('ko-en')">🎯 한글→영어</button>
     </div>
+    <label style="display:inline-flex;align-items:center;gap:.4em;cursor:pointer;font-size:.82em;color:var(--muted);margin-bottom:.75em;user-select:none">
+      <input type="checkbox" id="q-weighted-toggle" onchange="qWeighted=this.checked" style="accent-color:var(--danger);width:1em;height:1em">
+      오답 가중치 — 오답 단어가 더 자주 출제됨
+    </label>
     <!-- 복습 3열 -->
     <div class="home-sec-label">복습</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
@@ -308,6 +312,11 @@ h1{text-align:left;padding:1.25em 0 .875em}
           <div class="etym-title">📖 어원으로 기억하기</div>
           <div class="etym-roots" id="st-etym-roots"></div>
           <div class="etym-tip" id="st-etym-tip"></div>
+        </div>
+        <div style="margin-top:.65em" onclick="event.stopPropagation()">
+          <textarea id="st-memo" placeholder="📝 연상 메모..." rows="2"
+            style="width:100%;box-sizing:border-box;font-size:.8em;padding:.45em .65em;border:1px solid rgba(255,255,255,.3);border-radius:.5em;background:rgba(255,255,255,.15);color:#fff;resize:none;font-family:inherit;line-height:1.4;outline:none"
+            oninput="saveMemo(stWords[stIdx].en,this.value)"></textarea>
         </div>
       </div>
     </div>
@@ -1828,6 +1837,9 @@ let typeHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorag
 let _histDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-hist-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
 let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-wrong-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
 let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
+let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,v.note));}catch(e){}return m;})();
+let qWeighted=false;
+let _memoTimer=null;
 
 // ── FIREBASE ──
 const firebaseConfig = {
@@ -2024,6 +2036,10 @@ function dbLoad(){
       quizLog.sort((a,b)=>b.ts-a.ts);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+    }
+    if(d.notesData){
+      d.notesData.forEach(({en,note})=>{if(!wordNotes.has(en))wordNotes.set(en,note);});
+      try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,note])=>({en,note}))));}catch(e){}
     }
     refreshSectionStats();
     updateHomeResume();
@@ -2313,6 +2329,16 @@ function showSecLog(secId){
   document.getElementById('sec-log-modal').style.display='flex';
 }
 function closeSecLog(){document.getElementById('sec-log-modal').style.display='none';}
+function saveMemo(en,val){
+  const k=en.toLowerCase().trim();
+  if(val.trim())wordNotes.set(k,val.trim());
+  else wordNotes.delete(k);
+  try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,note])=>({en,note}))));}catch(e){}
+  clearTimeout(_memoTimer);
+  _memoTimer=setTimeout(()=>{
+    DOC.set({notesData:[...wordNotes.entries()].map(([en,note])=>({en,note}))},{merge:true}).catch(e=>console.error('saveMemo error',e));
+  },1500);
+}
 
 // ── STUDY ──
 function goStudy(){
@@ -2330,6 +2356,7 @@ function renderSt(){
   document.getElementById('st-prog').style.width=((stIdx+1)/stWords.length*100)+'%';
   document.getElementById('fc-reveal').classList.remove('show');
   document.getElementById('fc-hint').style.display='block';
+  document.getElementById('st-memo').value=wordNotes.get(w.en.toLowerCase().trim())||'';
   updateFavBtn();
   // etymology
   const etym=ETYM[w.en.toLowerCase()];
@@ -2433,9 +2460,16 @@ function goQuiz(mode){
 function buildQuestions(words,mode){
   const qs=[];
   words.forEach(w=>{
-    if(mode==='en-ko'||mode==='both')qs.push({type:'en-ko',word:w});
-    if(mode==='ko-en'||mode==='both')qs.push({type:'ko-en',word:w});
-    if(mode==='type')qs.push({type:'type',word:w});
+    const types=[];
+    if(mode==='en-ko'||mode==='both')types.push('en-ko');
+    if(mode==='ko-en'||mode==='both')types.push('ko-en');
+    if(mode==='type')types.push('type');
+    types.forEach(t=>qs.push({type:t,word:w}));
+    if(qWeighted&&allWrong.has(w.en)){
+      const cnt=allWrong.get(w.en).count;
+      const extra=cnt>=4?2:cnt>=2?1:0;
+      for(let i=0;i<extra;i++)types.forEach(t=>qs.push({type:t,word:w}));
+    }
   });
   return qs.sort(()=>Math.random()-.5);
 }
@@ -2617,9 +2651,11 @@ function pick(sel,correct,word){
     document.querySelectorAll('.opt-ko-reveal').forEach(s=>s.style.display='');
   }
   const etym=etymHTML(word.en);
+  const note=wordNotes.get(word.en.toLowerCase().trim());
+  const noteHtml=note?`<div style="margin-top:.5em;padding:.4em .6em;background:var(--primary-light);border-radius:.4em;font-size:.85em;color:var(--primary);line-height:1.4">📝 ${note}</div>`:'';
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
-    `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}`;
+    `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}${noteHtml}`;
   var nb=document.getElementById('q-next');nb.style.display='flex';nb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function nextQ(){
@@ -3008,8 +3044,10 @@ function checkTyped(){
   const expl=document.getElementById('q-expl');
   expl.classList.add('show');
   const answerLine=`<div style="margin-bottom:.375em;font-size:.88em">${ok?'뜻:':'정답:'} <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>`;
+  const typeNote=wordNotes.get(w.en.toLowerCase().trim());
+  const typeNoteHtml=typeNote?`<div style="margin-top:.5em;padding:.4em .6em;background:var(--primary-light);border-radius:.4em;font-size:.85em;color:var(--primary);line-height:1.4">📝 ${typeNote}</div>`:'';
   document.getElementById('q-expl-body').innerHTML=
-    `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
+    `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}${typeNoteHtml}`;
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-next').style.display='flex';
