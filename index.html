@@ -233,23 +233,26 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <div id="home-resume-list" style="display:grid;grid-template-columns:1fr 1fr;gap:.4em"></div>
     </div>
     <!-- 퀴즈 4열 -->
-    <div class="home-sec-label">퀴즈</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4em">
+      <div class="home-sec-label" style="margin-bottom:0">퀴즈</div>
+      <div style="display:flex;align-items:center;gap:.4em">
+        <button id="q-weighted-toggle" onclick="toggleQWeighted()" style="padding:.25em .75em;font-size:.76em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.5;transition:all .15s">오답 가중치</button>
+        <span id="q-weighted-desc" style="font-size:.74em;color:var(--muted)"></span>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.75em">
       <button class="btn btn-p home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('type')">✏️ 직접입력</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('both')">🎯 영어↔한글</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('en-ko')">🎯 영어→한글</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('ko-en')">🎯 한글→영어</button>
     </div>
-    <div style="margin-bottom:.75em">
-      <button id="q-weighted-toggle" onclick="toggleQWeighted()" style="padding:.3em .85em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.5;transition:all .15s">오답 가중치</button>
-      <span id="q-weighted-desc" style="font-size:.76em;color:var(--muted);margin-left:.4em"></span>
-    </div>
-    <!-- 복습 3열 -->
+    <!-- 복습 4열 -->
     <div class="home-sec-label">복습</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
       <button class="btn btn-danger home-btn" style="font-size:.78em;padding:.75em .4em" id="home-wrong-btn" onclick="goWrongFromHome()">❌ 오답 복습</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goHistory()">📊 회독 체크</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" id="home-ua-btn" onclick="goUserAnswers()">📝 추가 정답</button>
+      <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goMemos()">📝 연상메모</button>
     </div>
     <!-- 섹션 선택 카드 -->
     <div class="card">
@@ -561,6 +564,28 @@ h1{text-align:left;padding:1.25em 0 .875em}
   <!-- 등록된 목록 -->
   <div style="border-top:1px solid #e2e8f0;margin:1.5em 0"></div>
   <div id="useranswers-list"></div>
+</div>
+
+<!-- MEMOS -->
+<div id="sc-memos" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6em">
+    <div style="font-size:1.05em;font-weight:700">📝 연상 메모</div>
+    <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
+  </div>
+  <div style="position:relative;margin-bottom:.6em">
+    <input id="memo-search" type="text" autocomplete="off" placeholder="단어 검색..."
+      style="width:100%;padding:.55em .75em;border:1px solid var(--border);border-radius:.5em;font-size:.88em;font-family:inherit;outline:none;box-sizing:border-box"
+      oninput="renderMemoList()">
+  </div>
+  <div style="display:flex;gap:.4em;margin-bottom:.65em">
+    <button id="memo-sort-en" onclick="setMemoSort('en')" style="padding:.25em .75em;font-size:.78em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">A→Z</button>
+    <button id="memo-sort-sec" onclick="setMemoSort('sec')" style="padding:.25em .75em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">섹션순</button>
+  </div>
+  <div id="memo-empty" style="display:none;text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">
+    아직 작성한 연상 메모가 없습니다.<br>
+    <span style="font-size:.88em;margin-top:.5em;display:block">단어 학습 또는 퀴즈에서 메모를 작성해보세요.</span>
+  </div>
+  <div id="memo-list"></div>
 </div>
 </div><!-- /.wrap -->
 
@@ -2183,6 +2208,7 @@ function navigateToHash(hash){
   else if(hash==='wrong'){if(allWrong.size>0)goWrongFromHome();else goHome();}
   else if(hash==='etym-browse')goEtymBrowse();
   else if(hash==='useranswers')goUserAnswers();
+  else if(hash==='memos')goMemos();
   else if(hash==='wordbrowser-alpha')goWordBrowser('alpha');
   else if(hash==='wordbrowser-meaning')goWordBrowser('meaning');
   else goHome();
@@ -3369,6 +3395,68 @@ function makeWbCard(w){
 
 // ── USER ANSWERS ──
 // uaSelectedWord declared before IIFE (see above)
+// ── MEMO LIST ──────────────────────────────────────────
+var _memoSort='en';
+function goMemos(){
+  document.getElementById('memo-search').value='';
+  renderMemoList();
+  showSc('memos');
+}
+function setMemoSort(s){
+  _memoSort=s;
+  document.getElementById('memo-sort-en').style.background=s==='en'?'var(--primary)':'var(--card)';
+  document.getElementById('memo-sort-en').style.color=s==='en'?'#fff':'var(--muted)';
+  document.getElementById('memo-sort-en').style.borderColor=s==='en'?'var(--primary)':'var(--border)';
+  document.getElementById('memo-sort-sec').style.background=s==='sec'?'var(--primary)':'var(--card)';
+  document.getElementById('memo-sort-sec').style.color=s==='sec'?'#fff':'var(--muted)';
+  document.getElementById('memo-sort-sec').style.borderColor=s==='sec'?'var(--primary)':'var(--border)';
+  renderMemoList();
+}
+function renderMemoList(){
+  const q=(document.getElementById('memo-search').value||'').trim().toLowerCase();
+  // Build word lookup map from SECTIONS
+  const wordMap=new Map();
+  SECTIONS.forEach((sec,si)=>{
+    sec.words.forEach(w=>{
+      const k=w.en.toLowerCase().trim();
+      if(!wordMap.has(k))wordMap.set(k,{word:w,sec,si});
+    });
+  });
+  // Gather all memo entries
+  let entries=[...wordNotes.entries()].map(([en,note])=>{
+    const info=wordMap.get(en)||null;
+    return{en,note,word:info?info.word:null,sec:info?info.sec:null,si:info?info.si:999};
+  });
+  // Filter by search
+  if(q){
+    entries=entries.filter(e=>e.en.includes(q)||(e.word&&e.word.ko.some(k=>k.includes(q)))||e.note.toLowerCase().includes(q));
+  }
+  // Sort
+  if(_memoSort==='sec'){
+    entries.sort((a,b)=>a.si-b.si||a.en.localeCompare(b.en));
+  } else {
+    entries.sort((a,b)=>a.en.localeCompare(b.en));
+  }
+  const emptyEl=document.getElementById('memo-empty');
+  const listEl=document.getElementById('memo-list');
+  if(!entries.length){emptyEl.style.display='';listEl.innerHTML='';return;}
+  emptyEl.style.display='none';
+  listEl.innerHTML=entries.map((e,i)=>{
+    const koStr=e.word?e.word.ko.join(' / '):'';
+    const secStr=e.sec?`<span style="font-size:.72em;color:var(--muted);margin-left:.4em">${e.sec.name}</span>`:'';
+    return `<div class="card" style="margin-bottom:.5em;padding:.75em">
+      <div style="display:flex;align-items:baseline;gap:.3em;margin-bottom:.3em">
+        <span style="font-weight:700;font-size:.95em">${e.en}</span>
+        ${secStr}
+      </div>
+      ${koStr?`<div style="font-size:.8em;color:var(--muted);margin-bottom:.4em">${koStr}</div>`:''}
+      <textarea data-memo-en="${e.en}" rows="2"
+        style="width:100%;box-sizing:border-box;font-size:.82em;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;font-family:inherit;line-height:1.4;outline:none;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+        oninput="saveMemo(this.dataset.memoEn,this.value)">${e.note}</textarea>
+    </div>`;
+  }).join('');
+}
 function goUserAnswers(){
   uaSelectedWord=null;
   const wi=document.getElementById('ua-word-input');
