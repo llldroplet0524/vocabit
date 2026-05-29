@@ -2866,6 +2866,10 @@ function confirmOk(){document.getElementById('confirm-modal').style.display='non
 function confirmCancel(){document.getElementById('confirm-modal').style.display='none';_confirmCb=null;}
 function clearAllWrong(){
   showConfirm('오답 목록을 초기화할까요?',()=>{
+    const now=Date.now();
+    allWrong.forEach((_,en)=>{_wrongDeleted.set(en,now);_histDeleted.set(en,now);allHistory.delete(en);});
+    try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+    try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
     allWrong=new Map();
     updateHomeWrongBtn();
     dbSave();
@@ -3185,6 +3189,9 @@ function deleteSelectedHistory(){
 }
 function clearHistory(){
   showConfirm('회독 체크 기록을 모두 초기화할까요?',()=>{
+    const now=Date.now();
+    allHistory.forEach((_,en)=>_histDeleted.set(en,now));
+    try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
     allHistory=new Map();
     dbSave();
     goHistory();
