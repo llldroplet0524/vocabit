@@ -2021,7 +2021,7 @@ var uaSelectedWord=null;
 var isWrongStudyMode=false;
 var qSecs=[];
 var apActive=false;
-var _swSecId=null,_swWords=[];
+var _swSecId=null,_swWords=[],_swSort='count';
 var apTimer=null;
 var _etymGroups=[];
 
@@ -2213,20 +2213,32 @@ function goWrongSec(id){
   if(!sec)return;
   const words=sec.words.filter(w=>allWrong.has(w.en));
   if(!words.length){alert('이 섹션의 오답이 없습니다.');return;}
-  _swSecId=id;_swWords=words;
+  _swSecId=id;_swWords=words;_swSort='count';
+  document.getElementById('sw-title').textContent=sec.name+' 오답 ('+words.length+'개)';
+  renderSWList();
+  document.getElementById('sw-modal').style.display='flex';
+}
+function renderSWList(){
   const list=document.getElementById('sw-word-list');
   list.innerHTML='';
-  words.forEach(w=>{
+  const sorted=[..._swWords];
+  if(_swSort==='en') sorted.sort((a,b)=>a.en.localeCompare(b.en));
+  else if(_swSort==='ko') sorted.sort((a,b)=>(a.ko[0]||'').localeCompare(b.ko[0]||'','ko'));
+  else sorted.sort((a,b)=>(allWrong.get(b.en)?.count||0)-(allWrong.get(a.en)?.count||0));
+  sorted.forEach(w=>{
     const cnt=allWrong.get(w.en)?.count||0;
     const div=document.createElement('div');
     div.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:.4em 0;border-bottom:1px solid var(--border)';
     div.innerHTML='<div><div style="font-weight:700;font-size:.9em">'+w.en+'</div><div style="color:var(--muted);font-size:.78em">'+w.ko.join(' / ')+'</div></div><span style="color:var(--danger);font-size:.78em;font-weight:600;flex-shrink:0">'+cnt+'회</span>';
     list.appendChild(div);
   });
-  document.getElementById('sw-title').textContent=sec.name+' 오답 ('+words.length+'개)';
-  const modal=document.getElementById('sw-modal');
-  modal.style.display='flex';
+  // update sort chip active state
+  ['en','ko','count'].forEach(s=>{
+    const el=document.getElementById('sw-sort-'+s);
+    if(el){el.style.background=_swSort===s?'var(--primary)':'var(--card)';el.style.color=_swSort===s?'#fff':'var(--text)';el.style.borderColor=_swSort===s?'var(--primary)':'var(--border)';}
+  });
 }
+function setSWSort(s){_swSort=s;renderSWList();}
 function closeSWModal(){document.getElementById('sw-modal').style.display='none';}
 function goWrongSecStudy(){
   closeSWModal();
@@ -3751,9 +3763,14 @@ function speak(t){
 <!-- SECTION WRONG MODAL -->
 <div id="sw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1.5em">
   <div style="background:var(--card);border-radius:var(--radius);padding:1.5em;width:100%;max-width:22em;box-shadow:var(--shadow-md);max-height:80vh;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75em">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6em">
       <div id="sw-title" style="font-size:.95em;font-weight:700"></div>
       <button onclick="closeSWModal()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em">✕</button>
+    </div>
+    <div style="display:flex;gap:.4em;margin-bottom:.65em">
+      <button id="sw-sort-count" onclick="setSWSort('count')" style="padding:.22em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">오답횟수</button>
+      <button id="sw-sort-en" onclick="setSWSort('en')" style="padding:.22em .6em;font-size:.75em;border:1px solid var(--border);border-radius:2em;background:var(--card);color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">A→Z</button>
+      <button id="sw-sort-ko" onclick="setSWSort('ko')" style="padding:.22em .6em;font-size:.75em;border:1px solid var(--border);border-radius:2em;background:var(--card);color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">ㄱ→ㅎ</button>
     </div>
     <div id="sw-word-list" style="overflow-y:auto;flex:1;margin-bottom:.75em"></div>
     <div style="display:flex;gap:.6em">
