@@ -3415,7 +3415,16 @@ function goHistory(){
     list.innerHTML='<div style="text-align:center;color:var(--muted);padding:2em;font-size:.9em">오답이 없습니다.</div>';
     showSc('history');return;
   }
-  const sorted=[...allHistory.values()].filter(({word})=>allWrong.has((word.en||'').toLowerCase().trim())||(allWrong.has(word.en||''))).sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
+  const wrongWords=[...allWrong.keys()];
+  let sorted;
+  if(histSeg==='wrong'){
+    // 오답만: allWrong 중 마지막 직접입력 결과가 틀린 단어
+    sorted=wrongWords.map(en=>{const h=allHistory.get(en);const w=allWrong.get(en)?.word||{en,ko:[]};return h||{word:w,results:[]};}).filter(({results})=>{const r=results||[];return r.length===0||r[r.length-1]===false;});
+  }else{
+    // 전체: allWrong에 있는 모든 단어 (오답복습과 동일)
+    sorted=wrongWords.map(en=>{const h=allHistory.get(en);const w=allWrong.get(en)?.word||{en,ko:[]};return h||{word:w,results:[]};});
+  }
+  sorted.sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
   sorted.forEach(({word,results})=>{
     const res=results||[];
     const wrongs=res.filter(r=>!r).length;
