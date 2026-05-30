@@ -3453,6 +3453,7 @@ function setHistSeg(seg){
   histSeg=seg;
   document.getElementById('hist-seg-wrong').className='btn '+(seg==='wrong'?'btn-p':'btn-s');
   document.getElementById('hist-seg-all').className='btn '+(seg==='all'?'btn-p':'btn-s');
+  goHistory();
 }
 function setHistAction(action){
   document.getElementById('hist-act-study').className='btn '+(action==='study'?'btn-p':'btn-s');
