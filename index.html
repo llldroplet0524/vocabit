@@ -2075,7 +2075,8 @@ function dbLoad(){
     if(d.deletedWrongData){
       d.deletedWrongData.forEach(({en,ts})=>{
         const cur=_wrongDeleted.get(en)||0;
-        if(ts>cur){_wrongDeleted.set(en,ts);allWrong.delete(en);}
+        const wrongTs=(allWrong.get(en)||{}).ts||0;
+        if(ts>cur&&ts>wrongTs){_wrongDeleted.set(en,ts);allWrong.delete(en);}
       });
       try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
     }
@@ -2089,7 +2090,7 @@ function dbLoad(){
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
       // Remove any tombstoned items that slipped into allWrong
-      _wrongDeleted.forEach((ts,en)=>{if(ts>0)allWrong.delete(en);});
+      _wrongDeleted.forEach((ts,en)=>{const wrongTs=(allWrong.get(en)||{}).ts||0;if(ts>0&&ts>wrongTs)allWrong.delete(en);});
       try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
     }
@@ -3259,7 +3260,7 @@ function checkTyped(){
   if(ok){
     qScore++;
     const hk=w.en;
-    if(allWrong.has(hk)){allWrong.get(hk).count--;if(allWrong.get(hk).count<=0)allWrong.delete(hk);updateHomeWrongBtn();dbSave();}
+    if(allWrong.has(hk)){allWrong.get(hk).count--;if(allWrong.get(hk).count<=0){allWrong.delete(hk);_wrongDeleted.set(hk,Date.now());}updateHomeWrongBtn();dbSave();}
     if(!allHistory.has(hk))allHistory.set(hk,{word:w,results:[],ts:0});
     const hr=allHistory.get(hk);hr.results.push(true);if(hr.results.length>20)hr.results.shift();hr.ts=Date.now();
   }else{
