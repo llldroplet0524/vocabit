@@ -1861,7 +1861,7 @@ let isWrongQuizMode=false;
 let wrongCountFilter=new Set();
 let favorites=new Set(JSON.parse(localStorage.getItem('vocabit-fav')||'[]'));
 let userAnswers=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-ua')||'[]');a.forEach(v=>m.set(v.en,new Set(v.answers)));}catch(e){}return m;})();
-let allWrong=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-wrong')||'[]');a.forEach(v=>m.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count}));}catch(e){}return m;})();
+let allWrong=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-wrong')||'[]');a.forEach(v=>m.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0}));}catch(e){}return m;})();
 let favMode='both';
 let favCount=0;
 let typeHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-type-hist')||'[]');a.forEach(v=>m.set(v.en,{results:v.results||[],ts:v.ts||0}));}catch(e){}return m;})();
@@ -1890,7 +1890,7 @@ let dbSaveTimer = null;
 function dbSave(){
   const uaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
   try{localStorage.setItem('vocabit-ua',JSON.stringify(uaArr));}catch(e){}
-  const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}));
+  const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
   try{localStorage.setItem('vocabit-wrong',JSON.stringify(wrongArr));}catch(e){}
   clearTimeout(dbSaveTimer);
   dbSaveTimer = setTimeout(async ()=>{
@@ -1922,12 +1922,13 @@ function dbSave(){
         if(!typeHistory.has(en)){typeHistory.set(en,{results:v.results||[],ts:v.ts||0});}
         else if((v.ts||0)>(typeHistory.get(en).ts||0)){const t=typeHistory.get(en);t.results=v.results||[];t.ts=v.ts||0;}
       });
-      // merge allWrong: remote-only added, take max count, skip tombstoned
+      // merge allWrong: remote-only added, take max count, skip tombstoned (ts comparison)
       const rWrong=new Map((r.wrongData||[]).map(v=>[v.en,v]));
       rWrong.forEach((v,en)=>{
-        if(_wrongDeleted.has(en))return;
-        if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count});
-        else if(v.count>allWrong.get(en).count) allWrong.get(en).count=v.count;
+        const delTs=_wrongDeleted.get(en)||0;
+        if(delTs>0&&delTs>=(v.ts||0))return; // tombstone is newer than wrong data
+        if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count,ts:v.ts||0});
+        else if(v.count>allWrong.get(en).count){allWrong.get(en).count=v.count;allWrong.get(en).ts=v.ts||0;}
       });
       // merge favorites: union
       (r.favorites||[]).forEach(f=>favorites.add(f));
@@ -1961,7 +1962,7 @@ function dbSave(){
       // build final arrays from merged state
       const histArr=[...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||'',results:v.results||[],ts:v.ts||0}));
       const typeHistArr=[...typeHistory.entries()].map(([en,v])=>({en,results:v.results||[],ts:v.ts||0}));
-      const mergedWrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}));
+      const mergedWrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
       const mergedUaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
       const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
       const deletedHistArr=[..._histDeleted.entries()].map(([en,ts])=>({en,ts}));
@@ -2028,11 +2029,12 @@ function dbLoad(){
     }
     if(d.wrongData && d.wrongData.length){
       d.wrongData.forEach(v=>{
-        if(_wrongDeleted.has(v.en))return;
-        if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count});
-        else if(v.count>allWrong.get(v.en).count) allWrong.get(v.en).count=v.count;
+        const delTs=_wrongDeleted.get(v.en)||0;
+        if(delTs>0&&delTs>=(v.ts||0))return;
+        if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
+        else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
-      try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}))));}catch(e){}
+      try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
     }
     if(d.historyData && d.historyData.length){
@@ -2696,8 +2698,10 @@ function pick(sel,correct,word){
     const k=word.en;
     if(wrongMap.has(k))wrongMap.get(k).count++;
     else wrongMap.set(k,{word,count:1});
-    if(allWrong.has(k))allWrong.get(k).count++;
-    else allWrong.set(k,{word,count:1});
+    const _wts=Date.now();
+    if(allWrong.has(k)){allWrong.get(k).count++;allWrong.get(k).ts=_wts;}
+    else allWrong.set(k,{word,count:1,ts:_wts});
+    _wrongDeleted.delete(k);
     if(!allHistory.has(k))allHistory.set(k,{word,results:[],ts:0});
     const hr2=allHistory.get(k);hr2.results.push(false);if(hr2.results.length>20)hr2.results.shift();hr2.ts=Date.now();
     updateHomeWrongBtn();dbSave();
@@ -3104,8 +3108,10 @@ function checkTyped(){
     const key=w.en;
     if(wrongMap.has(key))wrongMap.get(key).count++;
     else wrongMap.set(key,{word:w,count:1});
-    if(allWrong.has(key))allWrong.get(key).count++;
-    else allWrong.set(key,{word:w,count:1});
+    const _wts2=Date.now();
+    if(allWrong.has(key)){allWrong.get(key).count++;allWrong.get(key).ts=_wts2;}
+    else allWrong.set(key,{word:w,count:1,ts:_wts2});
+    _wrongDeleted.delete(key);
     if(!allHistory.has(key))allHistory.set(key,{word:w,results:[],ts:0});
     const hr2=allHistory.get(key);hr2.results.push(false);if(hr2.results.length>20)hr2.results.shift();hr2.ts=Date.now();
     updateHomeWrongBtn();dbSave();
@@ -3161,8 +3167,10 @@ function _doPassTyped(){
   const key=w.en;
   if(wrongMap.has(key))wrongMap.get(key).count++;
   else wrongMap.set(key,{word:w,count:1});
-  if(allWrong.has(key))allWrong.get(key).count++;
-  else allWrong.set(key,{word:w,count:1});
+  const _wts3=Date.now();
+  if(allWrong.has(key)){allWrong.get(key).count++;allWrong.get(key).ts=_wts3;}
+  else allWrong.set(key,{word:w,count:1,ts:_wts3});
+  _wrongDeleted.delete(key);
   if(!allHistory.has(key))allHistory.set(key,{word:w,results:[],ts:0});
   const hr3=allHistory.get(key);hr3.results.push(false);if(hr3.results.length>20)hr3.results.shift();hr3.ts=Date.now();
   updateHomeWrongBtn();dbSave();
