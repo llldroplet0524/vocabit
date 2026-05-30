@@ -2679,10 +2679,10 @@ function buildQuestions(words,mode){
     if(mode==='ko-en'||mode==='both')types.push('ko-en');
     if(mode==='type')types.push('type');
     types.forEach(t=>qs.push({type:t,word:w}));
-    if(qWeighted&&allWrong.has(w.en)){
-      const cnt=allWrong.get(w.en).count;
-      const extra=cnt>=4?2:cnt>=2?1:0;
-      for(let i=0;i<extra;i++)types.forEach(t=>qs.push({type:t,word:w}));
+    if(qWeighted){
+      const _wk=w.en.toLowerCase().trim();
+      const _we=allWrong.get(w.en)||allWrong.get(_wk);
+      if(_we){const extra=_we.count>=4?2:_we.count>=2?1:0;for(let i=0;i<extra;i++)types.forEach(t=>qs.push({type:t,word:w}));}
     }
   });
   return qs.sort(()=>Math.random()-.5);
@@ -3440,7 +3440,7 @@ function goHistory(){
   updateHistDeleteBtn();
   showSc('history');
 }
-var histSeg='wrong';
+var histSeg='all';
 function setHistSeg(seg){
   histSeg=seg;
   document.getElementById('hist-seg-wrong').className='btn '+(seg==='wrong'?'btn-p':'btn-s');
