@@ -2224,6 +2224,17 @@ var _etymGroups=[];
       setTimeout(()=>{DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('cleanLog',e));},2000);
     }
   })();
+  // allWrong에 없는 allHistory 항목 정리 (1회성 데이터 정규화)
+  (function(){
+    const toDelete=[];
+    allHistory.forEach((_,en)=>{if(!allWrong.has(en))toDelete.push(en);});
+    if(toDelete.length){
+      const now=Date.now();
+      toDelete.forEach(en=>{allHistory.delete(en);_histDeleted.set(en,now);});
+      try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+      setTimeout(()=>{DOC.set({deletedHistData:[..._histDeleted.entries()].map(([en,ts])=>({en,ts}))},{merge:true}).catch(e=>console.error('cleanHist',e));},2500);
+    }
+  })();
   setTimeout(_doInitNav,0);
 })();
 
