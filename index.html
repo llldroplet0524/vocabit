@@ -368,11 +368,13 @@ h1{text-align:left;padding:1.25em 0 .875em}
     </div>
   </div>
   <div class="prog-bar"><div class="prog-fill" id="q-prog"></div></div>
+  <div style="display:flex;justify-content:flex-end;margin:.3em 0 .1em">
+    <button id="q-fav-btn" onclick="toggleFavorite(qEnWord);updateQFavBtn()" style="display:none;font-size:.78em;padding:.28em .8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">☆ 단어장</button>
+  </div>
   <div id="q-badge" style="font-size:.78em;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.4em;text-align:center"></div>
   <div class="q-text" id="q-text"></div>
-  <div style="display:flex;justify-content:center;align-items:center;gap:.5em;margin:.3em 0 1.2em">
+  <div style="text-align:center;margin:.3em 0 1.2em">
     <button class="tts-word-btn" id="q-tts" onclick="ttsQuiz()" style="display:none">🔊 발음 듣기</button>
-    <button id="q-fav-btn" onclick="toggleFavorite(qEnWord);updateQFavBtn()" style="display:none;font-size:.78em;padding:.32em .9em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">☆ 단어장</button>
   </div>
   <div id="q-opts" style="margin-top:4em"></div>
   <div id="q-type-area" style="display:none;margin-top:4em">
@@ -388,8 +390,9 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div id="q-expl-body"></div>
     <div id="q-memo-area" style="display:none;margin-top:.6em">
       <div class="memo-row" style="display:flex;gap:.4em;align-items:flex-start">
-        <textarea id="q-memo-input" data-memo-en="" placeholder="📝 연상 메모 입력..." rows="2"
-          style="flex:1;box-sizing:border-box;font-size:.82em;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.5em;background:var(--card);color:var(--text);resize:none;font-family:inherit;line-height:1.4;outline:none;min-width:0"></textarea>
+        <textarea id="q-memo-input" data-memo-en="" placeholder="📝 연상 메모 입력..." rows="1"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+          style="flex:1;box-sizing:border-box;font-size:.82em;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.5em;background:var(--card);color:var(--text);resize:none;overflow:hidden;font-family:inherit;line-height:1.4;outline:none;min-width:0"></textarea>
         <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.3em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4;height:fit-content">저장</button>
       </div>
     </div>
@@ -2872,7 +2875,7 @@ function pick(sel,correct,word){
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}`;
-  const qMemoTa=document.getElementById('q-memo-input');qMemoTa.dataset.memoEn=word.en;qMemoTa.value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';qMemoTa.readOnly=false;qMemoTa.style.opacity='1';qMemoTa.style.cursor='';const qMemoBtn=qMemoTa.closest('.memo-row')&&qMemoTa.closest('.memo-row').querySelector('button');if(qMemoBtn)qMemoBtn.textContent='저장';initMemoRow(qMemoTa,qMemoBtn);
+  const qMemoTa=document.getElementById('q-memo-input');qMemoTa.dataset.memoEn=word.en;qMemoTa.value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';qMemoTa.style.height='auto';qMemoTa.readOnly=false;qMemoTa.style.opacity='1';qMemoTa.style.cursor='';const qMemoBtn=qMemoTa.closest('.memo-row')&&qMemoTa.closest('.memo-row').querySelector('button');if(qMemoBtn)qMemoBtn.textContent='저장';initMemoRow(qMemoTa,qMemoBtn);requestAnimationFrame(()=>{qMemoTa.style.height='auto';qMemoTa.style.height=qMemoTa.scrollHeight+'px';});
   document.getElementById('q-memo-area').style.display='block';
   var nb=document.getElementById('q-next');nb.style.display='flex';nb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3282,7 +3285,7 @@ function checkTyped(){
   const answerLine=`<div style="margin-bottom:.375em;font-size:.88em">${ok?'뜻:':'정답:'} <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>`;
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
-  const qMemoTa2=document.getElementById('q-memo-input');qMemoTa2.dataset.memoEn=w.en;qMemoTa2.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTa2.readOnly=false;qMemoTa2.style.opacity='1';qMemoTa2.style.cursor='';const qMemoBtn2=qMemoTa2.closest('.memo-row')&&qMemoTa2.closest('.memo-row').querySelector('button');if(qMemoBtn2)qMemoBtn2.textContent='저장';initMemoRow(qMemoTa2,qMemoBtn2);
+  const qMemoTa2=document.getElementById('q-memo-input');qMemoTa2.dataset.memoEn=w.en;qMemoTa2.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTa2.style.height='auto';qMemoTa2.readOnly=false;qMemoTa2.style.opacity='1';qMemoTa2.style.cursor='';const qMemoBtn2=qMemoTa2.closest('.memo-row')&&qMemoTa2.closest('.memo-row').querySelector('button');if(qMemoBtn2)qMemoBtn2.textContent='저장';initMemoRow(qMemoTa2,qMemoBtn2);requestAnimationFrame(()=>{qMemoTa2.style.height='auto';qMemoTa2.style.height=qMemoTa2.scrollHeight+'px';});
   document.getElementById('q-memo-area').style.display='block';
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
@@ -3335,7 +3338,7 @@ function _doPassTyped(){
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:var(--muted);display:block;margin-bottom:.375em">⏭ 패스 (오답 처리)</span><div style="margin-bottom:.375em;font-size:.9em">정답: <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>${etymHTML(w.en)}`;
-  const qMemoTaP=document.getElementById('q-memo-input');qMemoTaP.dataset.memoEn=w.en;qMemoTaP.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTaP.readOnly=false;qMemoTaP.style.opacity='1';qMemoTaP.style.cursor='';const qMemoBtnP=qMemoTaP.closest('.memo-row')&&qMemoTaP.closest('.memo-row').querySelector('button');if(qMemoBtnP)qMemoBtnP.textContent='저장';initMemoRow(qMemoTaP,qMemoBtnP);
+  const qMemoTaP=document.getElementById('q-memo-input');qMemoTaP.dataset.memoEn=w.en;qMemoTaP.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTaP.style.height='auto';qMemoTaP.readOnly=false;qMemoTaP.style.opacity='1';qMemoTaP.style.cursor='';const qMemoBtnP=qMemoTaP.closest('.memo-row')&&qMemoTaP.closest('.memo-row').querySelector('button');if(qMemoBtnP)qMemoBtnP.textContent='저장';initMemoRow(qMemoTaP,qMemoBtnP);requestAnimationFrame(()=>{qMemoTaP.style.height='auto';qMemoTaP.style.height=qMemoTaP.scrollHeight+'px';});
   document.getElementById('q-memo-area').style.display='block';
   document.getElementById('q-next').style.display='flex';
 }
