@@ -2082,7 +2082,7 @@ function dbLoad(){
         const corrAt=_wrongCorrectedAt.get(v.en)||0;
         if(corrAt>0&&corrAt>(v.ts||0))return;
         const delTs=_wrongDeleted.get(v.en)||0;
-        if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return; // only block if both have ts and tombstone is newer
+        if(delTs>0&&delTs>=(v.ts||0))return; // block if tombstone newer than or equal to item
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
@@ -2841,20 +2841,14 @@ function pick(sel,correct,word){
   if(ok){
     qScore++;
     const hk=word.en;
-    if(allWrong.has(hk)){allWrong.get(hk).count--;if(allWrong.get(hk).count<=0)allWrong.delete(hk);updateHomeWrongBtn();dbSave();}
     if(!allHistory.has(hk))allHistory.set(hk,{word,results:[],ts:0});
     const hr=allHistory.get(hk);hr.results.push(true);if(hr.results.length>20)hr.results.shift();hr.ts=Date.now();
   }else{
     const k=word.en;
     if(wrongMap.has(k))wrongMap.get(k).count++;
     else wrongMap.set(k,{word,count:1});
-    const _wts=Date.now();
-    if(allWrong.has(k)){allWrong.get(k).count++;allWrong.get(k).ts=_wts;}
-    else allWrong.set(k,{word,count:1,ts:_wts});
-    _wrongDeleted.delete(k);
     if(!allHistory.has(k))allHistory.set(k,{word,results:[],ts:0});
     const hr2=allHistory.get(k);hr2.results.push(false);if(hr2.results.length>20)hr2.results.shift();hr2.ts=Date.now();
-    updateHomeWrongBtn();dbSave();
   }
   document.querySelectorAll('.opt-mc').forEach(b=>{
     b.disabled=true;
@@ -4659,9 +4653,12 @@ function toggleSpellCatPlay(btn,sibId,idx,repeat){
 function speak(t){
   if(!window.speechSynthesis)return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t);
-  u.lang='en-US';u.rate=0.88;
-  speechSynthesis.speak(u);
+  setTimeout(()=>{
+    if(speechSynthesis.paused)speechSynthesis.resume();
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang='en-US';u.rate=0.88;
+    speechSynthesis.speak(u);
+  },50);
 }
 </script>
 
