@@ -1869,6 +1869,7 @@ let _histDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getIt
 let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-wrong-del')||'[]').forEach(v=>m.set(v.en,v.ts));}catch(e){}return m;})();
 let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
 let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,{note:v.note,ts:v.ts||0}));}catch(e){}return m;})();
+let _resumeDeleted=(function(){try{return new Set(JSON.parse(localStorage.getItem('vocabit-resume-del')||'[]'));}catch(e){return new Set();}})();
 let qWeighted=false;
 let _memoTimer=null;
 
@@ -1935,14 +1936,22 @@ function dbSave(){
         if(!userAnswers.has(v.en)) userAnswers.set(v.en,new Set(v.answers||[]));
         else (v.answers||[]).forEach(a=>userAnswers.get(v.en).add(a));
       });
-      // merge resumeData: remote entries added to local if not present or newer ts; remove local-only keys
+      // merge resumeDeleted tombstones
+      (r.resumeDeleted||[]).forEach(k=>_resumeDeleted.add(k));
+      if((r.resumeDeleted||[]).length){
+        try{localStorage.setItem('vocabit-resume-del',JSON.stringify([..._resumeDeleted]));}catch(e){}
+        _resumeDeleted.forEach(k=>localStorage.removeItem(k));
+      }
+      // merge resumeData: remote entries added to local if not present or newer ts; skip tombstoned
       const rResume=new Map((r.resumeData||[]).map(v=>[v.key,v.data]));
       rResume.forEach((data,key)=>{
+        if(_resumeDeleted.has(key))return;
         const localRaw=localStorage.getItem(key);
         if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
-      getAllProgKeys().forEach(k=>{if(!rResume.has(k))localStorage.removeItem(k);});
+      // apply tombstones to local keys
+      getAllProgKeys().forEach(k=>{if(_resumeDeleted.has(k))localStorage.removeItem(k);});
       // merge quizLog: union by ts
       const localLogTs=new Set(quizLog.map(e=>e.ts));
       (r.quizLogData||[]).forEach(e=>{if(!localLogTs.has(e.ts))quizLog.push(e);});
@@ -1965,6 +1974,7 @@ function dbSave(){
         userAnswersData:mergedUaArr,
         typeHistoryData:typeHistArr,
         resumeData:resumeArr,
+        resumeDeleted:[..._resumeDeleted],
         deletedHistData:deletedHistArr,
         deletedWrongData:deletedWrongArr,
         quizLogData:quizLog,
@@ -1978,8 +1988,8 @@ function dbSave(){
   }, 1000);
 }
 function dbSaveResumeNow(){
-  const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
-  DOC.set({resumeData:resumeArr},{merge:true}).catch(e=>console.error('dbSaveResume error',e));
+  const resumeArr=getAllProgKeys().filter(k=>!_resumeDeleted.has(k)).map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
+  DOC.set({resumeData:resumeArr,resumeDeleted:[..._resumeDeleted]},{merge:true}).catch(e=>console.error('dbSaveResume error',e));
 }
 function dbSaveFavNow(){
   const ts=Date.now();
@@ -2056,16 +2066,18 @@ function dbLoad(){
       });
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify([...typeHistory.entries()].map(([en,v])=>({en,results:v.results,ts:v.ts||0}))));}catch(e){}
     }
+    if(d.resumeDeleted){
+      d.resumeDeleted.forEach(k=>_resumeDeleted.add(k));
+      try{localStorage.setItem('vocabit-resume-del',JSON.stringify([..._resumeDeleted]));}catch(e){}
+      _resumeDeleted.forEach(k=>localStorage.removeItem(k));
+    }
     if(d.resumeData){
-      const fsKeys=new Set(d.resumeData.map(v=>v.key));
       d.resumeData.forEach(({key,data})=>{
-        if(!data)return;
+        if(!data||_resumeDeleted.has(key))return;
         const localRaw=localStorage.getItem(key);
         if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
         else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
       });
-      // remove local vp: keys that no longer exist in Firebase
-      getAllProgKeys().forEach(k=>{if(!fsKeys.has(k))localStorage.removeItem(k);});
     }
     if(d.quizLogData && d.quizLogData.length){
       const localTs=new Set(quizLog.map(e=>e.ts));
@@ -2936,8 +2948,9 @@ function saveStudyProgress(){
   updateHomeResume();
 }
 function clearStudyProgress(key){
-  if(key)localStorage.removeItem(key);
-  else getAllProgKeys().filter(k=>k.startsWith('vp:study:')).forEach(k=>localStorage.removeItem(k));
+  if(key){localStorage.removeItem(key);_resumeDeleted.add(key);}
+  else getAllProgKeys().filter(k=>k.startsWith('vp:study:')).forEach(k=>{localStorage.removeItem(k);_resumeDeleted.add(k);});
+  try{localStorage.setItem('vocabit-resume-del',JSON.stringify([..._resumeDeleted]));}catch(e){}
   dbSaveResumeNow();
   updateHomeResume();
 }
@@ -2976,8 +2989,9 @@ function saveQuizProgress(){
   updateHomeResume();
 }
 function clearQuizProgress(key){
-  if(key)localStorage.removeItem(key);
-  else getAllProgKeys().filter(k=>!k.startsWith('vp:study:')).forEach(k=>localStorage.removeItem(k));
+  if(key){localStorage.removeItem(key);_resumeDeleted.add(key);}
+  else getAllProgKeys().filter(k=>!k.startsWith('vp:study:')).forEach(k=>{localStorage.removeItem(k);_resumeDeleted.add(k);});
+  try{localStorage.setItem('vocabit-resume-del',JSON.stringify([..._resumeDeleted]));}catch(e){}
   dbSaveResumeNow();
   updateHomeResume();
 }
