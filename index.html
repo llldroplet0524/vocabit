@@ -3323,6 +3323,8 @@ function _doPassTyped(){
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:var(--muted);display:block;margin-bottom:.375em">⏭ 패스 (오답 처리)</span><div style="margin-bottom:.375em;font-size:.9em">정답: <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>${etymHTML(w.en)}`;
+  const qMemoTaP=document.getElementById('q-memo-input');qMemoTaP.dataset.memoEn=w.en;qMemoTaP.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTaP.readOnly=false;qMemoTaP.style.opacity='1';qMemoTaP.style.cursor='';const qMemoBtnP=qMemoTaP.closest('.memo-row')&&qMemoTaP.closest('.memo-row').querySelector('button');if(qMemoBtnP)qMemoBtnP.textContent='저장';initMemoRow(qMemoTaP,qMemoBtnP);
+  document.getElementById('q-memo-area').style.display='block';
   document.getElementById('q-next').style.display='flex';
 }
 function ttsQuiz(){speak(qEnWord);}
