@@ -2188,7 +2188,7 @@ var _etymGroups=[];
   updateHomeFavBtn();
   dbLoad();
   updateHomeResume();
-  setTimeout(_doInitNav,400);
+  _doInitNav();
 })();
 
 function toggle(id){
@@ -3701,7 +3701,7 @@ function _renderDongUieo(){
   el.innerHTML=groups.map(([ko,ws],i)=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45em">
-        <span style="font-size:1.1em;font-weight:800;color:var(--primary-dark)">${ko}</span>
+        <span style="font-size:.9em;font-weight:800;color:var(--primary-dark)">${ko}</span>
         <div style="display:flex;gap:.3em">
           <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×1" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×1</button>
           <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×2" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×2</button>
@@ -4436,13 +4436,14 @@ function playSeq(items,repeat,btnEl,sibEl){
   if(sibEl){sibEl.disabled=true;sibEl.style.opacity='.4';}
   setTimeout(_nextSeq,100);
 }
+function _koTts(s){return(s||'').replace(/~/g,'뭐뭐 ');}
 function toggleSynCatPlay(btn,sibId,idx,repeat){
   if(_seqActiveBtn===btn){stopSeq();return;}
   const cat=_synCategoryData[idx];if(!cat)return;
   const items=[];
   cat.words.forEach(en=>{
     for(let i=0;i<5;i++)items.push({text:en,lang:'en-US',rate:0.88,pause:150});
-    items.push({text:cat.ko,lang:'ko-KR',rate:0.85,pause:600});
+    items.push({text:_koTts(cat.ko),lang:'ko-KR',rate:0.85,pause:600});
   });
   playSeq(items,repeat,btn,document.getElementById(sibId));
 }
@@ -4452,7 +4453,7 @@ function toggleSpellCatPlay(btn,sibId,idx,repeat){
   const items=[];
   cat.words.forEach(({en,ko})=>{
     for(let i=0;i<5;i++)items.push({text:en,lang:'en-US',rate:0.88,pause:150});
-    items.push({text:ko,lang:'ko-KR',rate:0.85,pause:600});
+    items.push({text:_koTts(ko),lang:'ko-KR',rate:0.85,pause:600});
   });
   playSeq(items,repeat,btn,document.getElementById(sibId));
 }
