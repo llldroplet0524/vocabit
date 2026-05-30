@@ -2261,7 +2261,7 @@ function navigateToHash(hash){
   else if(hash==='etym-browse')goEtymBrowse();
   else if(hash==='useranswers')goUserAnswers();
   else if(hash==='memos')goMemos();
-  else if(hash==='synonyms')goSynonyms();
+  else if(hash==='synonyms'||hash.startsWith('synonyms-'))_goSynonymTab(hash);
   else if(hash==='wordbrowser-alpha')goWordBrowser('alpha');
   else if(hash==='wordbrowser-meaning')goWordBrowser('meaning');
   else goHome();
@@ -3597,6 +3597,15 @@ const ANTONYM_PAIRS=[
 
 var _synTab='dong';
 var _synLetter='';
+function _goSynonymTab(hash){
+  const parts=(hash||'synonyms-dong').replace('synonyms-','').split('-');
+  const tab=['dong','ant','spell'].includes(parts[0])?parts[0]:'dong';
+  const sm=parts[1]&&['prefix','suffix'].includes(parts[1])?parts[1]:'prefix';
+  const el=document.getElementById('syn-search');if(el)el.value='';
+  _synLetter='';_synTab=tab;_spellMode=sm;
+  _updateSynTabBtns();renderSynTab();
+  showSc('synonyms',hash||'synonyms-dong');
+}
 const _EN_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const _KO_LETTERS=['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
 function _koIni(str){
@@ -3633,15 +3642,12 @@ function _buildSynNav(enSet,koSet){
   nav.innerHTML=html;
 }
 function _synLetterClick(l){_synLetter=_synLetter===l?'':l;renderSynTab();}
-function goSynonyms(){
-  document.getElementById('syn-search').value='';
-  _synTab='dong';_synLetter='';
-  _updateSynTabBtns();
-  renderSynTab();
-  showSc('synonyms');
-}
+function goSynonyms(){_goSynonymTab('synonyms-dong');}
 function setSynTab(t){
-  _synTab=t;_synLetter='';_updateSynTabBtns();renderSynTab();
+  _synTab=t;_synLetter='';_updateSynTabBtns();
+  const h=t==='spell'?'synonyms-spell-'+_spellMode:'synonyms-'+t;
+  _curHash=h;location.hash=h;
+  renderSynTab();
 }
 function _updateSynTabBtns(){
   ['dong','ant','spell'].forEach(t=>{
@@ -3759,18 +3765,6 @@ function _renderSpelling(){
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
     if(!seen.has(w.en)){seen.add(w.en);allWords.push(w);}
   }));
-  // sub-tab chips html (injected at top of list)
-  const chips=`<div style="display:flex;gap:.4em;margin-bottom:.7em">
-    <button onclick="_setSpellMode('prefix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접두사</button>
-    <button onclick="_setSpellMode('suffix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접미사</button>
-  </div>`;
-  // build nav (English only for spelling)
-  const enSet=new Set();
-  [...groupMap.entries()].filter(([,ws])=>ws.length>=2).forEach(([key,ws])=>{
-    ws.forEach(w=>{if(w.en[0])enSet.add(w.en[0].toUpperCase());});
-    if(_spellMode==='prefix'&&key[0])enSet.add(key[0].toUpperCase());
-  });
-  _buildSynNav(enSet,new Set());
   const groupMap=new Map();
   if(_spellMode==='prefix'){
     allWords.forEach(w=>{
@@ -3786,9 +3780,19 @@ function _renderSpelling(){
       groupMap.get(s).push(w);
     });
   }
-  let groups=[...groupMap.entries()]
-    .filter(([,ws])=>ws.length>=2)
-    .sort((a,b)=>b[1].length-a[1].length);
+  let groups=[...groupMap.entries()].filter(([,ws])=>ws.length>=2);
+  // build nav after groupMap is ready
+  const enSet=new Set();
+  groups.forEach(([key,ws])=>{
+    ws.forEach(w=>{if(w.en[0])enSet.add(w.en[0].toUpperCase());});
+    if(_spellMode==='prefix'&&key[0])enSet.add(key[0].toUpperCase());
+  });
+  _buildSynNav(enSet,new Set());
+  // sub-tab chips
+  const chips=`<div style="display:flex;gap:.4em;margin-bottom:.7em">
+    <button onclick="_setSpellMode('prefix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접두사</button>
+    <button onclick="_setSpellMode('suffix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접미사</button>
+  </div>`;
   if(q)groups=groups.filter(([key,ws])=>key.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
   if(_synLetter)groups=groups.filter(([key,ws])=>_matchLetter([key,...ws.map(w=>w.en)],[],_synLetter));
   groups.sort((a,b)=>a[0].localeCompare(b[0]));
@@ -3803,7 +3807,7 @@ function _renderSpelling(){
       </div>`).join('')}
     </div>`).join('');
 }
-function _setSpellMode(m){_spellMode=m;_renderSpelling();}
+function _setSpellMode(m){_spellMode=m;_curHash='synonyms-spell-'+m;location.hash='synonyms-spell-'+m;_renderSpelling();}
 function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const wordMap=new Map();
