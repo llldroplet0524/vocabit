@@ -4565,6 +4565,8 @@ function apShowReveal(){
   var h=document.getElementById('fc-hint');
   if(r)r.classList.add('show');
   if(h)h.style.display='none';
+  var ma=document.getElementById('st-memo-area');
+  if(ma){ma.style.display='';requestAnimationFrame(function(){var ta=document.getElementById('st-memo');if(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';}});}
 }
 function apPlayWord(){
   if(!apActive)return;
