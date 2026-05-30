@@ -1890,8 +1890,7 @@ let dbSaveTimer = null;
 function dbSave(){
   const uaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
   try{localStorage.setItem('vocabit-ua',JSON.stringify(uaArr));}catch(e){}
-  const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
-  try{localStorage.setItem('vocabit-wrong',JSON.stringify(wrongArr));}catch(e){}
+  if(allWrong.size>0){const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));try{localStorage.setItem('vocabit-wrong',JSON.stringify(wrongArr));}catch(e){}}
   clearTimeout(dbSaveTimer);
   dbSaveTimer = setTimeout(async ()=>{
     try{
@@ -1926,7 +1925,7 @@ function dbSave(){
       const rWrong=new Map((r.wrongData||[]).map(v=>[v.en,v]));
       rWrong.forEach((v,en)=>{
         const delTs=_wrongDeleted.get(en)||0;
-        if(delTs>0&&delTs>=(v.ts||0))return; // tombstone is newer than wrong data
+        if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return; // only block if both have ts and tombstone is newer
         if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(en).count){allWrong.get(en).count=v.count;allWrong.get(en).ts=v.ts||0;}
       });
@@ -2030,7 +2029,7 @@ function dbLoad(){
     if(d.wrongData && d.wrongData.length){
       d.wrongData.forEach(v=>{
         const delTs=_wrongDeleted.get(v.en)||0;
-        if(delTs>0&&delTs>=(v.ts||0))return;
+        if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return; // only block if both have ts and tombstone is newer
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
