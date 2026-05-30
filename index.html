@@ -2032,6 +2032,7 @@ function dbLoad(){
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count});
         else if(v.count>allWrong.get(v.en).count) allWrong.get(v.en).count=v.count;
       });
+      try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}))));}catch(e){}
       updateHomeWrongBtn();
     }
     if(d.historyData && d.historyData.length){
