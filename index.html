@@ -3820,7 +3820,7 @@ function _renderSpelling(){
   el.innerHTML=chips+groups.map(([key,ws],i)=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45em">
-        <span style="font-size:1.1em;font-weight:800;color:var(--primary-dark);font-family:'Courier New',Courier,monospace;letter-spacing:.03em">${_spellMode==='prefix'?key+'…':key}</span>
+        <span style="font-size:1.1em;font-weight:800;color:var(--primary-dark)">${_spellMode==='prefix'?key+'…':key}</span>
         <div style="display:flex;align-items:center;gap:.4em">
           <span style="font-size:.75em;color:var(--muted)">${ws.length}개</span>
           <button onclick="playSpellCategory(${i},1)" style="${spellPlayBtnStyle}">▶ ×1</button>
