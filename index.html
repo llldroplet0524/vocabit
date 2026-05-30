@@ -1870,6 +1870,7 @@ let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getI
 let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
 let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,{note:v.note,ts:v.ts||0}));}catch(e){}return m;})();
 let _resumeDeleted=(function(){try{return new Set(JSON.parse(localStorage.getItem('vocabit-resume-del')||'[]'));}catch(e){return new Set();}})();
+let _wrongCorrectedAt=new Map(); // en -> timestamp when marked correct this session
 let qWeighted=false;
 let _memoTimer=null;
 
@@ -1924,8 +1925,10 @@ function dbSave(){
       // merge allWrong: remote-only added, take max count, skip tombstoned (ts comparison)
       const rWrong=new Map((r.wrongData||[]).map(v=>[v.en,v]));
       rWrong.forEach((v,en)=>{
+        const corrAt=_wrongCorrectedAt.get(en)||0;
+        if(corrAt>0&&corrAt>(v.ts||0))return; // correction newer than Firebase data
         const delTs=_wrongDeleted.get(en)||0;
-        if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return; // only block if both have ts and tombstone is newer
+        if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return;
         if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(en).count){allWrong.get(en).count=v.count;allWrong.get(en).ts=v.ts||0;}
       });
@@ -2028,6 +2031,8 @@ function dbLoad(){
     }
     if(d.wrongData && d.wrongData.length){
       d.wrongData.forEach(v=>{
+        const corrAt=_wrongCorrectedAt.get(v.en)||0;
+        if(corrAt>0&&corrAt>(v.ts||0))return;
         const delTs=_wrongDeleted.get(v.en)||0;
         if(delTs>0&&(v.ts||0)>0&&delTs>=v.ts)return; // only block if both have ts and tombstone is newer
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
@@ -2729,6 +2734,7 @@ function nextQ(){
   qIdx++;
   if(qIdx>=qQuestions.length){
     clearQuizProgress();
+    dbSave(); // ensure last question's history reaches Firebase
     if(!isWrongQuizMode && qSecs && qSecs.length){
       const entry={ts:Date.now(),secs:[...qSecs],score:qScore,total:qQuestions.length,mode:qMode};
       quizLog.unshift(entry);
@@ -3133,6 +3139,7 @@ function markTypedCorrect(){
   qScore++;
   if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
   if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0)allWrong.delete(key);}
+  _wrongCorrectedAt.set(key,Date.now());
   if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
   if(typed){
     const uk=key.toLowerCase();
@@ -3150,6 +3157,7 @@ function markTypedTypo(){
   qScore++;
   if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
   if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0)allWrong.delete(key);}
+  _wrongCorrectedAt.set(key,Date.now());
   if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
   updateHomeWrongBtn();dbSave();
   document.getElementById('q-mark-correct-btn').style.display='none';
