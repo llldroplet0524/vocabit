@@ -3554,54 +3554,228 @@ function makeWbCard(w){
 // ── MEMO LIST ──────────────────────────────────────────
 var _memoSort='en';
 // ── SYNONYMS / ANTONYMS ────────────────────────────────
+const SYNONYM_GROUPS=[
+{ko:'달성하다',words:[{en:'accomplish',ko:'달성하다'},{en:'achieve',ko:'성취하다'},{en:'attain',ko:'이루다'},{en:'fulfill',ko:'완수하다'}]},
+{ko:'얻다/습득하다',words:[{en:'acquire',ko:'얻다/습득하다'},{en:'obtain',ko:'얻다'},{en:'gain',ko:'획득하다'}]},
+{ko:'시도하다',words:[{en:'attempt',ko:'시도하다'},{en:'try',ko:'시도하다'}]},
+{ko:'매력적인',words:[{en:'attractive',ko:'매력적인'},{en:'appealing',ko:'매력적인'},{en:'charming',ko:'매력있는'}]},
+{ko:'피하다',words:[{en:'avoid',ko:'피하다'},{en:'evade',ko:'피하다'}]},
+{ko:'금지하다',words:[{en:'ban',ko:'금지하다'},{en:'prohibit',ko:'금지하다'},{en:'forbid',ko:'금지하다'}]},
+{ko:'이로운',words:[{en:'beneficial',ko:'이로운'},{en:'helpful',ko:'도움이 되는'},{en:'advantageous',ko:'유리한'}]},
+{ko:'침착한/차분한',words:[{en:'calm',ko:'침착한/차분한'},{en:'composed',ko:'차분한'},{en:'collected',ko:'침착한'}]},
+{ko:'취소하다',words:[{en:'cancel',ko:'취소하다'},{en:'call off',ko:'취소하다'}]},
+{ko:'어려운/힘든',words:[{en:'challenging',ko:'어려운/힘든'},{en:'difficult',ko:'어려운'},{en:'demanding',ko:'힘든'}]},
+{ko:'협력',words:[{en:'collaboration',ko:'협력'},{en:'cooperation',ko:'협력'},{en:'teamwork',ko:'팀워크'}]},
+{ko:'편안한',words:[{en:'comfortable',ko:'편안한'},{en:'cozy',ko:'아늑한'}]},
+{ko:'자신감 있는',words:[{en:'confident',ko:'자신감 있는'},{en:'assured',ko:'확신하는'},{en:'self-assured',ko:'자신감 있는'}]},
+{ko:'일관된/꾸준한',words:[{en:'consistent',ko:'일관된/꾸준한'},{en:'steady',ko:'꾸준한'},{en:'constant',ko:'일정한'}]},
+{ko:'용기',words:[{en:'courage',ko:'용기'},{en:'bravery',ko:'용감함'},{en:'boldness',ko:'대담함'}]},
+{ko:'결정적으로 중요한',words:[{en:'crucial',ko:'결정적으로 중요한'},{en:'vital',ko:'매우 중요한'},{en:'critical',ko:'결정적인'}]},
+{ko:'손상시키다',words:[{en:'damage',ko:'손상시키다'},{en:'harm',ko:'해치다'},{en:'hurt',ko:'해치다'}]},
+{ko:'위험한',words:[{en:'dangerous',ko:'위험한'},{en:'risky',ko:'위험한'},{en:'hazardous',ko:'유해한'}]},
+{ko:'거절하다',words:[{en:'decline',ko:'거절하다'},{en:'refuse',ko:'거절하다'},{en:'reject',ko:'거부하다'},{en:'turn down',ko:'거절하다'}]},
+{ko:'감소하다',words:[{en:'decrease',ko:'감소하다'},{en:'drop',ko:'떨어지다'},{en:'fall',ko:'하락하다'},{en:'reduce',ko:'줄다/감소하다'}]},
+{ko:'헌신적인',words:[{en:'dedicated',ko:'헌신적인'},{en:'committed',ko:'헌신하는'},{en:'devoted',ko:'헌신적인'}]},
+{ko:'묘사하다',words:[{en:'describe',ko:'묘사하다'},{en:'portray',ko:'묘사하다'},{en:'depict',ko:'그리다'}]},
+{ko:'결정하다',words:[{en:'determine',ko:'결정하다'},{en:'decide',ko:'결정하다'},{en:'resolve',ko:'결심하다'}]},
+{ko:'사라지다',words:[{en:'disappear',ko:'사라지다'},{en:'vanish',ko:'사라지다'}]},
+{ko:'실망시키다',words:[{en:'disappoint',ko:'실망시키다'},{en:'let down',ko:'실망시키다'}]},
+{ko:'구별하다',words:[{en:'distinguish',ko:'구별하다'},{en:'differentiate',ko:'구분하다'},{en:'tell apart',ko:'구분하다'}]},
+{ko:'격려하다',words:[{en:'encourage',ko:'격려하다'},{en:'motivate',ko:'동기를 주다'},{en:'inspire',ko:'영감을 주다'}]},
+{ko:'마음을 끄는',words:[{en:'engaging',ko:'마음을 끄는'},{en:'interesting',ko:'흥미로운'},{en:'captivating',ko:'매혹적인'}]},
+{ko:'열광적인',words:[{en:'enthusiastic',ko:'열광적인'},{en:'eager',ko:'열성적인'},{en:'passionate',ko:'열정적인'}]},
+{ko:'설립하다',words:[{en:'establish',ko:'설립하다'},{en:'found',ko:'설립하다'},{en:'set up',ko:'세우다'}]},
+{ko:'확장하다',words:[{en:'expand',ko:'확장하다'},{en:'extend',ko:'확장하다'}]},
+{ko:'경험이 많은',words:[{en:'experienced',ko:'경험이 많은'},{en:'seasoned',ko:'노련한'},{en:'veteran',ko:'베테랑의'}]},
+{ko:'표현하다',words:[{en:'express',ko:'표현하다'},{en:'convey',ko:'전달하다'},{en:'communicate',ko:'전달하다'}]},
+{ko:'충성스러운',words:[{en:'faithful',ko:'충성스러운'},{en:'loyal',ko:'충성스러운'},{en:'devoted',ko:'헌신적인'}]},
+{ko:'유명한',words:[{en:'famous',ko:'유명한'},{en:'well-known',ko:'잘 알려진'},{en:'renowned',ko:'유명한'},{en:'celebrated',ko:'저명한'}]},
+{ko:'고치다',words:[{en:'fix',ko:'고치다'},{en:'repair',ko:'수리하다'},{en:'mend',ko:'고치다'}]},
+{ko:'풍미 있는',words:[{en:'flavorful',ko:'풍미 있는'},{en:'tasty',ko:'맛있는'},{en:'delicious',ko:'맛있는'}]},
+{ko:'다행히도',words:[{en:'fortunately',ko:'다행히도'},{en:'luckily',ko:'운 좋게'},{en:'thankfully',ko:'다행히'}]},
+{ko:'관대한',words:[{en:'generous',ko:'관대한'},{en:'giving',ko:'베푸는'},{en:'charitable',ko:'자선적인'}]},
+{ko:'성장하다',words:[{en:'grow',ko:'성장하다'},{en:'increase',ko:'증가하다'},{en:'rise',ko:'오르다'}]},
+{ko:'해로운',words:[{en:'harmful',ko:'해로운'},{en:'damaging',ko:'해가 되는'},{en:'detrimental',ko:'유해한'}]},
+{ko:'정직한',words:[{en:'honest',ko:'정직한'},{en:'truthful',ko:'진실한'}]},
+{ko:'즉시',words:[{en:'immediately',ko:'즉시'},{en:'instantly',ko:'즉시'},{en:'at once',ko:'즉각'}]},
+{ko:'향상시키다',words:[{en:'improve',ko:'향상시키다'},{en:'enhance',ko:'향상시키다'}]},
+{ko:'증가하다',words:[{en:'increase',ko:'증가하다'},{en:'rise',ko:'오르다'},{en:'grow',ko:'성장하다'}]},
+{ko:'혁신적인',words:[{en:'innovative',ko:'혁신적인'},{en:'creative',ko:'창의적인'},{en:'groundbreaking',ko:'획기적인'}]},
+{ko:'포함하다',words:[{en:'involve',ko:'포함하다'},{en:'include',ko:'포함하다'},{en:'incorporate',ko:'통합하다'}]},
+{ko:'유지하다',words:[{en:'maintain',ko:'유지하다'},{en:'keep',ko:'유지하다'},{en:'preserve',ko:'보존하다'},{en:'sustain',ko:'지속하다'}]},
+{ko:'의욕적인',words:[{en:'motivated',ko:'의욕적인'},{en:'driven',ko:'의욕적인'}]},
+{ko:'부정적인',words:[{en:'negative',ko:'부정적인'},{en:'unfavorable',ko:'불리한'}]},
+{ko:'극복하다',words:[{en:'overcome',ko:'극복하다'},{en:'conquer',ko:'정복하다'},{en:'surmount',ko:'극복하다'}]},
+{ko:'참을성 있는',words:[{en:'patient',ko:'참을성 있는'},{en:'calm',ko:'침착한'},{en:'composed',ko:'차분한'}]},
+{ko:'긍정적인',words:[{en:'positive',ko:'긍정적인'},{en:'favorable',ko:'유리한'}]},
+{ko:'막다/예방하다',words:[{en:'prevent',ko:'막다/예방하다'},{en:'stop',ko:'막다'}]},
+{ko:'생산적인',words:[{en:'productive',ko:'생산적인'},{en:'efficient',ko:'효율적인'},{en:'fruitful',ko:'결실 있는'}]},
+{ko:'약속하다',words:[{en:'promise',ko:'약속하다'},{en:'pledge',ko:'서약하다'},{en:'vow',ko:'맹세하다'}]},
+{ko:'보호하다',words:[{en:'protect',ko:'보호하다'},{en:'safeguard',ko:'보호하다'},{en:'defend',ko:'방어하다'}]},
+{ko:'제공하다',words:[{en:'provide',ko:'제공하다'},{en:'supply',ko:'공급하다'},{en:'offer',ko:'제공하다'}]},
+{ko:'합리적인',words:[{en:'reasonable',ko:'합리적인'},{en:'sensible',ko:'분별있는'},{en:'rational',ko:'이성적인'}]},
+{ko:'줄이다/감소시키다',words:[{en:'reduce',ko:'줄이다/감소시키다'},{en:'lower',ko:'낮추다'},{en:'cut',ko:'줄이다'},{en:'decrease',ko:'감소시키다'}]},
+{ko:'믿을 만한',words:[{en:'reliable',ko:'믿을 만한'},{en:'dependable',ko:'믿을 수 있는'},{en:'trustworthy',ko:'신뢰할 수 있는'}]},
+{ko:'대체하다',words:[{en:'replace',ko:'대체하다'},{en:'substitute',ko:'대체하다'}]},
+{ko:'드러내다/공개하다',words:[{en:'reveal',ko:'드러내다/공개하다'},{en:'disclose',ko:'공개하다'},{en:'uncover',ko:'밝히다'}]},
+{ko:'심각한',words:[{en:'serious',ko:'심각한'},{en:'severe',ko:'심각한'},{en:'grave',ko:'중대한'}]},
+{ko:'중요한/상당한',words:[{en:'significant',ko:'중요한/상당한'},{en:'considerable',ko:'상당한'},{en:'substantial',ko:'상당한'}]},
+{ko:'숙련된',words:[{en:'skilled',ko:'숙련된'},{en:'experienced',ko:'경험 많은'},{en:'proficient',ko:'능숙한'}]},
+{ko:'안정적인',words:[{en:'stable',ko:'안정적인'},{en:'steady',ko:'안정적인'},{en:'consistent',ko:'일관된'}]},
+{ko:'갑자기',words:[{en:'suddenly',ko:'갑자기'},{en:'abruptly',ko:'갑자기'},{en:'unexpectedly',ko:'예상치 못하게'}]},
+{ko:'적합한',words:[{en:'suitable',ko:'적합한'},{en:'appropriate',ko:'적절한'},{en:'proper',ko:'적당한'}]},
+{ko:'지지하는',words:[{en:'supportive',ko:'지지하는'},{en:'encouraging',ko:'격려하는'}]},
+{ko:'일시적인',words:[{en:'temporary',ko:'일시적인'},{en:'short-term',ko:'단기적인'}]},
+{ko:'예상 밖의',words:[{en:'unexpected',ko:'예상 밖의'},{en:'unforeseen',ko:'예상치 못한'},{en:'surprising',ko:'놀라운'}]},
+{ko:'불행히도',words:[{en:'unfortunately',ko:'불행히도'},{en:'sadly',ko:'슬프게도'},{en:'regrettably',ko:'안타깝게도'}]},
+{ko:'유용한',words:[{en:'useful',ko:'유용한'},{en:'helpful',ko:'도움이 되는'},{en:'practical',ko:'실용적인'}]},
+{ko:'귀중한/소중한',words:[{en:'valuable',ko:'귀중한/소중한'},{en:'precious',ko:'소중한'}]},
+{ko:'다양한',words:[{en:'various',ko:'다양한'},{en:'diverse',ko:'다양한'},{en:'varied',ko:'다양한'}]}
+];
 const ANTONYM_PAIRS=[
-  ['reduce','increase'],['reduce','expand'],['minimize','maximize'],
-  ['narrow','broaden'],['narrow','widen'],['shrink','expand'],['shrink','grow'],
-  ['reality','fantasy'],['useless','useful'],['useless','essential'],
-  ['famous','obscure'],['famous','unknown'],['well-known','obscure'],
-  ['disreputable','reputable'],['notorious','reputable'],['notorious','famous'],
-  ['dull','exciting'],['dull','interesting'],['dull','vivid'],
-  ['retire','continue'],['accept','refuse'],['accept','reject'],
-  ['approve','reject'],['approve','disapprove'],['support','oppose'],
-  ['agree','disagree'],['attract','repel'],['reveal','conceal'],['reveal','hide'],
-  ['establish','abolish'],['establish','dissolve'],['strengthen','weaken'],
-  ['reinforce','weaken'],['reinforce','undermine'],['consolidate','disperse'],
-  ['encourage','discourage'],['promote','demote'],['build','destroy'],
-  ['construct','demolish'],['create','destroy'],['include','exclude'],
-  ['provide','withhold'],['donate','receive'],['acquire','lose'],
-  ['advance','retreat'],['ascend','descend'],['increase','decrease'],
-  ['expand','contract'],['lengthen','shorten'],['extend','shorten'],
-  ['permanent','temporary'],['essential','unnecessary'],['necessary','unnecessary'],
-  ['voluntary','mandatory'],['voluntary','compulsory'],['frequent','rare'],
-  ['numerous','scarce'],['numerous','few'],['significant','trivial'],
-  ['significant','insignificant'],['major','minor'],['active','passive'],
-  ['confident','uncertain'],['confident','hesitant'],['flexible','rigid'],
-  ['flexible','inflexible'],['stable','unstable'],['stable','volatile'],
-  ['transparent','opaque'],['obvious','subtle'],['explicit','implicit'],
-  ['similar','different'],['similar','distinct'],['identical','different'],
-  ['familiar','unfamiliar'],['familiar','strange'],['genuine','fake'],
-  ['genuine','artificial'],['natural','artificial'],['natural','synthetic'],
-  ['harmful','beneficial'],['harmful','harmless'],['positive','negative'],
-  ['optimistic','pessimistic'],['superior','inferior'],['dominant','subordinate'],
-  ['generous','stingy'],['humble','arrogant'],['honest','dishonest'],
-  ['honest','deceptive'],['ancient','modern'],['ancient','contemporary'],
-  ['formal','informal'],['formal','casual'],['strict','lenient'],
-  ['precise','vague'],['specific','general'],['objective','subjective'],
-  ['consistent','inconsistent'],['reliable','unreliable'],['dependent','independent'],
-  ['local','global'],['local','international'],['maximum','minimum'],
-  ['majority','minority'],['ordinary','extraordinary'],['ordinary','exceptional'],
-  ['traditional','modern'],['traditional','innovative'],['static','dynamic'],
-  ['simple','complex'],['brief','lengthy'],['brief','extended'],
-  ['dense','sparse'],['efficient','inefficient'],['gradual','sudden'],
-  ['gradual','abrupt'],['succeed','fail'],['innovative','conventional'],
-  ['prominent','obscure'],['widespread','limited'],['widespread','rare'],
-  ['restrict','permit'],['restrict','allow'],['eliminate','introduce'],
-  ['announce','conceal'],['observe','ignore'],['distinguish','confuse'],
-  ['differentiate','confuse'],['separate','combine'],['separate','unite'],
-  ['invest','waste'],['save','spend'],['income','expense'],
-  ['satisfied','dissatisfied'],['satisfied','unhappy'],
-  ['essential','optional'],['critical','trivial'],
-  ['improve','worsen'],['improve','deteriorate'],['benefit','harm'],
+['accomplish','달성하다','fail','실패하다'],
+['accomplish','달성하다','give up','포기하다'],
+['acquire','얻다/습득하다','lose','잃다'],
+['ancient','고대의','modern','현대의'],
+['ancient','고대의','contemporary','현대의'],
+['attempt','시도하다','give up','포기하다'],
+['attempt','시도하다','abandon','포기하다'],
+['attractive','매력적인','unattractive','매력없는'],
+['attractive','매력적인','repulsive','역겨운'],
+['avoid','피하다','face','직면하다'],
+['avoid','피하다','confront','맞서다'],
+['ban','금지하다','allow','허락하다'],
+['ban','금지하다','permit','허가하다'],
+['beneficial','이로운','harmful','해로운'],
+['beneficial','이로운','detrimental','유해한'],
+['calm','침착한/차분한','anxious','불안한'],
+['calm','침착한/차분한','nervous','긴장한'],
+['cancel','취소하다','proceed','진행하다'],
+['cancel','취소하다','continue','계속하다'],
+['challenging','어려운/힘든','easy','쉬운'],
+['challenging','어려운/힘든','simple','간단한'],
+['collaboration','협력','competition','경쟁'],
+['comfortable','편안한','uncomfortable','불편한'],
+['comfortable','편안한','unpleasant','불쾌한'],
+['confident','자신감 있는','insecure','불안한'],
+['confident','자신감 있는','uncertain','불확실한'],
+['consistent','일관된/꾸준한','inconsistent','일관성 없는'],
+['consistent','일관된/꾸준한','irregular','불규칙한'],
+['courage','용기','cowardice','겁쟁이'],
+['courage','용기','fear','두려움'],
+['crucial','결정적으로 중요한','trivial','사소한'],
+['crucial','결정적으로 중요한','minor','사소한'],
+['damage','손상시키다','repair','수리하다'],
+['damage','손상시키다','fix','고치다'],
+['damage','손상시키다','restore','복원하다'],
+['dangerous','위험한','safe','안전한'],
+['dangerous','위험한','harmless','무해한'],
+['decline','거절하다','accept','수락하다'],
+['decrease','감소하다','increase','증가하다'],
+['decrease','감소하다','rise','오르다'],
+['dedicated','헌신적인','indifferent','무관심한'],
+['dedicated','헌신적인','uncommitted','헌신하지 않는'],
+['describe','묘사하다','misrepresent','왜곡하다'],
+['determine','결정하다','hesitate','망설이다'],
+['determine','결정하다','waver','망설이다'],
+['disappear','사라지다','appear','나타나다'],
+['disappear','사라지다','emerge','등장하다'],
+['disappoint','실망시키다','impress','감동시키다'],
+['disappoint','실망시키다','satisfy','만족시키다'],
+['distinguish','구별하다','confuse','혼동하다'],
+['distinguish','구별하다','mix up','혼동하다'],
+['effective','효과적인','ineffective','효과없는'],
+['encourage','격려하다','discourage','낙담시키다'],
+['encourage','격려하다','deter','단념시키다'],
+['engaging','마음을 끄는','boring','지루한'],
+['engaging','마음을 끄는','dull','따분한'],
+['enthusiastic','열광적인','indifferent','무관심한'],
+['enthusiastic','열광적인','apathetic','무감각한'],
+['establish','설립하다','abolish','폐지하다'],
+['establish','설립하다','dissolve','해산하다'],
+['expand','확장하다','shrink','줄어들다'],
+['expand','확장하다','contract','수축하다'],
+['experienced','경험이 많은','inexperienced','경험없는'],
+['experienced','경험이 많은','novice','초보의'],
+['express','표현하다','suppress','억제하다'],
+['express','표현하다','conceal','숨기다'],
+['faithful','충성스러운','disloyal','불충한'],
+['famous','유명한','unknown','알려지지 않은'],
+['famous','유명한','obscure','무명의'],
+['fix','고치다','break','부수다'],
+['flavorful','풍미 있는','bland','맛없는'],
+['flavorful','풍미 있는','tasteless','맛없는'],
+['fortunately','다행히도','unfortunately','불행히도'],
+['generous','관대한','stingy','인색한'],
+['generous','관대한','selfish','이기적인'],
+['grow','성장하다','shrink','줄어들다'],
+['grow','성장하다','decrease','감소하다'],
+['harmful','해로운','harmless','무해한'],
+['honest','정직한','dishonest','부정직한'],
+['honest','정직한','deceptive','기만적인'],
+['immediately','즉시','later','나중에'],
+['improve','향상시키다','worsen','악화시키다'],
+['improve','향상시키다','deteriorate','악화되다'],
+['increase','증가하다','drop','떨어지다'],
+['increase','증가하다','fall','하락하다'],
+['innovative','혁신적인','traditional','전통적인'],
+['innovative','혁신적인','conventional','관습적인'],
+['involve','포함하다','exclude','제외하다'],
+['involve','포함하다','omit','빠뜨리다'],
+['maintain','유지하다','abandon','버리다'],
+['maintain','유지하다','give up','포기하다'],
+['motivated','의욕적인','unmotivated','의욕없는'],
+['motivated','의욕적인','apathetic','무감각한'],
+['negative','부정적인','positive','긍정적인'],
+['overcome','극복하다','surrender','항복하다'],
+['overcome','극복하다','give in','굴복하다'],
+['patient','참을성 있는','impatient','참을성 없는'],
+['patient','참을성 있는','restless','들뜬'],
+['prevent','막다/예방하다','allow','허락하다'],
+['prevent','막다/예방하다','permit','허가하다'],
+['productive','생산적인','unproductive','비생산적인'],
+['productive','생산적인','wasteful','낭비적인'],
+['promise','약속하다','break','어기다'],
+['protect','보호하다','expose','노출시키다'],
+['protect','보호하다','endanger','위험에 빠뜨리다'],
+['provide','제공하다','withhold','보류하다'],
+['provide','제공하다','take away','빼앗다'],
+['reasonable','합리적인','unreasonable','불합리한'],
+['reasonable','합리적인','irrational','비이성적인'],
+['reduce','줄이다/감소시키다','increase','증가시키다'],
+['reduce','줄이다/감소시키다','raise','높이다'],
+['reliable','믿을 만한','unreliable','믿을 수 없는'],
+['reliable','믿을 만한','untrustworthy','신뢰할 수 없는'],
+['replace','대체하다','keep','유지하다'],
+['replace','대체하다','retain','보유하다'],
+['reveal','드러내다/공개하다','hide','숨기다'],
+['reveal','드러내다/공개하다','conceal','감추다'],
+['serious','심각한','mild','가벼운'],
+['serious','심각한','minor','사소한'],
+['significant','중요한/상당한','insignificant','사소한'],
+['significant','중요한/상당한','minor','작은'],
+['skilled','숙련된','unskilled','숙련되지 않은'],
+['skilled','숙련된','inexperienced','경험없는'],
+['stable','안정적인','unstable','불안정한'],
+['stable','안정적인','volatile','변동이 심한'],
+['suddenly','갑자기','gradually','서서히'],
+['suitable','적합한','unsuitable','부적합한'],
+['suitable','적합한','inappropriate','부적절한'],
+['supportive','지지하는','unsupportive','지지하지 않는'],
+['supportive','지지하는','opposing','반대하는'],
+['temporary','일시적인','permanent','영구적인'],
+['temporary','일시적인','lasting','지속적인'],
+['temporary','일시적인','long-term','장기적인'],
+['unexpected','예상 밖의','expected','예상된'],
+['unfortunately','불행히도','luckily','운 좋게도'],
+['useful','유용한','useless','쓸모없는'],
+['useful','유용한','impractical','비실용적인'],
+['valuable','귀중한/소중한','worthless','가치없는'],
+['valuable','귀중한/소중한','useless','쓸모없는'],
+['various','다양한','uniform','획일적인'],
+['various','다양한','identical','동일한'],
+['vivid','생생한/선명한','dull','흐릿한'],
+['vivid','생생한/선명한','faint','희미한']
 ];
 
 var _synTab='dong';
@@ -3679,43 +3853,32 @@ function renderSynTab(){
 }
 function _renderDongUieo(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  const koMap=new Map();
-  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    const key=w.ko[0]||'';
-    if(!key)return;
-    if(!koMap.has(key))koMap.set(key,[]);
-    if(!koMap.get(key).find(x=>x.en===w.en))koMap.get(key).push(w);
-  }));
-  let groups=[...koMap.entries()].filter(([,ws])=>ws.length>=2);
-  // build nav sets
-  const enSet=new Set(),koSet=new Set();
-  groups.forEach(([ko,ws])=>{
-    ws.forEach(w=>{if(w.en[0])enSet.add(w.en[0].toUpperCase());});
-    const ki=_koIni(ko);if(ki)koSet.add(ki);
-  });
-  const hasWave=groups.some(([ko])=>(ko||'').startsWith('~'));
-  _buildSynNav(enSet,koSet,hasWave);
-  if(q)groups=groups.filter(([ko,ws])=>ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
-  if(_synLetter)groups=groups.filter(([ko,ws])=>_matchLetter(ws.map(w=>w.en),[ko],_synLetter));
-  groups.sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words}));
+  const koSet=new Set();
+  groups.forEach(g=>{const ki=_koIni(g.ko);if(ki)koSet.add(ki);});
+  const hasWave=groups.some(g=>(g.ko||'').startsWith('~'));
+  _buildSynNav(new Set(),koSet,hasWave);
+  if(q)groups=groups.filter(g=>g.ko.includes(q)||g.words.some(w=>w.en.toLowerCase().includes(q)||w.ko.includes(q)));
+  if(_synLetter)groups=groups.filter(g=>_matchLetter(g.words.map(w=>w.en),[g.ko],_synLetter));
+  groups.sort((a,b)=>a.ko.localeCompare(b.ko,'ko'));
   document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+groups.length+'그룹)';
-  _synCategoryData=groups.map(([ko,ws])=>({ko,words:ws.map(w=>w.en)}));
+  _synCategoryData=groups.map(g=>({ko:g.ko,words:g.words.map(w=>w.en)}));
   const el=document.getElementById('syn-list');
   if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
-  el.innerHTML=groups.map(([ko,ws],i)=>`
+  el.innerHTML=groups.map((g,i)=>`
     <div class="etym-group">
       <div class="etym-group-hd">
-        <span class="etym-root-badge">${ko}</span>
+        <span class="etym-root-badge">${g.ko}</span>
         <span style="margin-left:auto;display:flex;gap:.3em;align-items:center">
           <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×1" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×1</button>
           <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×2" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×2</button>
         </span>
       </div>
-      <div class="etym-word-grid">${ws.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
+      <div class="etym-word-grid">${g.words.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
         <div style="display:flex;align-items:center;gap:.3em;min-width:0">
           <span style="font-weight:700;font-size:.9em;flex-shrink:0">${w.en}</span>
           <button onclick="speak(this.dataset.word)" data-word="${w.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
-          <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko.join(' / ')}</span>
+          <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko}</span>
         </div>
       </div>`).join('')}</div>
     </div>`).join('');
@@ -3846,12 +4009,7 @@ function _renderSpelling(){
 function _setSpellMode(m){_spellMode=m;_curHash='synonyms-spell-'+m;location.hash='synonyms-spell-'+m;_renderSpelling();}
 function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  const wordMap=new Map();
-  SECTIONS.forEach(sec=>sec.words.forEach(w=>{const k=w.en.toLowerCase();if(!wordMap.has(k))wordMap.set(k,w);}));
-  let pairs=ANTONYM_PAIRS.filter(([a,b])=>wordMap.has(a.toLowerCase())&&wordMap.has(b.toLowerCase()))
-    .map(([a,b])=>[wordMap.get(a.toLowerCase()),wordMap.get(b.toLowerCase())]);
-  const seen=new Set();
-  pairs=pairs.filter(([wa,wb])=>{const key=[wa.en,wb.en].sort().join('|');if(seen.has(key))return false;seen.add(key);return true;});
+  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[aKo]},{en:bEn,ko:[bKo]}]);
   const enSet=new Set(),koSet=new Set();
   pairs.forEach(([wa,wb])=>{
     [wa.en,wb.en].forEach(e=>{if(e[0])enSet.add(e[0].toUpperCase());});
@@ -3871,7 +4029,7 @@ function _renderAntonyms(){
           <span style="font-weight:700;font-size:.9em">${wa.en}</span>
           <button onclick="speak(this.dataset.word)" data-word="${wa.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
         </div>
-        <div style="font-size:.75em;color:var(--muted)">${wa.ko.slice(0,2).join(' / ')}</div>
+        <div style="font-size:.75em;color:var(--muted)">${wa.ko.join(' / ')}</div>
       </div>
       <div style="font-size:1.1em;color:var(--muted);flex-shrink:0">↔</div>
       <div style="flex:1;min-width:0;text-align:right">
@@ -3879,7 +4037,7 @@ function _renderAntonyms(){
           <button onclick="speak(this.dataset.word)" data-word="${wb.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
           <span style="font-weight:700;font-size:.9em">${wb.en}</span>
         </div>
-        <div style="font-size:.75em;color:var(--muted)">${wb.ko.slice(0,2).join(' / ')}</div>
+        <div style="font-size:.75em;color:var(--muted)">${wb.ko.join(' / ')}</div>
       </div>
     </div>`).join('');
 }
