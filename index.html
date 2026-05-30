@@ -2685,7 +2685,7 @@ function buildQuestions(words,mode){
     if(qWeighted){
       const _wk=w.en.toLowerCase().trim();
       const _we=allWrong.get(w.en)||allWrong.get(_wk);
-      if(_we){const extra=_we.count>=4?2:_we.count>=2?1:0;for(let i=0;i<extra;i++)types.forEach(t=>qs.push({type:t,word:w}));}
+      if(_we){const extra=_we.count>=4?2:_we.count>=1?1:0;for(let i=0;i<extra;i++)types.forEach(t=>qs.push({type:t,word:w}));}
     }
   });
   return qs.sort(()=>Math.random()-.5);
