@@ -157,11 +157,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
   .home-btn{flex-direction:column;gap:.1em}
   .home-hero{flex-direction:column;gap:.15em}
   .wrap{padding:.35em}
-  #sc-synonyms{margin-left:-.35em;margin-right:-.35em;padding:0 0 1em}
-  #sc-synonyms>div:first-child{padding:.35em .35em .25em}
-  #sc-synonyms #syn-nav,#sc-synonyms>div:nth-child(2),#sc-synonyms>div:nth-child(3){padding:0 .35em}
-  #sc-synonyms .etym-group,#sc-synonyms .card{border-radius:0;border-left:none;border-right:none;margin-bottom:2px;}
-  #sc-synonyms #syn-list{padding:0}
+  #sc-synonyms .etym-group,#sc-synonyms .card{margin-bottom:.4em;}
   .card{padding:.6em}
   .src-card{padding:.45em .55em}
   .sec-grid{gap:.3em;margin-bottom:.25em}
@@ -3909,10 +3905,6 @@ function _renderDongUieo(){
     <div class="etym-group">
       <div class="etym-group-hd">
         <span class="etym-root-badge">${g.ko}</span>
-        <span style="margin-left:auto;display:flex;gap:.3em;align-items:center">
-          <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×1" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×1</button>
-          <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×2" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×2</button>
-        </span>
       </div>
       <div class="etym-word-grid">${g.words.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
         <div style="display:flex;align-items:center;gap:.3em;min-width:0">
@@ -3921,6 +3913,10 @@ function _renderDongUieo(){
           <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko}</span>
         </div>
       </div>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4em;margin-top:.6em">
+        <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×1" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×1</button>
+        <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×2" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×2</button>
+      </div>
     </div>`).join('');
 }
 const _SUFFIXES=[
@@ -4004,10 +4000,6 @@ function _renderSpelling(){
       <div class="etym-group-hd">
         <span class="etym-root-badge">${_spellMode==='prefix'?key+'…':key}</span>
         <span class="etym-root-meaning">${ws.length}개</span>
-        <span style="margin-left:auto;display:flex;gap:.3em;align-items:center">
-          <button id="spell-pb-${i}-1" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×1" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-2',${i},1)">↻ ×1</button>
-          <button id="spell-pb-${i}-2" class="btn btn-s" style="font-size:.72em" data-orig="↻ ×2" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-1',${i},2)">↻ ×2</button>
-        </span>
       </div>
       <div class="etym-word-grid">${ws.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
         <div style="display:flex;align-items:center;gap:.3em;min-width:0">
@@ -4016,6 +4008,10 @@ function _renderSpelling(){
           <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko.slice(0,2).join(' / ')}</span>
         </div>
       </div>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4em;margin-top:.6em">
+        <button id="spell-pb-${i}-1" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×1" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-2',${i},1)">↻ ×1</button>
+        <button id="spell-pb-${i}-2" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×2" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-1',${i},2)">↻ ×2</button>
+      </div>
     </div>`).join('');
 }
 function _setSpellMode(m){_spellMode=m;_curHash='synonyms-spell-'+m;location.hash='synonyms-spell-'+m;_renderSpelling();}
