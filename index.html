@@ -419,7 +419,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
   </div>
   <div style="margin-bottom:.5em">
-    <input id="etym-search" type="text" placeholder="🔍 어원, 뜻, 영단어 검색..." style="width:100%;padding:.6em .9em;border:1.5px solid var(--border);border-radius:.625em;font-size:.88em;font-family:inherit;outline:none;transition:border-color .15s" oninput="etymSearch()">
+    <input id="etym-search" type="text" placeholder="🔍 어원, 뜻, 영단어 검색..." style="width:100%;padding:.55em .8em;border:1.5px solid var(--border);border-radius:.625em;font-size:.88em;font-family:inherit;outline:none;transition:border-color .15s" oninput="etymSearch()">
   </div>
   <div id="etym-alpha-nav" style="display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.5em"></div>
   <div id="etym-browse-nav" style="display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.5em"></div>
@@ -622,9 +622,9 @@ h1{text-align:left;padding:1.25em 0 .875em}
       oninput="renderSynTab()">
   </div>
   <div style="display:flex;gap:.4em;margin-bottom:.55em">
-    <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
-    <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
-    <button id="syn-tab-spell" onclick="setSynTab('spell')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">스펠링</button>
+    <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .75em;font-size:.78em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
+    <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .75em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
+    <button id="syn-tab-spell" onclick="setSynTab('spell')" style="padding:.28em .75em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">스펠링</button>
   </div>
   <div id="syn-nav" style="margin-bottom:.55em"></div>
   <div id="syn-list"></div>
@@ -3533,7 +3533,7 @@ function renderWordBrowser(words){
     secIds.forEach(({label,secId})=>{
       const btn=document.createElement('button');
       btn.textContent=label;
-      btn.style.cssText='padding:.2em .5em;font-size:.75em;border:1px solid var(--border);border-radius:.4em;background:var(--card);cursor:pointer;font-family:inherit;font-weight:600;color:var(--primary);line-height:1.4';
+      btn.style.cssText='padding:.18em .35em;font-size:.76em;border:1px solid var(--border);border-radius:.4em;background:var(--card);cursor:pointer;font-family:inherit;font-weight:700;color:var(--primary);line-height:1.4;transition:all .15s';
       btn.onclick=()=>{
         const el=document.getElementById(secId);
         if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
@@ -3852,7 +3852,7 @@ function _matchLetter(enWords,koWords,letter){
 function _buildSynNav(enSet,koSet,hasWave){
   const nav=document.getElementById('syn-nav');
   if(!nav)return;
-  const chipStyle=(active)=>`min-width:1.9em;padding:.18em .25em;font-size:.76em;border:1px solid ${active?'var(--primary)':'var(--border)'};border-radius:.4em;background:${active?'var(--primary)':'var(--card)'};color:${active?'#fff':'var(--text)'};cursor:pointer;font-family:inherit;font-weight:700;line-height:1.4;text-align:center`;
+  const chipStyle=(active)=>`min-width:1.9em;padding:.18em .35em;font-size:.76em;border:1px solid ${active?'var(--primary)':'var(--border)'};border-radius:.4em;background:${active?'var(--primary)':'var(--card)'};color:${active?'#fff':'var(--text)'};cursor:pointer;font-family:inherit;font-weight:700;line-height:1.4;text-align:center;transition:all .15s`;
   let html='';
   if(_synTab==='spell'){
     const enAvail=_EN_LETTERS.filter(l=>enSet.has(l));
@@ -3996,8 +3996,8 @@ function _renderSpelling(){
   _buildSynNav(enSet,new Set());
   // sub-tab chips
   const chips=`<div style="display:flex;gap:.4em;margin-bottom:.7em">
-    <button onclick="_setSpellMode('prefix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접두사</button>
-    <button onclick="_setSpellMode('suffix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접미사</button>
+    <button onclick="_setSpellMode('prefix')" style="padding:.28em .75em;font-size:.78em;border:1.5px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">접두사</button>
+    <button onclick="_setSpellMode('suffix')" style="padding:.28em .75em;font-size:.78em;border:1.5px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">접미사</button>
   </div>`;
   if(q)groups=groups.filter(([key,ws])=>key.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
   if(_synLetter)groups=groups.filter(([key,ws])=>_matchLetter([key,...ws.map(w=>w.en)],[],_synLetter));
@@ -4322,7 +4322,7 @@ function etymBuildAlphaNav(){
     btn.textContent=l;
     btn.disabled=!hasItems;
     const isSel=l===_etymAlpha;
-    btn.style.cssText='padding:.3em .55em;font-size:.78em;border-radius:.4em;cursor:'+(hasItems?'pointer':'default')+';font-weight:'+(isSel?'700':'500')+';border:1.5px solid '+(isSel?'var(--primary)':'var(--border)')+';background:'+(isSel?'var(--primary)':'var(--card)')+';color:'+(isSel?'#fff':(hasItems?'var(--text)':'var(--border)'))+';font-family:inherit;transition:all .15s';
+    btn.style.cssText='padding:.18em .35em;font-size:.76em;border-radius:.4em;cursor:'+(hasItems?'pointer':'default')+';font-weight:700;border:1px solid '+(isSel?'var(--primary)':'var(--border)')+';background:'+(isSel?'var(--primary)':'var(--card)')+';color:'+(isSel?'#fff':(hasItems?'var(--text)':'var(--border)'))+';font-family:inherit;transition:all .15s;line-height:1.4;text-align:center';
     btn.onclick=function(){_etymAlpha=l;etymFilterAlpha();};
     alphaEl.appendChild(btn);
   });
@@ -4350,7 +4350,7 @@ function etymRender(groups,q){
     const secId='etym-grp-'+gi;
     const navBtn=document.createElement('button');
     navBtn.innerHTML='<b>'+g.p+'</b> <span style="color:var(--muted);font-weight:400">'+g.m+'</span>';
-    navBtn.style.cssText='padding:.3em .7em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);cursor:pointer;color:var(--text);white-space:nowrap;font-family:inherit;transition:all .15s';
+    navBtn.style.cssText='padding:.28em .75em;font-size:.78em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);cursor:pointer;color:var(--text);white-space:nowrap;font-family:inherit;font-weight:600;transition:all .15s';
     navBtn.onmouseenter=function(){this.style.borderColor='var(--primary)';this.style.color='var(--primary)';};
     navBtn.onmouseleave=function(){this.style.borderColor='var(--border)';this.style.color='var(--text)';};
     navBtn.onclick=function(){var el=document.getElementById(secId);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});};
