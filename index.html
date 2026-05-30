@@ -2085,8 +2085,6 @@ function dbLoad(){
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
-      // Remove any tombstoned items that slipped into allWrong
-      _wrongDeleted.forEach((ts,en)=>{const wrongTs=(allWrong.get(en)||{}).ts||0;if(ts>0&&ts>wrongTs)allWrong.delete(en);});
       try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
       if(document.getElementById('sc-history').classList.contains('active'))goHistory();
@@ -3396,16 +3394,7 @@ function goHistory(){
     list.innerHTML='<div style="text-align:center;color:var(--muted);padding:2em;font-size:.9em">오답이 없습니다.</div>';
     showSc('history');return;
   }
-  // 오답만: allWrong 단어 중 마지막 결과가 틀린 것
-  // 전체: allWrong에 있는 모든 단어 (최근 정답 포함)
-  const wrongWords=[...allWrong.keys()];
-  let sorted;
-  if(histSeg==='wrong'){
-    sorted=wrongWords.map(en=>allHistory.get(en)||{word:{en,ko:allWrong.get(en)?.word?.ko||[]},results:[]}).filter(({results})=>{const r=results||[];return r.length===0||r[r.length-1]===false;});
-  }else{
-    sorted=wrongWords.map(en=>allHistory.get(en)||{word:{en,ko:allWrong.get(en)?.word?.ko||[]},results:[]});
-  }
-  sorted.sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
+  const sorted=[...allHistory.values()].filter(({word})=>allWrong.has((word.en||'').toLowerCase().trim())||(allWrong.has(word.en||''))).sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
   sorted.forEach(({word,results})=>{
     const res=results||[];
     const wrongs=res.filter(r=>!r).length;
@@ -3440,7 +3429,7 @@ function goHistory(){
   updateHistDeleteBtn();
   showSc('history');
 }
-var histSeg='all';
+var histSeg='wrong';
 function setHistSeg(seg){
   histSeg=seg;
   document.getElementById('hist-seg-wrong').className='btn '+(seg==='wrong'?'btn-p':'btn-s');
