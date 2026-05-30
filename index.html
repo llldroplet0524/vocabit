@@ -2709,12 +2709,19 @@ function distractorWords(word,type,n){
   });
   scored.sort((a,b)=>b.s-a.s);
   const res=[];
-  const seenKey=new Set();
-  seenKey.add(type==='en-ko'?word.ko.join(' / '):word.en);
-  for(let i=0;i<scored.length&&res.length<n;i++){
-    const w=scored[i].w;
-    const key=type==='en-ko'?w.ko.join(' / '):w.en;
-    if(!seenKey.has(key)){seenKey.add(key);res.push(w);}
+  if(type==='en-ko'){
+    const seenKo=new Set(word.ko.map(k=>k.trim().toLowerCase()));
+    for(let i=0;i<scored.length&&res.length<n;i++){
+      const w=scored[i].w;
+      const overlap=w.ko.some(k=>seenKo.has(k.trim().toLowerCase()));
+      if(!overlap){w.ko.forEach(k=>seenKo.add(k.trim().toLowerCase()));res.push(w);}
+    }
+  }else{
+    const seenEk=new Set([word.en.toLowerCase()]);
+    for(let i=0;i<scored.length&&res.length<n;i++){
+      const w=scored[i].w;
+      if(!seenEk.has(w.en.toLowerCase())){seenEk.add(w.en.toLowerCase());res.push(w);}
+    }
   }
   return res;
 }
