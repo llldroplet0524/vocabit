@@ -3981,11 +3981,12 @@ var _spellMode='prefix';
 function _renderSpelling(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const el=document.getElementById('syn-list');
+  const _kjSet=new Set();SECTIONS.filter(s=>s.src==='k'||s.src==='j').forEach(s=>s.words.forEach(w=>_kjSet.add(w.en.toLowerCase().trim())));
   // build word list
   const allWords=[];
   const seen=new Set();
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    if(!seen.has(w.en)){seen.add(w.en);allWords.push(w);}
+    if(!seen.has(w.en)){seen.add(w.en);allWords.push({...w,inExcelOnly:!_kjSet.has(w.en.toLowerCase().trim())});}
   }));
   const groupMap=new Map();
   if(_spellMode==='prefix'){
@@ -4033,7 +4034,7 @@ function _renderSpelling(){
       </div>
       <div class="etym-word-grid">${ws.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
         <div style="display:flex;align-items:center;gap:.3em;min-width:0">
-          <span style="font-weight:700;font-size:.9em;flex-shrink:0">${w.en}</span>
+          <span style="font-weight:700;font-size:.9em;flex-shrink:0">${w.en}</span>${w.inExcelOnly?'<span style="font-size:.65em;margin-left:.15em" title="엑셀 추가 단어">✅</span>':''}
           <button onclick="speak(this.dataset.word)" data-word="${w.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
           <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko.slice(0,2).join(' / ')}</span>
         </div>
