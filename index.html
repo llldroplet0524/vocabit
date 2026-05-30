@@ -2093,6 +2093,7 @@ function dbLoad(){
       _wrongDeleted.forEach((ts,en)=>{const wrongTs=(allWrong.get(en)||{}).ts||0;if(ts>0&&ts>wrongTs)allWrong.delete(en);});
       try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
+      if(document.getElementById('sc-history').classList.contains('active'))goHistory();
     }
     if(d.historyData && d.historyData.length){
       d.historyData.forEach(v=>{
@@ -2153,18 +2154,6 @@ function dbLoad(){
       });
       try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))));}catch(e){}
     }
-    // allWrong에 없는 allHistory 항목 정리 (Firebase 로드 후 실행)
-    (function(){
-      const toDelete=[];
-      allHistory.forEach((_,en)=>{if(!allWrong.has(en))toDelete.push(en);});
-      if(toDelete.length){
-        const now=Date.now();
-        toDelete.forEach(en=>{allHistory.delete(en);_histDeleted.set(en,now);});
-        try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
-        setTimeout(()=>{DOC.set({deletedHistData:[..._histDeleted.entries()].map(([en,ts])=>({en,ts}))},{merge:true}).catch(e=>console.error('cleanHist',e));},1000);
-        if(document.getElementById('sc-history').classList.contains('active'))goHistory();
-      }
-    })();
     _doInitNav();
     refreshSectionStats();
     updateHomeResume();
@@ -2235,17 +2224,6 @@ var _etymGroups=[];
     if(quizLog.length<before){
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
       setTimeout(()=>{DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('cleanLog',e));},2000);
-    }
-  })();
-  // allWrong에 없는 allHistory 항목 정리 (1회성 데이터 정규화)
-  (function(){
-    const toDelete=[];
-    allHistory.forEach((_,en)=>{if(!allWrong.has(en))toDelete.push(en);});
-    if(toDelete.length){
-      const now=Date.now();
-      toDelete.forEach(en=>{allHistory.delete(en);_histDeleted.set(en,now);});
-      try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
-      setTimeout(()=>{DOC.set({deletedHistData:[..._histDeleted.entries()].map(([en,ts])=>({en,ts}))},{merge:true}).catch(e=>console.error('cleanHist',e));},2500);
     }
   })();
   setTimeout(_doInitNav,0);
