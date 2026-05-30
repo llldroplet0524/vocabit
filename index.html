@@ -2215,7 +2215,7 @@ var _etymGroups=[];
       setTimeout(()=>{DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('cleanLog',e));},2000);
     }
   })();
-  _doInitNav();
+  setTimeout(_doInitNav,0);
 })();
 
 function toggle(id){
@@ -3821,6 +3821,11 @@ function _goSynonymTab(hash){
   _synLetter='';_synTab=tab;_spellMode=sm;
   try{_updateSynTabBtns();renderSynTab();}catch(e){console.error('syn render',e);}
   showSc('synonyms',hash||'synonyms-dong');
+  // Safety: if list is empty after render, retry once
+  setTimeout(()=>{
+    const el=document.getElementById('syn-list');
+    if(el&&!el.children.length){try{renderSynTab();}catch(e){console.error('syn retry',e);}}
+  },200);
 }
 const _EN_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const _KO_LETTERS=['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
