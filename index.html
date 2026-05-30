@@ -286,6 +286,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-hero" style="min-height:5.5em" onclick="goEtymBrowse()">🌿 어원학습</button>
       <button class="btn btn-s home-hero" style="min-height:5.5em" onclick="goWordBrowser('alpha')">🔤 알파벳순</button>
       <button class="btn btn-s home-hero" style="min-height:5.5em" onclick="goWordBrowser('meaning')">💬 의미별</button>
+      <button class="btn btn-s home-hero" style="min-height:5.5em" onclick="goSynonyms()">🔗 유의어·반의어</button>
     </div>
   </div>
 </div>
@@ -589,6 +590,24 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <span style="font-size:.88em;margin-top:.5em;display:block">단어 학습 또는 퀴즈에서 메모를 작성해보세요.</span>
   </div>
   <div id="memo-list"></div>
+</div>
+
+<!-- SYNONYMS / ANTONYMS -->
+<div id="sc-synonyms" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6em">
+    <div style="font-size:1.05em;font-weight:700">🔗 유의어 · 반의어</div>
+    <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
+  </div>
+  <div style="position:relative;margin-bottom:.6em">
+    <input id="syn-search" type="text" autocomplete="off" placeholder="단어 검색..."
+      style="width:100%;padding:.55em .75em;border:1px solid var(--border);border-radius:.5em;font-size:.88em;font-family:inherit;outline:none;box-sizing:border-box"
+      oninput="renderSynTab()">
+  </div>
+  <div style="display:flex;gap:.4em;margin-bottom:.65em">
+    <button id="syn-tab-syn" onclick="setSynTab('syn')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">유의어</button>
+    <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
+  </div>
+  <div id="syn-list"></div>
 </div>
 </div><!-- /.wrap -->
 
@@ -2240,6 +2259,7 @@ function navigateToHash(hash){
   else if(hash==='etym-browse')goEtymBrowse();
   else if(hash==='useranswers')goUserAnswers();
   else if(hash==='memos')goMemos();
+  else if(hash==='synonyms')goSynonyms();
   else if(hash==='wordbrowser-alpha')goWordBrowser('alpha');
   else if(hash==='wordbrowser-meaning')goWordBrowser('meaning');
   else goHome();
@@ -3522,6 +3542,148 @@ function makeWbCard(w){
 // uaSelectedWord declared before IIFE (see above)
 // ── MEMO LIST ──────────────────────────────────────────
 var _memoSort='en';
+// ── SYNONYMS / ANTONYMS ────────────────────────────────
+const ANTONYM_PAIRS=[
+  ['reduce','increase'],['reduce','expand'],['minimize','maximize'],
+  ['narrow','broaden'],['narrow','widen'],['shrink','expand'],['shrink','grow'],
+  ['reality','fantasy'],['useless','useful'],['useless','essential'],
+  ['famous','obscure'],['famous','unknown'],['well-known','obscure'],
+  ['disreputable','reputable'],['notorious','reputable'],['notorious','famous'],
+  ['dull','exciting'],['dull','interesting'],['dull','vivid'],
+  ['retire','continue'],['accept','refuse'],['accept','reject'],
+  ['approve','reject'],['approve','disapprove'],['support','oppose'],
+  ['agree','disagree'],['attract','repel'],['reveal','conceal'],['reveal','hide'],
+  ['establish','abolish'],['establish','dissolve'],['strengthen','weaken'],
+  ['reinforce','weaken'],['reinforce','undermine'],['consolidate','disperse'],
+  ['encourage','discourage'],['promote','demote'],['build','destroy'],
+  ['construct','demolish'],['create','destroy'],['include','exclude'],
+  ['provide','withhold'],['donate','receive'],['acquire','lose'],
+  ['advance','retreat'],['ascend','descend'],['increase','decrease'],
+  ['expand','contract'],['lengthen','shorten'],['extend','shorten'],
+  ['permanent','temporary'],['essential','unnecessary'],['necessary','unnecessary'],
+  ['voluntary','mandatory'],['voluntary','compulsory'],['frequent','rare'],
+  ['numerous','scarce'],['numerous','few'],['significant','trivial'],
+  ['significant','insignificant'],['major','minor'],['active','passive'],
+  ['confident','uncertain'],['confident','hesitant'],['flexible','rigid'],
+  ['flexible','inflexible'],['stable','unstable'],['stable','volatile'],
+  ['transparent','opaque'],['obvious','subtle'],['explicit','implicit'],
+  ['similar','different'],['similar','distinct'],['identical','different'],
+  ['familiar','unfamiliar'],['familiar','strange'],['genuine','fake'],
+  ['genuine','artificial'],['natural','artificial'],['natural','synthetic'],
+  ['harmful','beneficial'],['harmful','harmless'],['positive','negative'],
+  ['optimistic','pessimistic'],['superior','inferior'],['dominant','subordinate'],
+  ['generous','stingy'],['humble','arrogant'],['honest','dishonest'],
+  ['honest','deceptive'],['ancient','modern'],['ancient','contemporary'],
+  ['formal','informal'],['formal','casual'],['strict','lenient'],
+  ['precise','vague'],['specific','general'],['objective','subjective'],
+  ['consistent','inconsistent'],['reliable','unreliable'],['dependent','independent'],
+  ['local','global'],['local','international'],['maximum','minimum'],
+  ['majority','minority'],['ordinary','extraordinary'],['ordinary','exceptional'],
+  ['traditional','modern'],['traditional','innovative'],['static','dynamic'],
+  ['simple','complex'],['brief','lengthy'],['brief','extended'],
+  ['dense','sparse'],['efficient','inefficient'],['gradual','sudden'],
+  ['gradual','abrupt'],['succeed','fail'],['innovative','conventional'],
+  ['prominent','obscure'],['widespread','limited'],['widespread','rare'],
+  ['restrict','permit'],['restrict','allow'],['eliminate','introduce'],
+  ['announce','conceal'],['observe','ignore'],['distinguish','confuse'],
+  ['differentiate','confuse'],['separate','combine'],['separate','unite'],
+  ['invest','waste'],['save','spend'],['income','expense'],
+  ['satisfied','dissatisfied'],['satisfied','unhappy'],
+  ['essential','optional'],['critical','trivial'],
+  ['improve','worsen'],['improve','deteriorate'],['benefit','harm'],
+];
+
+var _synTab='syn';
+function goSynonyms(){
+  document.getElementById('syn-search').value='';
+  _synTab='syn';
+  _updateSynTabBtns();
+  renderSynTab();
+  showSc('synonyms');
+}
+function setSynTab(t){
+  _synTab=t;_updateSynTabBtns();renderSynTab();
+}
+function _updateSynTabBtns(){
+  ['syn','ant'].forEach(t=>{
+    const btn=document.getElementById('syn-tab-'+t);
+    btn.style.background=_synTab===t?'var(--primary)':'var(--card)';
+    btn.style.color=_synTab===t?'#fff':'var(--muted)';
+    btn.style.borderColor=_synTab===t?'var(--primary)':'var(--border)';
+  });
+}
+function renderSynTab(){
+  if(_synTab==='syn')_renderSynonyms();
+  else _renderAntonyms();
+}
+function _renderSynonyms(){
+  const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
+  // ko → words map
+  const koMap=new Map();
+  const wordByEn=new Map();
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    const k=w.en.toLowerCase();
+    if(!wordByEn.has(k))wordByEn.set(k,w);
+    w.ko.forEach(m=>{
+      if(!koMap.has(m))koMap.set(m,[]);
+      if(!koMap.get(m).find(x=>x.en===w.en))koMap.get(m).push(w);
+    });
+  }));
+  let groups=[...koMap.entries()]
+    .filter(([,ws])=>ws.length>=2)
+    .sort((a,b)=>b[1].length-a[1].length);
+  if(q){
+    groups=groups.filter(([ko,ws])=>
+      ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
+  }
+  const el=document.getElementById('syn-list');
+  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
+  el.innerHTML=groups.map(([ko,ws])=>`
+    <div class="card" style="margin-bottom:.55em;padding:.75em">
+      <div style="font-size:.78em;font-weight:700;color:var(--primary);margin-bottom:.45em">${ko}</div>
+      ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
+        <span style="font-weight:700;font-size:.9em;min-width:7em">${w.en}</span>
+        <span style="color:var(--muted);font-size:.78em">${w.ko.join(' / ')}</span>
+      </div>`).join('')}
+    </div>`).join('');
+}
+function _renderAntonyms(){
+  const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
+  const wordMap=new Map();
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    const k=w.en.toLowerCase();
+    if(!wordMap.has(k))wordMap.set(k,w);
+  }));
+  let pairs=ANTONYM_PAIRS
+    .filter(([a,b])=>wordMap.has(a.toLowerCase())&&wordMap.has(b.toLowerCase()))
+    .map(([a,b])=>[wordMap.get(a.toLowerCase()),wordMap.get(b.toLowerCase())]);
+  // deduplicate by sorted pair key
+  const seen=new Set();
+  pairs=pairs.filter(([wa,wb])=>{
+    const key=[wa.en,wb.en].sort().join('|');
+    if(seen.has(key))return false;seen.add(key);return true;
+  });
+  if(q){
+    pairs=pairs.filter(([wa,wb])=>
+      wa.en.toLowerCase().includes(q)||wb.en.toLowerCase().includes(q)||
+      wa.ko.some(k=>k.includes(q))||wb.ko.some(k=>k.includes(q)));
+  }
+  pairs.sort((a,b)=>a[0].en.localeCompare(b[0].en));
+  const el=document.getElementById('syn-list');
+  if(!pairs.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
+  el.innerHTML=pairs.map(([wa,wb])=>`
+    <div class="card" style="margin-bottom:.45em;padding:.65em .9em;display:flex;align-items:center;gap:.75em">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9em">${wa.en}</div>
+        <div style="font-size:.75em;color:var(--muted)">${wa.ko.slice(0,2).join(' / ')}</div>
+      </div>
+      <div style="font-size:1.1em;color:var(--muted);flex-shrink:0">↔</div>
+      <div style="flex:1;min-width:0;text-align:right">
+        <div style="font-weight:700;font-size:.9em">${wb.en}</div>
+        <div style="font-size:.75em;color:var(--muted)">${wb.ko.slice(0,2).join(' / ')}</div>
+      </div>
+    </div>`).join('');
+}
 function goMemos(){
   document.getElementById('memo-search').value='';
   renderMemoList();
