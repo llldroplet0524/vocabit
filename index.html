@@ -2264,7 +2264,7 @@ function getSecStats(sec){
     const th=typeHistory.get(w.en);
     if(th&&th.results.length>0&&th.results[th.results.length-1]===true)memorized++;
   });
-  return{prog:Math.round(studied/total*100),memo:Math.round(memorized/total*100)};
+  return{prog:Math.round(studied/total*100),memo:Math.round(memorized/total*100),studied,total};
 }
 function refreshSectionStats(){
   SECTIONS.forEach(sec=>{
@@ -2273,9 +2273,9 @@ function refreshSectionStats(){
     const pPct=document.getElementById('spp-'+sec.id);
     const mPct=document.getElementById('smp-'+sec.id);
     if(!pEl)return;
-    const{prog,memo}=getSecStats(sec);
+    const{prog,memo,studied,total}=getSecStats(sec);
     pEl.style.width=prog+'%';mEl.style.width=memo+'%';
-    pPct.textContent=prog+'%';mPct.textContent=memo+'%';
+    pPct.textContent=prog+'% ('+studied+'/'+total+')';mPct.textContent=memo+'%';
   });
 }
 function goStudySec(id){
