@@ -4653,12 +4653,10 @@ function toggleSpellCatPlay(btn,sibId,idx,repeat){
 function speak(t){
   if(!window.speechSynthesis)return;
   speechSynthesis.cancel();
-  setTimeout(()=>{
-    if(speechSynthesis.paused)speechSynthesis.resume();
-    const u=new SpeechSynthesisUtterance(t);
-    u.lang='en-US';u.rate=0.88;
-    speechSynthesis.speak(u);
-  },50);
+  if(speechSynthesis.paused)speechSynthesis.resume();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='en-US';u.rate=0.88;
+  speechSynthesis.speak(u);
 }
 </script>
 
