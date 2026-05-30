@@ -2007,7 +2007,7 @@ function dbSave(){
       // build final arrays from merged state
       const histArr=[...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||'',results:v.results||[],ts:v.ts||0}));
       const typeHistArr=[...typeHistory.entries()].map(([en,v])=>({en,results:v.results||[],ts:v.ts||0}));
-      const mergedWrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
+      const mergedWrongArr=[...allWrong.entries()].filter(([en])=>!(_wrongDeleted.get(en)>0)).map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
       const mergedUaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
       const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
       const deletedHistArr=[..._histDeleted.entries()].map(([en,ts])=>({en,ts}));
@@ -2082,6 +2082,8 @@ function dbLoad(){
         if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
+      // Remove any tombstoned items that slipped into allWrong
+      _wrongDeleted.forEach((ts,en)=>{if(ts>0)allWrong.delete(en);});
       try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
     }
