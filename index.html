@@ -471,7 +471,10 @@ h1{text-align:left;padding:1.25em 0 .875em}
 <div id="sc-favorites" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75em">
     <div style="font-size:1.05em;font-weight:700">⭐ 단어장</div>
-    <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
+    <div style="display:flex;gap:.4em">
+      <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="favSync(this)">☁ 동기화</button>
+      <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
+    </div>
   </div>
   <div id="fav-empty" style="display:none;text-align:center;color:var(--muted);padding:3em 1em">
     <div style="font-size:2.2em;font-weight:900;margin-bottom:.5em;color:var(--muted)">✚</div>
@@ -2212,6 +2215,8 @@ var _etymGroups=[];
   dbLoad();
   updateHomeResume();
   if(favorites.size>0)setTimeout(dbSaveFavNow,1500);
+  // 직접입력(type)이 아닌 퀴즈 기록 일괄 삭제
+  (function(){const before=quizLog.length;quizLog=quizLog.filter(e=>e.mode==='type');if(quizLog.length<before){try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}dbSave();}})();
   _doInitNav();
 })();
 
@@ -4465,6 +4470,11 @@ function getFavWords(){
 }
 function goFavorites(){
   renderFavPage();showSc('favorites');
+}
+function favSync(btn){
+  if(btn){btn.textContent='저장 중…';btn.disabled=true;}
+  dbSaveFavNow();
+  setTimeout(()=>{if(btn){btn.textContent='☁ 동기화';btn.disabled=false;}renderFavPage();},1500);
 }
 function renderFavPage(){
   const words=getFavWords();
