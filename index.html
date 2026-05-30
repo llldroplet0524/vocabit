@@ -275,6 +275,26 @@ h1{text-align:left;padding:1.25em 0 .875em}
       </div>
       <div class="sec-grid" id="grid-j"></div>
     </div>
+    <div class="card">
+      <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>동·반의어 추가단어</span>
+        <div style="display:flex;gap:.375em">
+          <button class="btn btn-s sel-btn" onclick="selAll('s')">전체선택</button>
+          <button class="btn btn-s sel-btn" onclick="selNone('s')">전체해제</button>
+        </div>
+      </div>
+      <div class="sec-grid" id="grid-s"></div>
+    </div>
+    <div class="card">
+      <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>동·반의어 추가단어</span>
+        <div style="display:flex;gap:.375em">
+          <button class="btn btn-s sel-btn" onclick="selAll('s')">전체선택</button>
+          <button class="btn btn-s sel-btn" onclick="selNone('s')">전체해제</button>
+        </div>
+      </div>
+      <div class="sec-grid" id="grid-s"></div>
+    </div>
     <div id="sel-info" class="card" style="text-align:center;padding:.625em;display:none">
       선택된 단어: <strong id="sel-count">0</strong>개
     </div>
@@ -1459,6 +1479,8 @@ const SECTIONS=[
 {en:'wait in line',ko:['줄을 서서 기다리다']},{en:'instead of',ko:['~대신에']},
 {en:'cozy',ko:['아늑한']},{en:'atmosphere',ko:['분위기']},
 ]},
+,
+{id:'s001',name:'동·반의어 추가단어',src:'s',words:[{en:'abolish',ko:['폐지하다']},{en:'abruptly',ko:['갑자기']},{en:'anxious',ko:['불안한']},{en:'apathetic',ko:['무감각한']},{en:'appealing',ko:['매력적인']},{en:'assured',ko:['확신하는']},{en:'at once',ko:['즉각']},{en:'attain',ko:['이루다']},{en:'bland',ko:['맛없는']},{en:'boldness',ko:['대담함']},{en:'boring',ko:['지루한']},{en:'bravery',ko:['용감함']},{en:'break',ko:['부수다']},{en:'captivating',ko:['매혹적인']},{en:'celebrated',ko:['저명한']},{en:'charitable',ko:['자선적인']},{en:'charming',ko:['매력있는']},{en:'collected',ko:['침착한']},{en:'committed',ko:['헌신하는']},{en:'confuse',ko:['혼동하다']},{en:'constant',ko:['일정한']},{en:'contemporary',ko:['현대의']},{en:'conventional',ko:['관습적인']},{en:'convey',ko:['전달하다']},{en:'cowardice',ko:['겁쟁이']},{en:'creative',ko:['창의적인']},{en:'critical',ko:['결정적인']},{en:'damaging',ko:['해가 되는']},{en:'deceptive',ko:['기만적인']},{en:'dependable',ko:['믿을 수 있는']},{en:'deter',ko:['단념시키다']},{en:'devoted',ko:['헌신적인']},{en:'disclose',ko:['공개하다']},{en:'discourage',ko:['낙담시키다']},{en:'dishonest',ko:['부정직한']},{en:'disloyal',ko:['불충한']},{en:'dissolve',ko:['해산하다']},{en:'diverse',ko:['다양한']},{en:'driven',ko:['의욕적인']},{en:'eager',ko:['열성적인']},{en:'easy',ko:['쉬운']},{en:'emerge',ko:['등장하다']},{en:'endanger',ko:['위험에 빠뜨리다']},{en:'evade',ko:['피하다']},{en:'expected',ko:['예상된']},{en:'expose',ko:['노출시키다']},{en:'extend',ko:['확장하다']},{en:'face',ko:['직면하다']},{en:'faint',ko:['희미한']},{en:'fall',ko:['하락하다']},{en:'favorable',ko:['유리한']},{en:'fear',ko:['두려움']},{en:'forbid',ko:['금지하다']},{en:'give in',ko:['굴복하다']},{en:'giving',ko:['베푸는']},{en:'gradually',ko:['서서히']},{en:'groundbreaking',ko:['획기적인']},{en:'harm',ko:['해치다']},{en:'harmless',ko:['무해한']},{en:'hesitate',ko:['망설이다']},{en:'honest',ko:['정직한']},{en:'identical',ko:['동일한']},{en:'impatient',ko:['참을성 없는']},{en:'impractical',ko:['비실용적인']},{en:'impress',ko:['감동시키다']},{en:'inappropriate',ko:['부적절한']},{en:'incorporate',ko:['통합하다']},{en:'indifferent',ko:['무관심한']},{en:'ineffective',ko:['효과없는']},{en:'inexperienced',ko:['경험없는']},{en:'insecure',ko:['불안한']},{en:'interesting',ko:['흥미로운']},{en:'irrational',ko:['비이성적인']},{en:'irregular',ko:['불규칙한']},{en:'lasting',ko:['지속적인']},{en:'let down',ko:['실망시키다']},{en:'long-term',ko:['장기적인']},{en:'lower',ko:['낮추다']},{en:'loyal',ko:['충성스러운']},{en:'luckily',ko:['운 좋게']},{en:'mend',ko:['고치다']},{en:'mild',ko:['가벼운']},{en:'minor',ko:['사소한']},{en:'misrepresent',ko:['왜곡하다']},{en:'mix up',ko:['혼동하다']},{en:'modern',ko:['현대의']},{en:'novice',ko:['초보의']},{en:'obscure',ko:['무명의']},{en:'omit',ko:['빠뜨리다']},{en:'opposing',ko:['반대하는']},{en:'permanent',ko:['영구적인']},{en:'pledge',ko:['서약하다']},{en:'portray',ko:['묘사하다']},{en:'proficient',ko:['능숙한']},{en:'raise',ko:['높이다']},{en:'rational',ko:['이성적인']},{en:'regrettably',ko:['안타깝게도']},{en:'reject',ko:['거부하다']},{en:'repair',ko:['수리하다']},{en:'repulsive',ko:['역겨운']},{en:'restless',ko:['들뜬']},{en:'rise',ko:['오르다']},{en:'risky',ko:['위험한']},{en:'sadly',ko:['슬프게도']},{en:'safe',ko:['안전한']},{en:'satisfy',ko:['만족시키다']},{en:'seasoned',ko:['노련한']},{en:'self-assured',ko:['자신감 있는']},{en:'selfish',ko:['이기적인']},{en:'sensible',ko:['분별있는']},{en:'set up',ko:['세우다']},{en:'short-term',ko:['단기적인']},{en:'simple',ko:['간단한']},{en:'steady',ko:['꾸준한']},{en:'stingy',ko:['인색한']},{en:'supply',ko:['공급하다']},{en:'suppress',ko:['억제하다']},{en:'surmount',ko:['극복하다']},{en:'surprising',ko:['놀라운']},{en:'surrender',ko:['항복하다']},{en:'sustain',ko:['지속하다']},{en:'take away',ko:['빼앗다']},{en:'tasteless',ko:['맛없는']},{en:'tasty',ko:['맛있는']},{en:'teamwork',ko:['팀워크']},{en:'tell apart',ko:['구분하다']},{en:'traditional',ko:['전통적인']},{en:'trustworthy',ko:['신뢰할 수 있는']},{en:'truthful',ko:['진실한']},{en:'turn down',ko:['거절하다']},{en:'unattractive',ko:['매력없는']},{en:'uncommitted',ko:['헌신하지 않는']},{en:'uncover',ko:['밝히다']},{en:'unexpectedly',ko:['예상치 못하게']},{en:'unfavorable',ko:['불리한']},{en:'unforeseen',ko:['예상치 못한']},{en:'unmotivated',ko:['의욕없는']},{en:'unproductive',ko:['비생산적인']},{en:'unreasonable',ko:['불합리한']},{en:'unreliable',ko:['믿을 수 없는']},{en:'unskilled',ko:['숙련되지 않은']},{en:'unsuitable',ko:['부적합한']},{en:'unsupportive',ko:['지지하지 않는']},{en:'untrustworthy',ko:['신뢰할 수 없는']},{en:'vanish',ko:['사라지다']},{en:'veteran',ko:['베테랑의']},{en:'vital',ko:['매우 중요한']},{en:'volatile',ko:['변동이 심한']},{en:'wasteful',ko:['낭비적인']},{en:'waver',ko:['망설이다']},{en:'withhold',ko:['보류하다']},{en:'worsen',ko:['악화시키다']},{en:'worthless',ko:['가치없는']}]}
 ];
 
 // ── ETYMOLOGY ──────────────────────────────────────────
@@ -2147,7 +2169,7 @@ var _etymGroups=[];
 
 // ── INIT ──
 (function init(){
-  ['k','j'].forEach(src=>{
+  ['k','j','s'].forEach(src=>{
     const grid=document.getElementById('grid-'+src);
     SECTIONS.filter(s=>s.src===src).forEach(sec=>{
       const hasW=sec.words.length>0;
@@ -3854,7 +3876,8 @@ function renderSynTab(){
 function _renderDongUieo(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '||''));}));
-  let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words.map(w=>({en:w.en,ko:_wm.get(w.en.toLowerCase().trim())||w.ko}))}));
+  const _inSec=(en)=>_wm.has(en.toLowerCase().trim());
+  let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words.map(w=>({en:w.en,ko:_wm.get(w.en.toLowerCase().trim())||w.ko,inSec:_inSec(w.en)}))}));
   const koSet=new Set();
   groups.forEach(g=>{const ki=_koIni(g.ko);if(ki)koSet.add(ki);});
   const hasWave=groups.some(g=>(g.ko||'').startsWith('~'));
@@ -3877,7 +3900,7 @@ function _renderDongUieo(){
       </div>
       <div class="etym-word-grid">${g.words.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
         <div style="display:flex;align-items:center;gap:.3em;min-width:0">
-          <span style="font-weight:700;font-size:.9em;flex-shrink:0">${w.en}</span>
+          <span style="font-weight:700;font-size:.9em;flex-shrink:0">${w.en}</span>${w.inSec?'<span style="font-size:.65em;margin-left:.15em" title="학습 단어">✅</span>':''}
           <button onclick="speak(this.dataset.word)" data-word="${w.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
           <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko}</span>
         </div>
@@ -4012,7 +4035,8 @@ function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '));}));
   const _ko=(en,fb)=>_wm.get(en.toLowerCase().trim())||fb;
-  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[_ko(aEn,aKo)]},{en:bEn,ko:[_ko(bEn,bKo)]}]);
+  const _inSec=(en)=>_wm.has(en.toLowerCase().trim());
+  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[_ko(aEn,aKo)],inSec:_inSec(aEn)},{en:bEn,ko:[_ko(bEn,bKo)],inSec:_inSec(bEn)}]);
   const enSet=new Set(),koSet=new Set();
   pairs.forEach(([wa,wb])=>{
     [wa.en,wb.en].forEach(e=>{if(e[0])enSet.add(e[0].toUpperCase());});
@@ -4029,7 +4053,7 @@ function _renderAntonyms(){
     <div class="card" style="margin-bottom:.45em;padding:.65em .9em;display:flex;align-items:center;gap:.75em">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:.3em">
-          <span style="font-weight:700;font-size:.9em">${wa.en}</span>
+          <span style="font-weight:700;font-size:.9em">${wa.en}</span>${wa.inSec?'<span style="font-size:.65em" title="학습 단어">✅</span>':''}
           <button onclick="speak(this.dataset.word)" data-word="${wa.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
         </div>
         <div style="font-size:.75em;color:var(--muted)">${wa.ko.join(' / ')}</div>
@@ -4038,7 +4062,7 @@ function _renderAntonyms(){
       <div style="flex:1;min-width:0;text-align:right">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3em">
           <button onclick="speak(this.dataset.word)" data-word="${wb.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
-          <span style="font-weight:700;font-size:.9em">${wb.en}</span>
+          ${wb.inSec?'<span style="font-size:.65em" title="학습 단어">✅</span>':''}<span style="font-weight:700;font-size:.9em">${wb.en}</span>
         </div>
         <div style="font-size:.75em;color:var(--muted)">${wb.ko.join(' / ')}</div>
       </div>
