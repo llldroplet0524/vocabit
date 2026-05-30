@@ -2327,7 +2327,9 @@ function renderSWList(){
     const cnt=allWrong.get(w.en)?.count||0;
     const div=document.createElement('div');
     div.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:.4em 0;border-bottom:1px solid var(--border)';
-    div.innerHTML='<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.9em">'+w.en+'</div><div style="color:var(--muted);font-size:.78em">'+w.ko.join(' / ')+'</div>'+_memoRowHtml(w.en,'📝 연상 메모...')+'</div><span style="color:var(--danger);font-size:.78em;font-weight:600;flex-shrink:0;margin-left:.5em">'+cnt+'회</span>';
+    const _sko=w.ko.join(' / ');
+    const _smemo=(wordNotes.get(w.en.toLowerCase().trim())||{}).note?'📝 메모':'📝';
+    div.innerHTML='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.35em"><span style="font-weight:700;font-size:.9em">'+w.en+'</span><button onclick="openMemoPopup(\''+w.en.replace(/'/g,"\\'")+'\',\''+_sko.replace(/'/g,"\\'")+'\');event.stopPropagation()" style="font-size:.68em;padding:.12em .38em;border:1px solid var(--border);border-radius:.4em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;line-height:1.4">'+_smemo+'</button></div><div style="color:var(--muted);font-size:.78em">'+_sko+'</div></div><span style="color:var(--danger);font-size:.78em;font-weight:600;flex-shrink:0;margin-left:.5em">'+cnt+'회</span>';
     list.appendChild(div);
   });
   // update sort chip active state
@@ -2451,14 +2453,19 @@ function saveMemoBtn(btn){
   btn.textContent='✓';btn.disabled=true;
   setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1200);
 }
-function _memoRowHtml(en,placeholder){
-  const note=(wordNotes.get(en.toLowerCase().trim())||{}).note||'';
-  const escaped=note.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return '<div class="memo-row" style="display:flex;gap:.4em;margin-top:.45em;align-items:flex-start">'+
-    '<textarea data-memo-en="'+en+'" rows="2" placeholder="'+placeholder+'"'+
-    ' style="flex:1;box-sizing:border-box;font-size:.78em;padding:.4em .55em;border:1px solid var(--border);border-radius:.45em;background:var(--bg);color:var(--text);resize:none;font-family:inherit;line-height:1.4;outline:none;min-width:0">'+escaped+'</textarea>'+
-    '<button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.3em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap;line-height:1.4;height:fit-content">저장</button>'+
-    '</div>';
+var _mpEn='';
+function openMemoPopup(en,ko){
+  _mpEn=en;
+  document.getElementById('mp-en').textContent=en;
+  document.getElementById('mp-ko').textContent=ko||'';
+  document.getElementById('mp-input').value=(wordNotes.get(en.toLowerCase().trim())||{}).note||'';
+  document.getElementById('memo-popup').style.display='flex';
+  setTimeout(()=>document.getElementById('mp-input').focus(),80);
+}
+function closeMemoPopup(){document.getElementById('memo-popup').style.display='none';}
+function saveMemoPopup(){
+  saveMemo(_mpEn,document.getElementById('mp-input').value);
+  closeMemoPopup();
 }
 
 // ── STUDY ──
@@ -2819,7 +2826,8 @@ function renderWrongList(){
     const div=document.createElement('div');
     div.className='wrong-item';
     div.style.cssText='align-items:center;gap:.6em';
-    div.innerHTML=`<input type="checkbox" class="wrong-chk" data-key="${key}" onchange="updateWrongDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;accent-color:var(--danger)"><div style="flex:1;min-width:0"><div style="font-weight:700">${word.en}</div><div style="color:var(--muted);font-size:.82em">${word.ko.join(' / ')}</div>${_memoRowHtml(word.en,'📝 연상 메모...')}</div><span class="wrong-cnt" style="flex-shrink:0">${count}회 오답</span>`;
+    const _wko=word.ko.join(' / ');
+    div.innerHTML=`<input type="checkbox" class="wrong-chk" data-key="${key}" onchange="updateWrongDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;accent-color:var(--danger)"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.4em"><span style="font-weight:700">${word.en}</span><button onclick="openMemoPopup('${word.en.replace(/'/g,"\\'")}','${_wko.replace(/'/g,"\\'")}');event.stopPropagation()" style="font-size:.7em;padding:.15em .4em;border:1px solid var(--border);border-radius:.4em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;line-height:1.4">${(wordNotes.get(key)||{}).note?'📝 메모':'📝'}</button></div><div style="color:var(--muted);font-size:.82em">${_wko}</div></div><span class="wrong-cnt" style="flex-shrink:0">${count}회 오답</span>`;
     list.appendChild(div);
   });
   updateWrongDeleteBtn();
@@ -3312,7 +3320,8 @@ function goHistory(){
     const div=document.createElement('div');
     div.style.cssText='background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:.65em .9em;display:flex;align-items:flex-start;gap:.6em';
     const key=word.en.toLowerCase();
-    div.innerHTML=`<input type="checkbox" class="hist-chk" data-key="${key}" onchange="updateHistDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;margin-top:.15em;accent-color:var(--danger)"><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2em"><span style="font-weight:700;font-size:.93em">${word.en}</span><span style="font-size:.72em;color:var(--muted);white-space:nowrap;margin-left:.5em">${wrongs}오 ${corrects}정</span></div><div style="font-size:.78em;color:var(--muted);margin-bottom:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${word.ko.slice(0,2).join(' / ')}</div><div style="display:grid;grid-template-columns:repeat(20,1fr);gap:.1em;width:100%;margin-bottom:.2em">${boxes}</div>${_memoRowHtml(word.en,'📝 연상 메모...')}</div>`;
+    const _hko=word.ko.slice(0,2).join(' / ');
+    div.innerHTML=`<input type="checkbox" class="hist-chk" data-key="${key}" onchange="updateHistDeleteBtn()" style="width:1.1em;height:1.1em;cursor:pointer;flex-shrink:0;margin-top:.15em;accent-color:var(--danger)"><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2em"><span style="font-weight:700;font-size:.93em">${word.en}</span><div style="display:flex;align-items:center;gap:.4em"><button onclick="openMemoPopup('${word.en.replace(/'/g,"\\'")}','${_hko.replace(/'/g,"\\'")}');event.stopPropagation()" style="font-size:.7em;padding:.15em .4em;border:1px solid var(--border);border-radius:.4em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;line-height:1.4">${(wordNotes.get(key)||{}).note?'📝 메모':'📝'}</button><span style="font-size:.72em;color:var(--muted);white-space:nowrap">${wrongs}오 ${corrects}정</span></div></div><div style="font-size:.78em;color:var(--muted);margin-bottom:.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_hko}</div><div style="display:grid;grid-template-columns:repeat(20,1fr);gap:.1em;width:100%">${boxes}</div></div>`;
     list.appendChild(div);
   });
   const actionArea=document.getElementById('history-action-area');
@@ -4038,6 +4047,26 @@ function speak(t){
     <div style="display:flex;gap:.6em">
       <button class="btn btn-s" style="flex:1" onclick="goWrongSecStudy()">단어학습</button>
       <button class="btn btn-p" style="flex:1" onclick="goWrongSecQuiz()">퀴즈</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMO POPUP MODAL -->
+<div id="memo-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:1.5em">
+  <div style="background:var(--card);border-radius:var(--radius);padding:1.4em;width:100%;max-width:22em;box-shadow:var(--shadow-md)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5em">
+      <div>
+        <div id="mp-en" style="font-weight:700;font-size:1em"></div>
+        <div id="mp-ko" style="font-size:.82em;color:var(--muted);margin-top:.1em"></div>
+      </div>
+      <button onclick="closeMemoPopup()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em;flex-shrink:0">✕</button>
+    </div>
+    <textarea id="mp-input" placeholder="📝 연상 메모 입력..." rows="3"
+      style="width:100%;box-sizing:border-box;font-size:.88em;padding:.5em .7em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;font-family:inherit;line-height:1.5;outline:none;margin-bottom:.6em"
+      onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div style="display:flex;gap:.5em">
+      <button class="btn btn-s" style="flex:1" onclick="closeMemoPopup()">취소</button>
+      <button class="btn btn-p" style="flex:1" onclick="saveMemoPopup()">💾 저장</button>
     </div>
   </div>
 </div>
