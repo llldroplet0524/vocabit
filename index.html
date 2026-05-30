@@ -2941,6 +2941,11 @@ function deleteSelectedWrong(){
   try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
   try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
   updateHomeWrongBtn();
+  // 즉시 tombstone을 Firebase에 반영 (debounce 우회)
+  DOC.set({
+    deletedWrongData:[..._wrongDeleted.entries()].map(([en,ts])=>({en,ts})),
+    deletedHistData:[..._histDeleted.entries()].map(([en,ts])=>({en,ts}))
+  },{merge:true}).catch(e=>console.error('del sync',e));
   dbSave();
   renderWrongList();
   renderWrongFilterBtns();
@@ -3260,7 +3265,6 @@ function checkTyped(){
   if(ok){
     qScore++;
     const hk=w.en;
-    if(allWrong.has(hk)){allWrong.get(hk).count--;if(allWrong.get(hk).count<=0){allWrong.delete(hk);_wrongDeleted.set(hk,Date.now());}updateHomeWrongBtn();dbSave();}
     if(!allHistory.has(hk))allHistory.set(hk,{word:w,results:[],ts:0});
     const hr=allHistory.get(hk);hr.results.push(true);if(hr.results.length>20)hr.results.shift();hr.ts=Date.now();
   }else{
