@@ -2139,6 +2139,7 @@ var _etymGroups=[];
           '<span class="src-stat-lbl">진도율</span>'+
           '<div class="src-stat-bar"><div class="src-stat-fill src-stat-prog" id="sp-'+sec.id+'" style="width:0%"></div></div>'+
           '<span class="src-stat-pct" id="spp-'+sec.id+'">0%</span>'+
+          '<span id="su-'+sec.id+'" style="display:none;font-size:.7em;color:var(--danger);margin-left:.35em;cursor:pointer;text-decoration:underline;white-space:nowrap" onclick="event.stopPropagation();showUnstudied(\''+sec.id+'\')"></span>'+
         '</div>'+
         '<div class="src-stat">'+
           '<span class="src-stat-lbl">암기율</span>'+
@@ -2275,7 +2276,9 @@ function refreshSectionStats(){
     if(!pEl)return;
     const{prog,memo,studied,total}=getSecStats(sec);
     pEl.style.width=prog+'%';mEl.style.width=memo+'%';
-    pPct.textContent=prog+'% ('+studied+'/'+total+')';mPct.textContent=memo+'%';
+    pPct.textContent=prog+'%';mPct.textContent=memo+'%';
+    const suEl=document.getElementById('su-'+sec.id);
+    if(suEl){const miss=total-studied;if(miss>0){suEl.textContent='미학습 '+miss+'개';suEl.style.display='inline';}else{suEl.style.display='none';}}
   });
 }
 function goStudySec(id){
@@ -2332,6 +2335,35 @@ function renderSWList(){
 }
 function setSWSort(s){_swSort=s;renderSWList();}
 function closeSWModal(){document.getElementById('sw-modal').style.display='none';}
+var _suWords=[];
+function showUnstudied(secId){
+  const sec=SECTIONS.find(s=>s.id===secId);
+  if(!sec)return;
+  _suWords=sec.words.filter(w=>!allHistory.has(w.en)||!(allHistory.get(w.en).results||[]).length);
+  if(!_suWords.length){alert('미학습 단어가 없습니다!');return;}
+  document.getElementById('su-modal-title').textContent=sec.name.replace('켈리지텔프 ','').replace('정재현 ','')+' 미학습 ('+_suWords.length+'개)';
+  const list=document.getElementById('su-modal-list');
+  list.innerHTML=_suWords.map(w=>
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:.4em 0;border-bottom:1px solid var(--border)">'+
+    '<div><div style="font-weight:700;font-size:.9em">'+w.en+'</div>'+
+    '<div style="color:var(--muted);font-size:.78em">'+w.ko.slice(0,2).join(' / ')+'</div></div></div>'
+  ).join('');
+  document.getElementById('su-modal').style.display='flex';
+}
+function closeUnstudied(){document.getElementById('su-modal').style.display='none';}
+function goUnstudiedStudy(){
+  closeUnstudied();
+  if(!_suWords.length)return;
+  stWords=[..._suWords];stIdx=0;isWrongStudyMode=false;
+  showSc('study');renderSt();
+}
+function goUnstudiedQuiz(){
+  closeUnstudied();
+  if(!_suWords.length)return;
+  qSecs=[];qMode='type';qScore=0;qIdx=0;wrongMap=new Map();
+  merged=[..._suWords];qQuestions=buildQuestions(_suWords,'type');
+  showSc('quiz');renderQ();
+}
 function goWrongSecStudy(){
   closeSWModal();
   if(!_swWords.length)return;
@@ -3978,6 +4010,21 @@ function speak(t){
     <div style="display:flex;gap:.6em">
       <button class="btn btn-s" style="flex:1" onclick="goWrongSecStudy()">단어학습</button>
       <button class="btn btn-p" style="flex:1" onclick="goWrongSecQuiz()">퀴즈</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION UNSTUDIED MODAL -->
+<div id="su-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1.5em">
+  <div style="background:var(--card);border-radius:var(--radius);padding:1.5em;width:100%;max-width:22em;box-shadow:var(--shadow-md);max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6em">
+      <div id="su-modal-title" style="font-size:.95em;font-weight:700"></div>
+      <button onclick="closeUnstudied()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em">✕</button>
+    </div>
+    <div id="su-modal-list" style="overflow-y:auto;flex:1;margin-bottom:.75em"></div>
+    <div style="display:flex;gap:.6em">
+      <button class="btn btn-s" style="flex:1" onclick="goUnstudiedStudy()">단어학습</button>
+      <button class="btn btn-p" style="flex:1" onclick="goUnstudiedQuiz()">퀴즈</button>
     </div>
   </div>
 </div>
