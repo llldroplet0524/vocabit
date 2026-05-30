@@ -2215,8 +2215,8 @@ var _etymGroups=[];
   dbLoad();
   updateHomeResume();
   if(favorites.size>0)setTimeout(dbSaveFavNow,1500);
-  // 직접입력(type)이 아닌 퀴즈 기록 일괄 삭제
-  (function(){const before=quizLog.length;quizLog=quizLog.filter(e=>e.mode==='type');if(quizLog.length<before){try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}dbSave();}})();
+  // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제
+  (function(){const before=quizLog.length;quizLog=quizLog.filter(e=>e.mode==='type'&&!(e.secs&&e.secs.includes('k021')));if(quizLog.length<before){try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}dbSave();}})();
   _doInitNav();
 })();
 
@@ -2483,19 +2483,9 @@ function showSecLog(secId){
   }
   document.getElementById('sec-log-title').textContent=sec.name+' 퀴즈 기록';
   document.getElementById('sec-log-body').innerHTML=html;
-  document.getElementById('sec-log-del-btn').onclick=()=>deleteSecLog(secId);
-  document.getElementById('sec-log-del-btn').style.display=entries.length?'':'none';
   document.getElementById('sec-log-modal').style.display='flex';
 }
 function closeSecLog(){document.getElementById('sec-log-modal').style.display='none';}
-function deleteSecLog(secId){
-  showConfirm('이 섹션의 퀴즈 기록을 모두 삭제할까요?',function(){
-    quizLog=quizLog.filter(e=>!(e.secs&&e.secs.includes(secId)));
-    try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
-    dbSave();
-    closeSecLog();
-  });
-}
 function toggleQWeighted(){
   qWeighted=!qWeighted;
   const btn=document.getElementById('q-weighted-toggle');
@@ -4772,7 +4762,6 @@ function speak(t){
       <button onclick="closeSecLog()" style="background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted);line-height:1;padding:.1em .3em">✕</button>
     </div>
     <div id="sec-log-body" style="overflow-y:auto;flex:1"></div>
-    <button id="sec-log-del-btn" class="btn btn-danger btn-full" style="margin-top:.75em;font-size:.82em;display:none">🗑 기록 삭제</button>
   </div>
 </div>
 
