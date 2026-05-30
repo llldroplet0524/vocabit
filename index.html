@@ -605,7 +605,6 @@ h1{text-align:left;padding:1.25em 0 .875em}
   </div>
   <div style="display:flex;gap:.4em;margin-bottom:.65em">
     <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
-    <button id="syn-tab-syn" onclick="setSynTab('syn')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">유의어</button>
     <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
   </div>
   <div id="syn-list"></div>
@@ -3606,7 +3605,7 @@ function setSynTab(t){
   _synTab=t;_updateSynTabBtns();renderSynTab();
 }
 function _updateSynTabBtns(){
-  ['dong','syn','ant'].forEach(t=>{
+  ['dong','ant'].forEach(t=>{
     const btn=document.getElementById('syn-tab-'+t);
     btn.style.background=_synTab===t?'var(--primary)':'var(--card)';
     btn.style.color=_synTab===t?'#fff':'var(--muted)';
@@ -3615,7 +3614,6 @@ function _updateSynTabBtns(){
 }
 function renderSynTab(){
   if(_synTab==='dong')_renderDongUieo();
-  else if(_synTab==='syn')_renderSynonyms();
   else _renderAntonyms();
 }
 function _renderDongUieo(){
