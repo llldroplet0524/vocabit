@@ -2003,7 +2003,7 @@ function dbSave(){
       getAllProgKeys().forEach(k=>{if(_resumeDeleted.has(k))localStorage.removeItem(k);});
       // merge quizLog: union by ts
       const localLogTs=new Set(quizLog.map(e=>e.ts));
-      (r.quizLogData||[]).forEach(e=>{if(!localLogTs.has(e.ts))quizLog.push(e);});
+      (r.quizLogData||[]).forEach(e=>{if(e.mode==='type'&&!(e.secs&&e.secs.includes('k021'))&&!localLogTs.has(e.ts))quizLog.push(e);});
       quizLog.sort((a,b)=>b.ts-a.ts);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
@@ -2135,7 +2135,7 @@ function dbLoad(){
     }
     if(d.quizLogData && d.quizLogData.length){
       const localTs=new Set(quizLog.map(e=>e.ts));
-      d.quizLogData.forEach(e=>{if(!localTs.has(e.ts))quizLog.push(e);});
+      d.quizLogData.forEach(e=>{if(e.mode==='type'&&!(e.secs&&e.secs.includes('k021'))&&!localTs.has(e.ts))quizLog.push(e);});
       quizLog.sort((a,b)=>b.ts-a.ts);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
@@ -2266,7 +2266,7 @@ function getWords(){
   return[...map.values()];
 }
 var _scrollTopEligible={
-  'sc-wordbrowser':1,'sc-useranswers':1,'sc-history':1,'sc-favorites':1,'sc-etym-browse':1
+  'sc-wordbrowser':1,'sc-useranswers':1,'sc-history':1,'sc-favorites':1,'sc-etym-browse':1,'sc-synonyms':1
 };
 function _updateScrollTopBtn(){
   var btn=document.getElementById('scroll-top-btn');
@@ -3825,7 +3825,7 @@ function _goSynonymTab(hash){
   const sm=parts[1]&&['prefix','suffix'].includes(parts[1])?parts[1]:'prefix';
   const el=document.getElementById('syn-search');if(el)el.value='';
   _synLetter='';_synTab=tab;_spellMode=sm;
-  _updateSynTabBtns();renderSynTab();
+  try{_updateSynTabBtns();renderSynTab();}catch(e){console.error('syn render',e);}
   showSc('synonyms',hash||'synonyms-dong');
 }
 const _EN_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
