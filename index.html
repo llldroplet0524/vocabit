@@ -328,13 +328,19 @@ h1{text-align:left;padding:1.25em 0 .875em}
           <div class="etym-roots" id="st-etym-roots"></div>
           <div class="etym-tip" id="st-etym-tip"></div>
         </div>
-        <div style="margin-top:.65em" onclick="event.stopPropagation()">
-          <div class="memo-row" style="display:flex;gap:.4em;align-items:flex-start">
-            <textarea id="st-memo" data-memo-en="" placeholder="📝 연상 메모..." rows="2"
-              style="flex:1;box-sizing:border-box;font-size:.8em;padding:.45em .65em;border:1px solid rgba(255,255,255,.3);border-radius:.5em;background:rgba(255,255,255,.15);color:#fff;resize:none;font-family:inherit;line-height:1.4;outline:none;min-width:0"></textarea>
-            <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.3em .6em;font-size:.75em;border:1px solid rgba(255,255,255,.5);border-radius:.45em;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4;height:fit-content">저장</button>
-          </div>
-        </div>
+      </div>
+    </div>
+  </div>
+  <div id="st-memo-area" style="display:none;margin-top:.5em" onclick="event.stopPropagation()">
+    <div class="card" style="padding:.65em .75em">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.4em;margin-bottom:.3em">
+        <span style="font-size:.8em;color:var(--muted);font-weight:600">📝 연상 메모</span>
+        <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.25em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">저장</button>
+      </div>
+      <div class="memo-row">
+        <textarea id="st-memo" data-memo-en="" placeholder="📝 연상 메모를 입력하세요..." rows="1"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+          style="width:100%;box-sizing:border-box;font-size:.82em;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;overflow:hidden;font-family:inherit;line-height:1.5;outline:none"></textarea>
       </div>
     </div>
   </div>
@@ -2557,12 +2563,13 @@ function renderSt(){
   const w=stWords[stIdx];
   document.getElementById('st-word').textContent=w.en;
   document.getElementById('st-ko').textContent=w.ko.join(' / ');
-  document.getElementById('st-sec').textContent=(w.secs||[]).join(' · ');
+  document.getElementById('st-sec').textContent='';
   document.getElementById('st-counter').textContent=`${stIdx+1} / ${stWords.length}`;
   document.getElementById('st-prog').style.width=((stIdx+1)/stWords.length*100)+'%';
   document.getElementById('fc-reveal').classList.remove('show');
   document.getElementById('fc-hint').style.display='block';
-  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';stMemoTa.readOnly=false;stMemoTa.style.opacity='1';stMemoTa.style.cursor='';const stMemoBtn=stMemoTa.closest('.memo-row')&&stMemoTa.closest('.memo-row').querySelector('button');if(stMemoBtn)stMemoBtn.textContent='저장';initMemoRow(stMemoTa,stMemoBtn);
+  const stMemoArea=document.getElementById('st-memo-area');if(stMemoArea)stMemoArea.style.display='none';
+  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';stMemoTa.style.height='auto';stMemoTa.readOnly=false;stMemoTa.style.opacity='1';stMemoTa.style.cursor='';const stMemoBtn=stMemoTa.closest('.card')&&stMemoTa.closest('.card').querySelector('button');if(stMemoBtn)stMemoBtn.textContent='저장';initMemoRow(stMemoTa,stMemoBtn);
   updateFavBtn();
   // etymology
   const etym=ETYM[w.en.toLowerCase()];
@@ -2581,6 +2588,8 @@ function toggleFcReveal(){
   const hint=document.getElementById('fc-hint');
   reveal.classList.add('show');
   hint.style.display='none';
+  const ma=document.getElementById('st-memo-area');
+  if(ma){ma.style.display='';requestAnimationFrame(()=>{const ta=document.getElementById('st-memo');if(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';}});}
 }
 function openFcExpand(){
   fcExpanded=true;
