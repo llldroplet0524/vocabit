@@ -2277,6 +2277,7 @@ function showSc(n,customHash){
   _updateScrollTopBtn();
   // close expanded overlay when navigating away from study
   if(n!=='study'){var ov=document.getElementById('fc-overlay');if(ov)ov.classList.remove('show');fcExpanded=false;if(apActive)stopAutoPlay();}
+  if(typeof stopSeq==='function')stopSeq();
 }
 function navigateToHash(hash){
   _inNavigation=true;
@@ -2748,7 +2749,7 @@ function renderQ(){
     const dWords=distractorWords(w,'en-ko',1);
     qOptWordsMap[correct]=w;
     dWords.forEach(dw=>{qOptWordsMap[dw.ko.join(' / ')]=dw;});
-    const opts=shuffle([correct,...dWords.map(dw=>dw.ko.join(' / '))]);
+    const opts=shuffle([...new Set([correct,...dWords.map(dw=>dw.ko.join(' / '))])]);
     renderOpts(opts,correct,w,'en-ko');
   }else if(q.type==='ko-en'){
     badge.textContent='한국어 → 영어';
@@ -2757,7 +2758,7 @@ function renderQ(){
     const dWords=distractorWords(w,'ko-en',1);
     qOptWordsMap[w.en]=w;
     dWords.forEach(dw=>{qOptWordsMap[dw.en]=dw;});
-    const opts=shuffle([w.en,...dWords.map(dw=>dw.en)]);
+    const opts=shuffle([...new Set([w.en,...dWords.map(dw=>dw.en)])]);
     renderOpts(opts,w.en,w,'ko-en');
   }else{
     badge.textContent='직접 입력';
