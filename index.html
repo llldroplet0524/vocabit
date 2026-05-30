@@ -2753,7 +2753,7 @@ function renderQ(){
   document.getElementById('q-opts').style.display='';
   document.getElementById('q-type-area').style.display='none';
   document.getElementById('q-tts').style.display='none';
-  document.getElementById('q-fav-btn').style.display='inline-flex';
+  const _qfb=document.getElementById('q-fav-btn');if(_qfb)_qfb.style.display='inline-flex';
   qOptWordsMap={};qEnWord=w.en;updateQFavBtn();
   const badge=document.getElementById('q-badge');
   const qTextEl=document.getElementById('q-text');
@@ -2887,9 +2887,13 @@ function nextQ(){
     dbSave(); // ensure last question's history reaches Firebase
     if(!isWrongQuizMode && qSecs && qSecs.length){
       const entry={ts:Date.now(),secs:[...qSecs],score:qScore,total:qQuestions.length,mode:qMode};
-      if(qMode==='type')quizLog.unshift(entry);
-      if(quizLog.length>500)quizLog=quizLog.slice(0,500);
-      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+      if(qMode==='type'){
+        quizLog.unshift(entry);
+        if(quizLog.length>500)quizLog=quizLog.slice(0,500);
+        try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+        // 즉시 Firebase에 기록 (debounce 우회)
+        DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('quizLog sync',e));
+      }
     }
     showSc('result');
     const pct=Math.round(qScore/qQuestions.length*100);
