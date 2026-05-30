@@ -2153,6 +2153,18 @@ function dbLoad(){
       });
       try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))));}catch(e){}
     }
+    // allWrong에 없는 allHistory 항목 정리 (Firebase 로드 후 실행)
+    (function(){
+      const toDelete=[];
+      allHistory.forEach((_,en)=>{if(!allWrong.has(en))toDelete.push(en);});
+      if(toDelete.length){
+        const now=Date.now();
+        toDelete.forEach(en=>{allHistory.delete(en);_histDeleted.set(en,now);});
+        try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
+        setTimeout(()=>{DOC.set({deletedHistData:[..._histDeleted.entries()].map(([en,ts])=>({en,ts}))},{merge:true}).catch(e=>console.error('cleanHist',e));},1000);
+        if(document.getElementById('sc-history').classList.contains('active'))goHistory();
+      }
+    })();
     _doInitNav();
     refreshSectionStats();
     updateHomeResume();
@@ -2215,6 +2227,7 @@ var _etymGroups=[];
   dbLoad();
   updateHomeResume();
   if(favorites.size>0)setTimeout(dbSaveFavNow,1500);
+  if(allWrong.size>0)setTimeout(dbSave,2000);
   // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제 (Firebase 직접 덮어쓰기)
   (function(){
     const before=quizLog.length;
@@ -3413,7 +3426,16 @@ function goHistory(){
     list.innerHTML='<div style="text-align:center;color:var(--muted);padding:2em;font-size:.9em">오답이 없습니다.</div>';
     showSc('history');return;
   }
-  const sorted=[...allHistory.values()].filter(({word})=>allWrong.has((word.en||'').toLowerCase().trim())).sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
+  // 오답만: allWrong 단어 중 마지막 결과가 틀린 것
+  // 전체: allWrong에 있는 모든 단어 (최근 정답 포함)
+  const wrongWords=[...allWrong.keys()];
+  let sorted;
+  if(histSeg==='wrong'){
+    sorted=wrongWords.map(en=>allHistory.get(en)||{word:{en,ko:allWrong.get(en)?.word?.ko||[]},results:[]}).filter(({results})=>{const r=results||[];return r.length===0||r[r.length-1]===false;});
+  }else{
+    sorted=wrongWords.map(en=>allHistory.get(en)||{word:{en,ko:allWrong.get(en)?.word?.ko||[]},results:[]});
+  }
+  sorted.sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
   sorted.forEach(({word,results})=>{
     const res=results||[];
     const wrongs=res.filter(r=>!r).length;
