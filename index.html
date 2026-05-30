@@ -4048,36 +4048,41 @@ function _renderAntonyms(){
   const _ko=(en,fb)=>_wm.get(en.toLowerCase().trim())||fb;
   const _kjSet=new Set();SECTIONS.filter(s=>s.src==='k'||s.src==='j').forEach(s=>s.words.forEach(w=>_kjSet.add(w.en.toLowerCase().trim())));
   const _inExcelOnly=(en)=>!_kjSet.has(en.toLowerCase().trim());
-  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[_ko(aEn,aKo)],inSec:_inExcelOnly(aEn)},{en:bEn,ko:[_ko(bEn,bKo)],inSec:_inExcelOnly(bEn)}]);
+  // 메인 단어 기준으로 그룹화
+  const gMap=new Map();
+  ANTONYM_PAIRS.forEach(([aEn,aKo,bEn,bKo])=>{
+    const key=aEn.toLowerCase().trim();
+    if(!gMap.has(key))gMap.set(key,{en:aEn,ko:_ko(aEn,aKo),inSec:_inExcelOnly(aEn),ants:[]});
+    gMap.get(key).ants.push({en:bEn,ko:_ko(bEn,bKo),inSec:_inExcelOnly(bEn)});
+  });
+  let groups=[...gMap.values()];
   const enSet=new Set(),koSet=new Set();
-  pairs.forEach(([wa,wb])=>{
-    [wa.en,wb.en].forEach(e=>{if(e[0])enSet.add(e[0].toUpperCase());});
-    [...wa.ko,...wb.ko].forEach(k=>{const ki=_koIni(k);if(ki)koSet.add(ki);});
+  groups.forEach(g=>{
+    if(g.en[0])enSet.add(g.en[0].toUpperCase());
+    const ki=_koIni(g.ko);if(ki)koSet.add(ki);
   });
   _buildSynNav(enSet,koSet);
-  if(q)pairs=pairs.filter(([wa,wb])=>wa.en.toLowerCase().includes(q)||wb.en.toLowerCase().includes(q)||wa.ko.some(k=>k.includes(q))||wb.ko.some(k=>k.includes(q)));
-  if(_synLetter)pairs=pairs.filter(([wa,wb])=>_matchLetter([wa.en,wb.en],[...wa.ko,...wb.ko],_synLetter));
-  pairs.sort((a,b)=>a[0].en.localeCompare(b[0].en));
-  document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+pairs.length+'쌍)';
+  if(q)groups=groups.filter(g=>g.en.toLowerCase().includes(q)||g.ko.includes(q)||g.ants.some(a=>a.en.toLowerCase().includes(q)||a.ko.includes(q)));
+  if(_synLetter)groups=groups.filter(g=>_matchLetter([g.en,...g.ants.map(a=>a.en)],[g.ko,...g.ants.map(a=>a.ko)],_synLetter));
+  groups.sort((a,b)=>a.en.localeCompare(b.en));
+  document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+groups.length+'그룹)';
   const el=document.getElementById('syn-list');
-  if(!pairs.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
-  el.innerHTML=pairs.map(([wa,wb])=>`
-    <div class="card" style="margin-bottom:.45em;padding:.65em .9em;display:flex;align-items:center;gap:.75em">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:.3em">
-          <span style="font-weight:700;font-size:.9em">${wa.en}</span>${wa.inSec?'<span style="font-size:.65em" title="학습 단어">✅</span>':''}
-          <button onclick="speak(this.dataset.word)" data-word="${wa.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
-        </div>
-        <div style="font-size:.75em;color:var(--muted)">${wa.ko.join(' / ')}</div>
+  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
+  el.innerHTML=groups.map(g=>`
+    <div class="etym-group">
+      <div class="etym-group-hd">
+        <span style="font-weight:700;font-size:.9em">${g.en}</span>${g.inSec?'<span style="font-size:.65em;margin-left:.15em">✅</span>':''}
+        <button onclick="speak(this.dataset.word)" data-word="${g.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;margin-left:.2em">🔊</button>
+        <span style="font-size:.78em;color:var(--muted);margin-left:.2em">${g.ko}</span>
+        <span style="margin-left:auto;font-size:.75em;color:var(--muted)">↔ ${g.ants.length}개</span>
       </div>
-      <div style="font-size:1.1em;color:var(--muted);flex-shrink:0">↔</div>
-      <div style="flex:1;min-width:0;text-align:right">
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3em">
-          <button onclick="speak(this.dataset.word)" data-word="${wb.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
-          ${wb.inSec?'<span style="font-size:.65em" title="학습 단어">✅</span>':''}<span style="font-weight:700;font-size:.9em">${wb.en}</span>
+      <div class="etym-word-grid">${g.ants.map(a=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
+        <div style="display:flex;align-items:center;gap:.3em;min-width:0">
+          <span style="font-weight:700;font-size:.9em;flex-shrink:0">${a.en}</span>${a.inSec?'<span style="font-size:.65em;margin-left:.1em">✅</span>':''}
+          <button onclick="speak(this.dataset.word)" data-word="${a.en}" class="tts" style="font-size:.72em;padding:.0625em .25em;flex-shrink:0">🔊</button>
+          <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${a.ko}</span>
         </div>
-        <div style="font-size:.75em;color:var(--muted)">${wb.ko.join(' / ')}</div>
-      </div>
+      </div>`).join('')}</div>
     </div>`).join('');
 }
 function goMemos(){
