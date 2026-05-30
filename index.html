@@ -606,6 +606,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
   <div style="display:flex;gap:.4em;margin-bottom:.65em">
     <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
     <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
+    <button id="syn-tab-spell" onclick="setSynTab('spell')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">스펠링</button>
   </div>
   <div id="syn-list"></div>
 </div>
@@ -3605,7 +3606,7 @@ function setSynTab(t){
   _synTab=t;_updateSynTabBtns();renderSynTab();
 }
 function _updateSynTabBtns(){
-  ['dong','ant'].forEach(t=>{
+  ['dong','ant','spell'].forEach(t=>{
     const btn=document.getElementById('syn-tab-'+t);
     btn.style.background=_synTab===t?'var(--primary)':'var(--card)';
     btn.style.color=_synTab===t?'#fff':'var(--muted)';
@@ -3614,6 +3615,7 @@ function _updateSynTabBtns(){
 }
 function renderSynTab(){
   if(_synTab==='dong')_renderDongUieo();
+  else if(_synTab==='spell')_renderSpelling();
   else _renderAntonyms();
 }
 function _renderDongUieo(){
@@ -3673,6 +3675,85 @@ function _renderSynonyms(){
       </div>`).join('')}
     </div>`).join('');
 }
+const _SUFFIXES=[
+  'ization','isation','ification','ication',
+  'ation','ition','tion','sion',
+  'ment',
+  'ability','ibility','able','ible',
+  'fulness','lessly','ness','less','ful',
+  'ically','ical','ic',
+  'ially','ial','ally','al',
+  'iously','eous','iously','ious','ously','ous',
+  'atively','ative','ively','ive',
+  'ance','ence',
+  'ity',
+  'ize','ise',
+  'ify',
+  'ently','antly','ent','ant',
+  'ery','ary','ory',
+  'ward',
+  'ure',
+  'age',
+  'ate',
+  'ist',
+  'er','or',
+  'ly',
+];
+function _getSuffix(w){
+  const lw=w.toLowerCase();
+  for(const s of _SUFFIXES){
+    if(lw.endsWith(s)&&lw.length>s.length+2)return '-'+s;
+  }
+  return null;
+}
+var _spellMode='prefix';
+function _renderSpelling(){
+  const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
+  const el=document.getElementById('syn-list');
+  // build word list
+  const allWords=[];
+  const seen=new Set();
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    if(!seen.has(w.en)){seen.add(w.en);allWords.push(w);}
+  }));
+  // sub-tab chips html (injected at top of list)
+  const chips=`<div style="display:flex;gap:.4em;margin-bottom:.7em">
+    <button onclick="_setSpellMode('prefix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접두사</button>
+    <button onclick="_setSpellMode('suffix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접미사</button>
+  </div>`;
+  const groupMap=new Map();
+  if(_spellMode==='prefix'){
+    allWords.forEach(w=>{
+      const key=w.en.toLowerCase().slice(0,4);
+      if(!groupMap.has(key))groupMap.set(key,[]);
+      groupMap.get(key).push(w);
+    });
+  } else {
+    allWords.forEach(w=>{
+      const s=_getSuffix(w.en);
+      if(!s)return;
+      if(!groupMap.has(s))groupMap.set(s,[]);
+      groupMap.get(s).push(w);
+    });
+  }
+  let groups=[...groupMap.entries()]
+    .filter(([,ws])=>ws.length>=2)
+    .sort((a,b)=>b[1].length-a[1].length);
+  if(q){
+    groups=groups.filter(([key,ws])=>
+      key.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
+  }
+  if(!groups.length){el.innerHTML=chips+'<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
+  el.innerHTML=chips+groups.map(([key,ws])=>`
+    <div class="card" style="margin-bottom:.55em;padding:.75em">
+      <div style="font-size:.8em;font-weight:700;color:var(--primary);margin-bottom:.45em;font-family:monospace;letter-spacing:.04em">${key}</div>
+      ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
+        <span style="font-weight:700;font-size:.9em;min-width:8em">${w.en}</span>
+        <span style="color:var(--muted);font-size:.78em">${w.ko.slice(0,2).join(' / ')}</span>
+      </div>`).join('')}
+    </div>`).join('');
+}
+function _setSpellMode(m){_spellMode=m;_renderSpelling();}
 function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const wordMap=new Map();
