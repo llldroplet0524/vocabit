@@ -2062,6 +2062,7 @@ function dbLoad(){
         localStorage.setItem('vocabit-fav',JSON.stringify(d.favorites));
         localStorage.setItem('vocabit-fav-ts',String(fsTs));
         updateHomeFavBtn();
+        if(document.getElementById('sc-favorites').classList.contains('active'))goFavorites();
       }
     }
     if(d.deletedHistData){
@@ -2875,7 +2876,7 @@ function nextQ(){
     dbSave(); // ensure last question's history reaches Firebase
     if(!isWrongQuizMode && qSecs && qSecs.length){
       const entry={ts:Date.now(),secs:[...qSecs],score:qScore,total:qQuestions.length,mode:qMode};
-      quizLog.unshift(entry);
+      if(qMode==='type')quizLog.unshift(entry);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
     }
