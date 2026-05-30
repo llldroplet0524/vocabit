@@ -3853,7 +3853,8 @@ function renderSynTab(){
 }
 function _renderDongUieo(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words}));
+  const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '||''));}));
+  let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words.map(w=>({en:w.en,ko:_wm.get(w.en.toLowerCase().trim())||w.ko}))}));
   const koSet=new Set();
   groups.forEach(g=>{const ki=_koIni(g.ko);if(ki)koSet.add(ki);});
   const hasWave=groups.some(g=>(g.ko||'').startsWith('~'));
@@ -4009,7 +4010,9 @@ function _renderSpelling(){
 function _setSpellMode(m){_spellMode=m;_curHash='synonyms-spell-'+m;location.hash='synonyms-spell-'+m;_renderSpelling();}
 function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[aKo]},{en:bEn,ko:[bKo]}]);
+  const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '));}));
+  const _ko=(en,fb)=>_wm.get(en.toLowerCase().trim())||fb;
+  let pairs=ANTONYM_PAIRS.map(([aEn,aKo,bEn,bKo])=>[{en:aEn,ko:[_ko(aEn,aKo)]},{en:bEn,ko:[_ko(bEn,bKo)]}]);
   const enSet=new Set(),koSet=new Set();
   pairs.forEach(([wa,wb])=>{
     [wa.en,wb.en].forEach(e=>{if(e[0])enSet.add(e[0].toUpperCase());});
