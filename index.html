@@ -2075,9 +2075,7 @@ function dbLoad(){
     if(d.deletedWrongData){
       d.deletedWrongData.forEach(({en,ts})=>{
         const cur=_wrongDeleted.get(en)||0;
-        const wrongTs=(allWrong.get(en)||{}).ts||0;
-        // Only apply tombstone if it's newer than both current tombstone and any local wrong entry
-        if(ts>cur&&ts>wrongTs){_wrongDeleted.set(en,ts);allWrong.delete(en);}
+        if(ts>cur){_wrongDeleted.set(en,ts);allWrong.delete(en);}
       });
       try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
     }
@@ -2091,7 +2089,7 @@ function dbLoad(){
         else if(v.count>allWrong.get(v.en).count){allWrong.get(v.en).count=v.count;allWrong.get(v.en).ts=v.ts||0;}
       });
       // Remove any tombstoned items that slipped into allWrong
-      _wrongDeleted.forEach((ts,en)=>{const wrongTs=(allWrong.get(en)||{}).ts||0;if(ts>0&&ts>wrongTs)allWrong.delete(en);});
+      _wrongDeleted.forEach((ts,en)=>{if(ts>0)allWrong.delete(en);});
       try{localStorage.setItem('vocabit-wrong',JSON.stringify([...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}))));}catch(e){}
       updateHomeWrongBtn();
     }
@@ -3354,7 +3352,6 @@ function resetSecStats(secId){
       const word=allHistory.has(w.en)?allHistory.get(w.en).word:{en:w.en,ko:w.ko||[]};
       allHistory.set(w.en,{word,results:[],ts:now});
       typeHistory.set(w.en,{results:[],ts:now});
-      if(allWrong.has(w.en)){allWrong.delete(w.en);_wrongDeleted.set(w.en,now);}
     });
     try{localStorage.setItem('vocabit-type-hist',JSON.stringify([...typeHistory.entries()].map(([en,v])=>({en,results:v.results,ts:v.ts||0}))));}catch(e){}
     dbSave();
