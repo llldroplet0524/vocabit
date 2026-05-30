@@ -3911,8 +3911,8 @@ function _renderDongUieo(){
       <div class="etym-group-hd">
         <span class="etym-root-badge">${g.ko}</span>
         <span style="margin-left:auto;display:flex;gap:.3em;align-items:center">
-          <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×5" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},5)">↻ ×5</button>
-          <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×10" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},10)">↻ ×10</button>
+          <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×5" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×5</button>
+          <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×10" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×10</button>
         </span>
       </div>
       <div class="etym-word-grid">${g.words.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
@@ -4006,8 +4006,8 @@ function _renderSpelling(){
         <span class="etym-root-badge">${_spellMode==='prefix'?key+'…':key}</span>
         <span class="etym-root-meaning">${ws.length}개</span>
         <span style="margin-left:auto;display:flex;gap:.3em;align-items:center">
-          <button id="spell-pb-${i}-1" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×5" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-2',${i},5)">↻ ×5</button>
-          <button id="spell-pb-${i}-2" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×10" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-1',${i},10)">↻ ×10</button>
+          <button id="spell-pb-${i}-1" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×5" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-2',${i},1)">↻ ×5</button>
+          <button id="spell-pb-${i}-2" class="btn btn-s" style="font-size:.78em;padding:.2em .7em" data-orig="↻ ×10" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-1',${i},2)">↻ ×10</button>
         </span>
       </div>
       <div class="etym-word-grid">${ws.map(w=>`<div style="border:1px solid var(--border);border-radius:.4em;padding:.35em .5em;background:var(--bg);min-width:0">
@@ -4635,7 +4635,7 @@ function playSeq(items,repeat,btnEl,sibEl){
   if(sibEl){sibEl.disabled=true;sibEl.style.opacity='.4';}
   setTimeout(_nextSeq,100);
 }
-function _koTts(s){return(s||'').replace(/~/g,'뭐뭐 ');}
+function _koTts(s){return(s||'').replace(/~/g,'뭐뭐 ').replace(/ \/ /g,', ').replace(/\//g,', ');}
 function toggleSynCatPlay(btn,sibId,idx,repeat){
   if(_seqActiveBtn===btn){stopSeq();return;}
   const cat=_synCategoryData[idx];if(!cat)return;
