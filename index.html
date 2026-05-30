@@ -3483,11 +3483,14 @@ function setHistQuizType(type){
 }
 function goHistoryStudy(mode){
   const wm=buildAllWordsMap();
-  let entries=[...allHistory.values()];
+  const wrongWords=[...allWrong.keys()];
+  let filtered;
   if(mode==='wrong'){
-    entries=entries.filter(({results})=>{const r=results||[];return r.length>0&&r[r.length-1]===false;});
+    filtered=wrongWords.filter(en=>{const r=(allHistory.get(en)?.results)||[];return r.length===0||r[r.length-1]===false;});
+  }else{
+    filtered=wrongWords;
   }
-  const words=entries.map(({word})=>wm.get(word.en.toLowerCase().trim())).filter(Boolean);
+  const words=filtered.map(en=>wm.get(en.toLowerCase().trim())||wm.get(en)).filter(Boolean);
   if(!words.length){alert('해당하는 단어가 없습니다.');return;}
   isWrongStudyMode=false;
   stWords=words;stIdx=0;
@@ -3496,11 +3499,14 @@ function goHistoryStudy(mode){
 function startHistoryQuiz(quizMode){
   document.getElementById('history-quiz-picker').style.display='none';
   const wm=buildAllWordsMap();
-  let entries=[...allHistory.values()];
+  const wrongWords=[...allWrong.keys()];
+  let filtered;
   if(histSeg==='wrong'){
-    entries=entries.filter(({results})=>{const r=results||[];return r.length>0&&r[r.length-1]===false;});
+    filtered=wrongWords.filter(en=>{const r=(allHistory.get(en)?.results)||[];return r.length===0||r[r.length-1]===false;});
+  }else{
+    filtered=wrongWords;
   }
-  const words=entries.map(({word})=>wm.get(word.en.toLowerCase().trim())).filter(Boolean);
+  const words=filtered.map(en=>wm.get(en.toLowerCase().trim())||wm.get(en)).filter(Boolean);
   if(!words.length){alert('해당하는 단어가 없습니다.');return;}
   isWrongQuizMode=false;
   qSecs=[];
