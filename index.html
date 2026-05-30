@@ -4125,13 +4125,15 @@ function renderMemoList(){
         <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.28em .65em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">저장</button>
       </div>
       <div class="memo-row">
-        <textarea data-memo-en="${e.en}" rows="2"
-          style="width:100%;box-sizing:border-box;font-size:.82em;padding:.5em .7em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;line-height:1.5;outline:none"></textarea>
+        <textarea data-memo-en="${e.en}" rows="1"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+          style="width:100%;box-sizing:border-box;font-size:.82em;padding:.5em .7em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;overflow:hidden;font-family:inherit;line-height:1.5;outline:none"></textarea>
       </div>
     </div>`;
   }).join('');
   listEl.querySelectorAll('textarea[data-memo-en]').forEach(ta=>{
     ta.value=(wordNotes.get(ta.dataset.memoEn)||{}).note||'';
+    ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';
     const btn=ta.closest('.card')&&ta.closest('.card').querySelector('button');
     if(btn)btn.textContent='저장';
     initMemoRow(ta,btn);
