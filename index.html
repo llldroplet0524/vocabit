@@ -594,20 +594,21 @@ h1{text-align:left;padding:1.25em 0 .875em}
 
 <!-- SYNONYMS / ANTONYMS -->
 <div id="sc-synonyms" class="screen">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6em">
-    <div style="font-size:1.05em;font-weight:700">🔗 동의어 · 반의어</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5em">
+    <div id="syn-page-title" style="font-size:1.05em;font-weight:700">🔗 동의어 · 반의어</div>
     <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
   </div>
-  <div style="position:relative;margin-bottom:.6em">
-    <input id="syn-search" type="text" autocomplete="off" placeholder="단어 검색..."
-      style="width:100%;padding:.55em .75em;border:1px solid var(--border);border-radius:.5em;font-size:.88em;font-family:inherit;outline:none;box-sizing:border-box"
+  <div style="margin-bottom:.5em">
+    <input id="syn-search" type="text" autocomplete="off" placeholder="영어 또는 한국어로 검색..."
+      style="width:100%;padding:.55em .8em;border:1.5px solid var(--border);border-radius:.625em;font-size:.88em;font-family:inherit;outline:none;box-sizing:border-box"
       oninput="renderSynTab()">
   </div>
-  <div style="display:flex;gap:.4em;margin-bottom:.65em">
+  <div style="display:flex;gap:.4em;margin-bottom:.55em">
     <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
     <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
     <button id="syn-tab-spell" onclick="setSynTab('spell')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">스펠링</button>
   </div>
+  <div id="syn-nav" style="margin-bottom:.55em"></div>
   <div id="syn-list"></div>
 </div>
 </div><!-- /.wrap -->
@@ -3595,15 +3596,52 @@ const ANTONYM_PAIRS=[
 ];
 
 var _synTab='dong';
+var _synLetter='';
+const _EN_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const _KO_LETTERS=['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function _koIni(str){
+  const c=(str||'').charCodeAt(0);
+  if(c<0xAC00||c>0xD7A3)return null;
+  const ALL=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  const MERGE={ㄲ:'ㄱ',ㄸ:'ㄷ',ㅃ:'ㅂ',ㅆ:'ㅅ',ㅉ:'ㅈ'};
+  const ini=ALL[Math.floor((c-0xAC00)/588)];
+  return MERGE[ini]||ini;
+}
+function _matchLetter(enWords,koWords,letter){
+  if(!letter)return true;
+  const isKo=_KO_LETTERS.includes(letter);
+  if(isKo)return koWords.some(k=>_koIni(k)===letter);
+  return enWords.some(e=>e[0]&&e[0].toUpperCase()===letter);
+}
+function _buildSynNav(enSet,koSet){
+  const nav=document.getElementById('syn-nav');
+  if(!nav)return;
+  const chipStyle=(active)=>`min-width:1.9em;padding:.18em .25em;font-size:.76em;border:1px solid ${active?'var(--primary)':'var(--border)'};border-radius:.4em;background:${active?'var(--primary)':'var(--card)'};color:${active?'#fff':'var(--text)'};cursor:pointer;font-family:inherit;font-weight:700;line-height:1.4;text-align:center`;
+  let html='';
+  const enAvail=_EN_LETTERS.filter(l=>enSet.has(l));
+  if(enAvail.length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:.25em;margin-bottom:.3em">';
+    enAvail.forEach(l=>{html+=`<button onclick="_synLetterClick('${l}')" style="${chipStyle(_synLetter===l)}">${l}</button>`;});
+    html+='</div>';
+  }
+  const koAvail=_KO_LETTERS.filter(l=>koSet.has(l));
+  if(koAvail.length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:.25em">';
+    koAvail.forEach(l=>{html+=`<button onclick="_synLetterClick('${l}')" style="${chipStyle(_synLetter===l)}">${l}</button>`;});
+    html+='</div>';
+  }
+  nav.innerHTML=html;
+}
+function _synLetterClick(l){_synLetter=_synLetter===l?'':l;renderSynTab();}
 function goSynonyms(){
   document.getElementById('syn-search').value='';
-  _synTab='dong';
+  _synTab='dong';_synLetter='';
   _updateSynTabBtns();
   renderSynTab();
   showSc('synonyms');
 }
 function setSynTab(t){
-  _synTab=t;_updateSynTabBtns();renderSynTab();
+  _synTab=t;_synLetter='';_updateSynTabBtns();renderSynTab();
 }
 function _updateSynTabBtns(){
   ['dong','ant','spell'].forEach(t=>{
@@ -3620,7 +3658,6 @@ function renderSynTab(){
 }
 function _renderDongUieo(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  // 첫 번째 ko가 완전히 일치하는 단어끼리 묶음
   const koMap=new Map();
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
     const key=w.ko[0]||'';
@@ -3628,17 +3665,23 @@ function _renderDongUieo(){
     if(!koMap.has(key))koMap.set(key,[]);
     if(!koMap.get(key).find(x=>x.en===w.en))koMap.get(key).push(w);
   }));
-  let groups=[...koMap.entries()]
-    .filter(([,ws])=>ws.length>=2)
-    .sort((a,b)=>b[1].length-a[1].length);
-  if(q){
-    groups=groups.filter(([ko,ws])=>ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
-  }
+  let groups=[...koMap.entries()].filter(([,ws])=>ws.length>=2);
+  // build nav sets
+  const enSet=new Set(),koSet=new Set();
+  groups.forEach(([ko,ws])=>{
+    ws.forEach(w=>{if(w.en[0])enSet.add(w.en[0].toUpperCase());});
+    const ki=_koIni(ko);if(ki)koSet.add(ki);
+  });
+  _buildSynNav(enSet,koSet);
+  if(q)groups=groups.filter(([ko,ws])=>ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
+  if(_synLetter)groups=groups.filter(([ko,ws])=>_matchLetter(ws.map(w=>w.en),[ko],_synLetter));
+  groups.sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+groups.length+'그룹)';
   const el=document.getElementById('syn-list');
   if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
   el.innerHTML=groups.map(([ko,ws])=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
-      <div style="font-size:.78em;font-weight:700;color:var(--primary);margin-bottom:.45em">${ko}</div>
+      <div style="margin-bottom:.45em"><span style="font-size:1em;font-weight:800;color:var(--primary-dark)">${ko}</span></div>
       ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
         <span style="font-weight:700;font-size:.9em;min-width:7em">${w.en}</span>
         <span style="color:var(--muted);font-size:.78em">${w.ko.join(' / ')}</span>
@@ -3721,6 +3764,13 @@ function _renderSpelling(){
     <button onclick="_setSpellMode('prefix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='prefix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='prefix'?'var(--primary)':'var(--card)'};color:${_spellMode==='prefix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접두사</button>
     <button onclick="_setSpellMode('suffix')" style="padding:.22em .65em;font-size:.76em;border:1px solid ${_spellMode==='suffix'?'var(--primary)':'var(--border)'};border-radius:2em;background:${_spellMode==='suffix'?'var(--primary)':'var(--card)'};color:${_spellMode==='suffix'?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit;font-weight:600">접미사</button>
   </div>`;
+  // build nav (English only for spelling)
+  const enSet=new Set();
+  [...groupMap.entries()].filter(([,ws])=>ws.length>=2).forEach(([key,ws])=>{
+    ws.forEach(w=>{if(w.en[0])enSet.add(w.en[0].toUpperCase());});
+    if(_spellMode==='prefix'&&key[0])enSet.add(key[0].toUpperCase());
+  });
+  _buildSynNav(enSet,new Set());
   const groupMap=new Map();
   if(_spellMode==='prefix'){
     allWords.forEach(w=>{
@@ -3739,14 +3789,14 @@ function _renderSpelling(){
   let groups=[...groupMap.entries()]
     .filter(([,ws])=>ws.length>=2)
     .sort((a,b)=>b[1].length-a[1].length);
-  if(q){
-    groups=groups.filter(([key,ws])=>
-      key.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
-  }
+  if(q)groups=groups.filter(([key,ws])=>key.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
+  if(_synLetter)groups=groups.filter(([key,ws])=>_matchLetter([key,...ws.map(w=>w.en)],[],_synLetter));
+  groups.sort((a,b)=>a[0].localeCompare(b[0]));
+  document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+groups.length+'그룹)';
   if(!groups.length){el.innerHTML=chips+'<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
   el.innerHTML=chips+groups.map(([key,ws])=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
-      <div style="margin-bottom:.5em"><span style="display:inline-block;background:var(--primary);color:#fff;font-size:.78em;font-weight:700;padding:.18em .65em;border-radius:2em;font-family:monospace;letter-spacing:.05em">${_spellMode==='prefix'?key+'…':key}</span></div>
+      <div style="margin-bottom:.45em"><span style="font-size:1.05em;font-weight:800;color:var(--primary-dark);font-family:monospace;letter-spacing:.04em">${_spellMode==='prefix'?key+'…':key}</span><span style="font-size:.75em;color:var(--muted);margin-left:.5em">${ws.length}개</span></div>
       ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
         <span style="font-weight:700;font-size:.9em;min-width:8em">${w.en}</span>
         <span style="color:var(--muted);font-size:.78em">${w.ko.slice(0,2).join(' / ')}</span>
@@ -3757,25 +3807,21 @@ function _setSpellMode(m){_spellMode=m;_renderSpelling();}
 function _renderAntonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
   const wordMap=new Map();
-  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    const k=w.en.toLowerCase();
-    if(!wordMap.has(k))wordMap.set(k,w);
-  }));
-  let pairs=ANTONYM_PAIRS
-    .filter(([a,b])=>wordMap.has(a.toLowerCase())&&wordMap.has(b.toLowerCase()))
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{const k=w.en.toLowerCase();if(!wordMap.has(k))wordMap.set(k,w);}));
+  let pairs=ANTONYM_PAIRS.filter(([a,b])=>wordMap.has(a.toLowerCase())&&wordMap.has(b.toLowerCase()))
     .map(([a,b])=>[wordMap.get(a.toLowerCase()),wordMap.get(b.toLowerCase())]);
-  // deduplicate by sorted pair key
   const seen=new Set();
-  pairs=pairs.filter(([wa,wb])=>{
-    const key=[wa.en,wb.en].sort().join('|');
-    if(seen.has(key))return false;seen.add(key);return true;
+  pairs=pairs.filter(([wa,wb])=>{const key=[wa.en,wb.en].sort().join('|');if(seen.has(key))return false;seen.add(key);return true;});
+  const enSet=new Set(),koSet=new Set();
+  pairs.forEach(([wa,wb])=>{
+    [wa.en,wb.en].forEach(e=>{if(e[0])enSet.add(e[0].toUpperCase());});
+    [...wa.ko,...wb.ko].forEach(k=>{const ki=_koIni(k);if(ki)koSet.add(ki);});
   });
-  if(q){
-    pairs=pairs.filter(([wa,wb])=>
-      wa.en.toLowerCase().includes(q)||wb.en.toLowerCase().includes(q)||
-      wa.ko.some(k=>k.includes(q))||wb.ko.some(k=>k.includes(q)));
-  }
+  _buildSynNav(enSet,koSet);
+  if(q)pairs=pairs.filter(([wa,wb])=>wa.en.toLowerCase().includes(q)||wb.en.toLowerCase().includes(q)||wa.ko.some(k=>k.includes(q))||wb.ko.some(k=>k.includes(q)));
+  if(_synLetter)pairs=pairs.filter(([wa,wb])=>_matchLetter([wa.en,wb.en],[...wa.ko,...wb.ko],_synLetter));
   pairs.sort((a,b)=>a[0].en.localeCompare(b[0].en));
+  document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+pairs.length+'쌍)';
   const el=document.getElementById('syn-list');
   if(!pairs.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
   el.innerHTML=pairs.map(([wa,wb])=>`
