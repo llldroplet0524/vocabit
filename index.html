@@ -616,6 +616,9 @@ h1{text-align:left;padding:1.25em 0 .875em}
 <script>
 var _curHash=''; // declared before IIFE to avoid TDZ
 var fcExpanded=false;
+var _initHash=location.hash.replace('#','');
+var _initNavDone=false;
+function _doInitNav(){if(_initNavDone)return;_initNavDone=true;navigateToHash(_initHash);}
 // ── DATA ──────────────────────────────────────────────
 const SECTIONS=[
 {id:'k001',name:'켈리지텔프 001~010',src:'k',words:[
@@ -2124,6 +2127,7 @@ function dbLoad(){
       });
       try{localStorage.setItem('vocabit-notes',JSON.stringify([...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))));}catch(e){}
     }
+    _doInitNav();
     refreshSectionStats();
     updateHomeResume();
   },e=>console.error('dbLoad error',e));
@@ -2184,7 +2188,7 @@ var _etymGroups=[];
   updateHomeFavBtn();
   dbLoad();
   updateHomeResume();
-  setTimeout(()=>navigateToHash(location.hash.replace('#','')),50);
+  setTimeout(_doInitNav,400);
 })();
 
 function toggle(id){
@@ -3693,15 +3697,14 @@ function _renderDongUieo(){
   _synCategoryData=groups.map(([ko,ws])=>({ko,words:ws.map(w=>w.en)}));
   const el=document.getElementById('syn-list');
   if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
-  const playBtnStyle='padding:.15em .5em;font-size:.7em;border:1px solid var(--primary);border-radius:2em;background:var(--card);color:var(--primary);cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0';
   const ttsBtnStyle='background:none;border:1px solid var(--border);border-radius:.4em;padding:.1em .3em;cursor:pointer;font-size:.78em;color:var(--muted);flex-shrink:0;line-height:1.3';
   el.innerHTML=groups.map(([ko,ws],i)=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45em">
         <span style="font-size:.82em;font-weight:700;color:var(--primary-dark)">${ko}</span>
         <div style="display:flex;gap:.3em">
-          <button onclick="playSynCategory(${i},1)" style="${playBtnStyle}">▶ ×1</button>
-          <button onclick="playSynCategory(${i},2)" style="${playBtnStyle}">▶ ×2</button>
+          <button id="syn-pb-${i}-1" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×1" onclick="toggleSynCatPlay(this,'syn-pb-${i}-2',${i},1)">↻ ×1</button>
+          <button id="syn-pb-${i}-2" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×2" onclick="toggleSynCatPlay(this,'syn-pb-${i}-1',${i},2)">↻ ×2</button>
         </div>
       </div>
       ${ws.map(w=>`<div style="display:flex;align-items:center;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
@@ -3816,15 +3819,14 @@ function _renderSpelling(){
   document.getElementById('syn-page-title').textContent='🔗 동의어 · 반의어 ('+groups.length+'그룹)';
   _spellCategoryData=groups.map(([key,ws])=>({key,words:ws.map(w=>({en:w.en,ko:w.ko.slice(0,1).join('')}))}));
   if(!groups.length){el.innerHTML=chips+'<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
-  const spellPlayBtnStyle='padding:.15em .5em;font-size:.7em;border:1px solid var(--primary);border-radius:2em;background:var(--card);color:var(--primary);cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0';
   el.innerHTML=chips+groups.map(([key,ws],i)=>`
     <div class="card" style="margin-bottom:.55em;padding:.75em">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45em">
         <span style="font-size:1.1em;font-weight:800;color:var(--primary-dark)">${_spellMode==='prefix'?key+'…':key}</span>
-        <div style="display:flex;align-items:center;gap:.4em">
+        <div style="display:flex;align-items:center;gap:.3em">
           <span style="font-size:.75em;color:var(--muted)">${ws.length}개</span>
-          <button onclick="playSpellCategory(${i},1)" style="${spellPlayBtnStyle}">▶ ×1</button>
-          <button onclick="playSpellCategory(${i},2)" style="${spellPlayBtnStyle}">▶ ×2</button>
+          <button id="spell-pb-${i}-1" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×1" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-2',${i},1)">↻ ×1</button>
+          <button id="spell-pb-${i}-2" class="btn btn-s" style="font-size:.82em" data-orig="↻ ×2" onclick="toggleSpellCatPlay(this,'spell-pb-${i}-1',${i},2)">↻ ×2</button>
         </div>
       </div>
       ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
@@ -4390,12 +4392,24 @@ var _seqItems=[];
 var _seqIdx=0;
 var _seqRepeat=0;
 var _seqMaxRepeat=1;
+var _seqActiveBtn=null;
+var _seqActiveSib=null;
+function _seqReset(){
+  if(_seqActiveBtn){
+    _seqActiveBtn.textContent=_seqActiveBtn.dataset.orig||'↻';
+    _seqActiveBtn.classList.remove('btn-danger');
+    _seqActiveBtn.classList.add('btn-s');
+    _seqActiveBtn.disabled=false;_seqActiveBtn.style.opacity='';
+  }
+  if(_seqActiveSib){_seqActiveSib.disabled=false;_seqActiveSib.style.opacity='';}
+  _seqActiveBtn=null;_seqActiveSib=null;
+}
 function _nextSeq(){
   if(!_seqItems.length)return;
   if(_seqIdx>=_seqItems.length){
     _seqRepeat++;
     if(_seqRepeat<_seqMaxRepeat){_seqIdx=0;}
-    else{_seqItems=[];return;}
+    else{_seqItems=[];_seqReset();return;}
   }
   const item=_seqItems[_seqIdx++];
   const u=new SpeechSynthesisUtterance(item.text);
@@ -4404,29 +4418,43 @@ function _nextSeq(){
   u.onerror=()=>setTimeout(_nextSeq,item.pause||300);
   speechSynthesis.speak(u);
 }
-function playSeq(items,repeat){
+function stopSeq(){
   if(!window.speechSynthesis)return;
   speechSynthesis.cancel();
+  _seqItems=[];
+  _seqReset();
+}
+function playSeq(items,repeat,btnEl,sibEl){
+  if(!window.speechSynthesis)return;
+  if(_seqActiveBtn){speechSynthesis.cancel();_seqReset();}
   _seqItems=items;_seqMaxRepeat=repeat||1;_seqRepeat=0;_seqIdx=0;
+  _seqActiveBtn=btnEl||null;_seqActiveSib=sibEl||null;
+  if(btnEl){
+    btnEl.textContent='⏹ 정지';
+    btnEl.classList.add('btn-danger');btnEl.classList.remove('btn-s');
+  }
+  if(sibEl){sibEl.disabled=true;sibEl.style.opacity='.4';}
   setTimeout(_nextSeq,100);
 }
-function playSynCategory(idx,repeat){
+function toggleSynCatPlay(btn,sibId,idx,repeat){
+  if(_seqActiveBtn===btn){stopSeq();return;}
   const cat=_synCategoryData[idx];if(!cat)return;
   const items=[];
   cat.words.forEach(en=>{
     for(let i=0;i<5;i++)items.push({text:en,lang:'en-US',rate:0.88,pause:150});
     items.push({text:cat.ko,lang:'ko-KR',rate:0.85,pause:600});
   });
-  playSeq(items,repeat||1);
+  playSeq(items,repeat,btn,document.getElementById(sibId));
 }
-function playSpellCategory(idx,repeat){
+function toggleSpellCatPlay(btn,sibId,idx,repeat){
+  if(_seqActiveBtn===btn){stopSeq();return;}
   const cat=_spellCategoryData[idx];if(!cat)return;
   const items=[];
   cat.words.forEach(({en,ko})=>{
     for(let i=0;i<5;i++)items.push({text:en,lang:'en-US',rate:0.88,pause:150});
     items.push({text:ko,lang:'ko-KR',rate:0.85,pause:600});
   });
-  playSeq(items,repeat||1);
+  playSeq(items,repeat,btn,document.getElementById(sibId));
 }
 function speak(t){
   if(!window.speechSynthesis)return;
