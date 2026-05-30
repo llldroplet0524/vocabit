@@ -2515,7 +2515,7 @@ function initMemoRow(ta,btn){
   if(ta&&ta.value.trim())_lockMemoRow(ta,btn);
 }
 function saveMemoBtn(btn){
-  const ta=btn.closest('.memo-row').querySelector('textarea');
+  const ta=btn.closest('.card')?.querySelector('textarea')||btn.closest('.memo-row')?.querySelector('textarea');
   if(!ta)return;
   if(btn.textContent==='수정'){_unlockMemoRow(ta,btn);return;}
   saveMemo(ta.dataset.memoEn,ta.value);
@@ -4141,23 +4141,23 @@ function renderMemoList(){
   emptyEl.style.display='none';
   listEl.innerHTML=entries.map((e)=>{
     const koStr=e.word?e.word.ko.join(' / '):'';
-    const secStr=e.sec?`<span style="font-size:.72em;color:var(--muted);margin-left:.4em">${e.sec.name}</span>`:'';
     return `<div class="card" style="margin-bottom:.5em;padding:.75em">
-      <div style="display:flex;align-items:baseline;gap:.3em;margin-bottom:.3em">
-        <span style="font-weight:700;font-size:.95em">${e.en}</span>
-        ${secStr}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.4em;margin-bottom:.25em">
+        <div>
+          <span style="font-weight:700;font-size:.95em">${e.en}</span>
+          ${koStr?`<div style="font-size:.8em;color:var(--muted);margin-top:.1em">${koStr}</div>`:''}
+        </div>
+        <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.28em .65em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">저장</button>
       </div>
-      ${koStr?`<div style="font-size:.8em;color:var(--muted);margin-bottom:.4em">${koStr}</div>`:''}
-      <div class="memo-row" style="display:flex;gap:.4em;align-items:flex-start">
-        <textarea data-memo-en="${e.en}" rows="2"
-          style="flex:1;box-sizing:border-box;font-size:.82em;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:none;font-family:inherit;line-height:1.4;outline:none;min-width:0"></textarea>
-        <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.3em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4;height:fit-content">저장</button>
+      <div class="memo-row">
+        <textarea data-memo-en="${e.en}" rows="4"
+          style="width:100%;box-sizing:border-box;font-size:.82em;padding:.5em .7em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;line-height:1.5;outline:none"></textarea>
       </div>
     </div>`;
   }).join('');
   listEl.querySelectorAll('textarea[data-memo-en]').forEach(ta=>{
     ta.value=(wordNotes.get(ta.dataset.memoEn)||{}).note||'';
-    const btn=ta.closest('.memo-row')&&ta.closest('.memo-row').querySelector('button');
+    const btn=ta.closest('.card')&&ta.closest('.card').querySelector('button');
     if(btn)btn.textContent='저장';
     initMemoRow(ta,btn);
   });
