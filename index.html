@@ -3398,11 +3398,11 @@ function clearHistory(){
 function goHistory(){
   const list=document.getElementById('history-list');
   list.innerHTML='';
-  if(allHistory.size===0){
-    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:2em;font-size:.9em">아직 기록이 없습니다.<br>퀴즈를 풀면 이곳에 기록됩니다.</div>';
+  if(allWrong.size===0){
+    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:2em;font-size:.9em">오답이 없습니다.</div>';
     showSc('history');return;
   }
-  const sorted=[...allHistory.values()].filter(({results})=>(results||[]).some(r=>!r)).sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
+  const sorted=[...allHistory.values()].filter(({word})=>allWrong.has((word.en||'').toLowerCase().trim())).sort((a,b)=>(b.results||[]).filter(r=>!r).length-(a.results||[]).filter(r=>!r).length);
   sorted.forEach(({word,results})=>{
     const res=results||[];
     const wrongs=res.filter(r=>!r).length;
