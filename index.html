@@ -2009,7 +2009,7 @@ function dbSave(){
       getAllProgKeys().forEach(k=>{if(_resumeDeleted.has(k))localStorage.removeItem(k);});
       // merge quizLog: union by ts
       const localLogTs=new Set(quizLog.map(e=>e.ts));
-      (r.quizLogData||[]).forEach(e=>{if(e.mode==='type'&&!(e.secs&&e.secs.includes('k021'))&&!localLogTs.has(e.ts))quizLog.push(e);});
+      (r.quizLogData||[]).forEach(e=>{if(e.mode==='type'&&!localLogTs.has(e.ts))quizLog.push(e);});
       quizLog.sort((a,b)=>b.ts-a.ts);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
@@ -2141,7 +2141,7 @@ function dbLoad(){
     }
     if(d.quizLogData && d.quizLogData.length){
       const localTs=new Set(quizLog.map(e=>e.ts));
-      d.quizLogData.forEach(e=>{if(e.mode==='type'&&!(e.secs&&e.secs.includes('k021'))&&!localTs.has(e.ts))quizLog.push(e);});
+      d.quizLogData.forEach(e=>{if(e.mode==='type'&&!localTs.has(e.ts))quizLog.push(e);});
       quizLog.sort((a,b)=>b.ts-a.ts);
       if(quizLog.length>500)quizLog=quizLog.slice(0,500);
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
@@ -2219,7 +2219,7 @@ var _etymGroups=[];
   // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제 (Firebase 직접 덮어쓰기)
   (function(){
     const before=quizLog.length;
-    quizLog=quizLog.filter(e=>e.mode==='type'&&!(e.secs&&e.secs.includes('k021')));
+    quizLog=quizLog.filter(e=>e.mode==='type');
     if(quizLog.length<before){
       try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
       setTimeout(()=>{DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('cleanLog',e));},2000);
