@@ -1957,7 +1957,8 @@ function dbSave(){
       });
       (r.deletedWrongData||[]).forEach(({en,ts})=>{
         const cur=_wrongDeleted.get(en)||0;
-        if(ts>cur){_wrongDeleted.set(en,ts);allWrong.delete(en);}
+        const wrongTs=(allWrong.get(en)||{}).ts||0;
+        if(ts>cur&&ts>wrongTs){_wrongDeleted.set(en,ts);allWrong.delete(en);}
       });
       try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
       try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
@@ -3296,6 +3297,7 @@ function markTypedCorrect(){
   const typed=document.getElementById('q-type-input').value.trim();
   qScore++;
   if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
+  if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}}
   if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
   if(typed){
     const uk=key.toLowerCase();
@@ -3312,6 +3314,7 @@ function markTypedTypo(){
   const q=qQuestions[qIdx];const w=q.word;const key=w.en;
   qScore++;
   if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
+  if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}}
   if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
   updateHomeWrongBtn();dbSave();
   document.getElementById('q-mark-correct-btn').style.display='none';
