@@ -159,7 +159,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
   .wrap{padding:.35em}
   #sc-synonyms{margin-left:-.35em;margin-right:-.35em;padding:0 0 1em}
   #sc-synonyms>div:first-child{padding:.35em .35em .25em}
-  #sc-synonyms #syn-nav,#sc-synonyms>div:nth-child(2){padding:0 .35em}
+  #sc-synonyms #syn-nav,#sc-synonyms>div:nth-child(2),#sc-synonyms>div:nth-child(3){padding:0 .35em}
   #sc-synonyms .etym-group,#sc-synonyms .card{border-radius:0;border-left:none;border-right:none;margin-bottom:2px;}
   #sc-synonyms #syn-list{padding:0}
   .card{padding:.6em}
@@ -636,6 +636,7 @@ var _curHash=''; // declared before IIFE to avoid TDZ
 var fcExpanded=false;
 var _initHash=location.hash.replace('#','');
 var _initNavDone=false;
+var _inNavigation=false;
 function _doInitNav(){if(_initNavDone)return;_initNavDone=true;navigateToHash(_initHash);}
 // ── DATA ──────────────────────────────────────────────
 const SECTIONS=[
@@ -2304,7 +2305,6 @@ function navigateToHash(hash){
     else goHome();
   }finally{setTimeout(()=>{_inNavigation=false;},50);}
 }
-var _inNavigation=false;
 window.addEventListener('hashchange',()=>{
   if(_inNavigation)return;
   const h=location.hash.replace('#','');
@@ -3054,7 +3054,12 @@ function clearAllWrong(){
     goHome();
   });
 }
-function updateHomeWrongBtn(){}
+function updateHomeWrongBtn(){
+  const btn=document.getElementById('home-wrong-btn');
+  if(!btn)return;
+  const n=allWrong.size;
+  btn.textContent=n>0?`❌ 오답 복습 (${n})`: '❌ 오답 복습';
+}
 
 
 // ── RESUME ──
@@ -3268,7 +3273,6 @@ function checkTyped(){
     const hr2=allHistory.get(key);hr2.results.push(false);if(hr2.results.length>20)hr2.results.shift();hr2.ts=Date.now();
     updateHomeWrongBtn();dbSave();
   }
-  const mr=document.getElementById('q-meaning-reveal');
   const expl=document.getElementById('q-expl');
   expl.classList.add('show');
   const answerLine=`<div style="margin-bottom:.375em;font-size:.88em">${ok?'뜻:':'정답:'} <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>`;
@@ -3892,7 +3896,7 @@ function renderSynTab(){
 }
 function _renderDongUieo(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '||''));}));
+  const _wm=new Map();SECTIONS.forEach(s=>s.words.forEach(w=>{const k=w.en.toLowerCase().trim();if(!_wm.has(k))_wm.set(k,w.ko.slice(0,2).join(' / '));}));
   const _kjSet=new Set();SECTIONS.filter(s=>s.src==='k'||s.src==='j').forEach(s=>s.words.forEach(w=>_kjSet.add(w.en.toLowerCase().trim())));
   const _inExcelOnly=(en)=>!_kjSet.has(en.toLowerCase().trim());
   let groups=SYNONYM_GROUPS.map(g=>({ko:g.ko,words:g.words.map(w=>({en:w.en,ko:_wm.get(w.en.toLowerCase().trim())||w.ko,inSec:_inExcelOnly(w.en)}))}));
@@ -3923,36 +3927,6 @@ function _renderDongUieo(){
           <span style="color:var(--muted);font-size:.78em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${w.ko}</span>
         </div>
       </div>`).join('')}</div>
-    </div>`).join('');
-}
-function _renderSynonyms(){
-  const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  const koMap=new Map();
-  const wordByEn=new Map();
-  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    const k=w.en.toLowerCase();
-    if(!wordByEn.has(k))wordByEn.set(k,w);
-    w.ko.forEach(m=>{
-      if(!koMap.has(m))koMap.set(m,[]);
-      if(!koMap.get(m).find(x=>x.en===w.en))koMap.get(m).push(w);
-    });
-  }));
-  let groups=[...koMap.entries()]
-    .filter(([,ws])=>ws.length>=2)
-    .sort((a,b)=>b[1].length-a[1].length);
-  if(q){
-    groups=groups.filter(([ko,ws])=>
-      ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
-  }
-  const el=document.getElementById('syn-list');
-  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
-  el.innerHTML=groups.map(([ko,ws])=>`
-    <div class="card" style="margin-bottom:.55em;padding:.75em">
-      <div style="font-size:.78em;font-weight:700;color:var(--primary);margin-bottom:.45em">${ko}</div>
-      ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
-        <span style="font-weight:700;font-size:.9em;min-width:7em">${w.en}</span>
-        <span style="color:var(--muted);font-size:.78em">${w.ko.join(' / ')}</span>
-      </div>`).join('')}
     </div>`).join('');
 }
 const _SUFFIXES=[
