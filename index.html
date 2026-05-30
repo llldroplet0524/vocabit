@@ -2209,8 +2209,15 @@ var _etymGroups=[];
   dbLoad();
   updateHomeResume();
   if(favorites.size>0)setTimeout(dbSaveFavNow,1500);
-  // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제
-  (function(){const before=quizLog.length;quizLog=quizLog.filter(e=>e.mode==='type'&&!(e.secs&&e.secs.includes('k021')));if(quizLog.length<before){try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}dbSave();}})();
+  // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제 (Firebase 직접 덮어쓰기)
+  (function(){
+    const before=quizLog.length;
+    quizLog=quizLog.filter(e=>e.mode==='type'&&!(e.secs&&e.secs.includes('k021')));
+    if(quizLog.length<before){
+      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
+      setTimeout(()=>{DOC.set({quizLogData:quizLog},{merge:true}).catch(e=>console.error('cleanLog',e));},2000);
+    }
+  })();
   _doInitNav();
 })();
 
@@ -4150,7 +4157,7 @@ function renderMemoList(){
         <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.28em .65em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">저장</button>
       </div>
       <div class="memo-row">
-        <textarea data-memo-en="${e.en}" rows="4"
+        <textarea data-memo-en="${e.en}" rows="2"
           style="width:100%;box-sizing:border-box;font-size:.82em;padding:.5em .7em;border:1.5px solid var(--border);border-radius:.5em;background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;line-height:1.5;outline:none"></textarea>
       </div>
     </div>`;
