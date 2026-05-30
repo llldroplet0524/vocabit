@@ -2445,13 +2445,31 @@ function saveMemo(en,val){
     DOC.set({notesData:[...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}))},{merge:true}).catch(e=>console.error('saveMemo error',e));
   },1500);
 }
+function _lockMemoRow(ta,btn){
+  ta.readOnly=true;
+  ta.style.opacity='.7';ta.style.cursor='default';
+  btn.textContent='수정';
+}
+function _unlockMemoRow(ta,btn){
+  ta.readOnly=false;
+  ta.style.opacity='1';ta.style.cursor='';
+  btn.textContent='저장';
+  ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+}
+function initMemoRow(ta,btn){
+  if(ta&&ta.value.trim())_lockMemoRow(ta,btn);
+}
 function saveMemoBtn(btn){
   const ta=btn.closest('.memo-row').querySelector('textarea');
   if(!ta)return;
+  if(btn.textContent==='수정'){_unlockMemoRow(ta,btn);return;}
   saveMemo(ta.dataset.memoEn,ta.value);
-  const orig=btn.textContent;
   btn.textContent='✓';btn.disabled=true;
-  setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1200);
+  setTimeout(()=>{
+    btn.disabled=false;
+    if(ta.value.trim())_lockMemoRow(ta,btn);
+    else btn.textContent='저장';
+  },900);
 }
 var _mpEn='';
 function openMemoPopup(en,ko){
@@ -2484,7 +2502,7 @@ function renderSt(){
   document.getElementById('st-prog').style.width=((stIdx+1)/stWords.length*100)+'%';
   document.getElementById('fc-reveal').classList.remove('show');
   document.getElementById('fc-hint').style.display='block';
-  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';
+  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';stMemoTa.readOnly=false;stMemoTa.style.opacity='1';stMemoTa.style.cursor='';const stMemoBtn=stMemoTa.closest('.memo-row')&&stMemoTa.closest('.memo-row').querySelector('button');if(stMemoBtn)stMemoBtn.textContent='저장';initMemoRow(stMemoTa,stMemoBtn);
   updateFavBtn();
   // etymology
   const etym=ETYM[w.en.toLowerCase()];
@@ -2785,7 +2803,7 @@ function pick(sel,correct,word){
   document.getElementById('q-expl').classList.add('show');
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}`;
-  const qMemoTa=document.getElementById('q-memo-input');qMemoTa.dataset.memoEn=word.en;qMemoTa.value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';
+  const qMemoTa=document.getElementById('q-memo-input');qMemoTa.dataset.memoEn=word.en;qMemoTa.value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';qMemoTa.readOnly=false;qMemoTa.style.opacity='1';qMemoTa.style.cursor='';const qMemoBtn=qMemoTa.closest('.memo-row')&&qMemoTa.closest('.memo-row').querySelector('button');if(qMemoBtn)qMemoBtn.textContent='저장';initMemoRow(qMemoTa,qMemoBtn);
   document.getElementById('q-memo-area').style.display='block';
   var nb=document.getElementById('q-next');nb.style.display='flex';nb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3187,7 +3205,7 @@ function checkTyped(){
   const answerLine=`<div style="margin-bottom:.375em;font-size:.88em">${ok?'뜻:':'정답:'} <span style="font-weight:700;color:var(--success)">${w.ko.join(' / ')}</span></div>`;
   document.getElementById('q-expl-body').innerHTML=
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${answerLine}${etymHTML(w.en)}`;
-  const qMemoTa2=document.getElementById('q-memo-input');qMemoTa2.dataset.memoEn=w.en;qMemoTa2.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';
+  const qMemoTa2=document.getElementById('q-memo-input');qMemoTa2.dataset.memoEn=w.en;qMemoTa2.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';qMemoTa2.readOnly=false;qMemoTa2.style.opacity='1';qMemoTa2.style.cursor='';const qMemoBtn2=qMemoTa2.closest('.memo-row')&&qMemoTa2.closest('.memo-row').querySelector('button');if(qMemoBtn2)qMemoBtn2.textContent='저장';initMemoRow(qMemoTa2,qMemoBtn2);
   document.getElementById('q-memo-area').style.display='block';
   document.getElementById('q-mark-correct-btn').style.display=ok?'none':'inline-block';
   document.getElementById('q-mark-typo-btn').style.display=ok?'none':'inline-block';
@@ -3574,6 +3592,9 @@ function renderMemoList(){
   }).join('');
   listEl.querySelectorAll('textarea[data-memo-en]').forEach(ta=>{
     ta.value=(wordNotes.get(ta.dataset.memoEn)||{}).note||'';
+    const btn=ta.closest('.memo-row')&&ta.closest('.memo-row').querySelector('button');
+    if(btn)btn.textContent='저장';
+    initMemoRow(ta,btn);
   });
 }
 function goUserAnswers(){
