@@ -604,7 +604,8 @@ h1{text-align:left;padding:1.25em 0 .875em}
       oninput="renderSynTab()">
   </div>
   <div style="display:flex;gap:.4em;margin-bottom:.65em">
-    <button id="syn-tab-syn" onclick="setSynTab('syn')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">유의어</button>
+    <button id="syn-tab-dong" onclick="setSynTab('dong')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--primary);border-radius:2em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">동의어</button>
+    <button id="syn-tab-syn" onclick="setSynTab('syn')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">유의어</button>
     <button id="syn-tab-ant" onclick="setSynTab('ant')" style="padding:.28em .85em;font-size:.8em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s">반의어</button>
   </div>
   <div id="syn-list"></div>
@@ -3593,10 +3594,10 @@ const ANTONYM_PAIRS=[
   ['improve','worsen'],['improve','deteriorate'],['benefit','harm'],
 ];
 
-var _synTab='syn';
+var _synTab='dong';
 function goSynonyms(){
   document.getElementById('syn-search').value='';
-  _synTab='syn';
+  _synTab='dong';
   _updateSynTabBtns();
   renderSynTab();
   showSc('synonyms');
@@ -3605,7 +3606,7 @@ function setSynTab(t){
   _synTab=t;_updateSynTabBtns();renderSynTab();
 }
 function _updateSynTabBtns(){
-  ['syn','ant'].forEach(t=>{
+  ['dong','syn','ant'].forEach(t=>{
     const btn=document.getElementById('syn-tab-'+t);
     btn.style.background=_synTab===t?'var(--primary)':'var(--card)';
     btn.style.color=_synTab===t?'#fff':'var(--muted)';
@@ -3613,12 +3614,39 @@ function _updateSynTabBtns(){
   });
 }
 function renderSynTab(){
-  if(_synTab==='syn')_renderSynonyms();
+  if(_synTab==='dong')_renderDongUieo();
+  else if(_synTab==='syn')_renderSynonyms();
   else _renderAntonyms();
+}
+function _renderDongUieo(){
+  const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
+  // 첫 번째 ko가 완전히 일치하는 단어끼리 묶음
+  const koMap=new Map();
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    const key=w.ko[0]||'';
+    if(!key)return;
+    if(!koMap.has(key))koMap.set(key,[]);
+    if(!koMap.get(key).find(x=>x.en===w.en))koMap.get(key).push(w);
+  }));
+  let groups=[...koMap.entries()]
+    .filter(([,ws])=>ws.length>=2)
+    .sort((a,b)=>b[1].length-a[1].length);
+  if(q){
+    groups=groups.filter(([ko,ws])=>ko.includes(q)||ws.some(w=>w.en.toLowerCase().includes(q)||w.ko.some(k=>k.includes(q))));
+  }
+  const el=document.getElementById('syn-list');
+  if(!groups.length){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:3em 1em;font-size:.9em">검색 결과가 없습니다.</div>';return;}
+  el.innerHTML=groups.map(([ko,ws])=>`
+    <div class="card" style="margin-bottom:.55em;padding:.75em">
+      <div style="font-size:.78em;font-weight:700;color:var(--primary);margin-bottom:.45em">${ko}</div>
+      ${ws.map(w=>`<div style="display:flex;align-items:baseline;gap:.5em;padding:.2em 0;border-bottom:1px solid var(--border)">
+        <span style="font-weight:700;font-size:.9em;min-width:7em">${w.en}</span>
+        <span style="color:var(--muted);font-size:.78em">${w.ko.join(' / ')}</span>
+      </div>`).join('')}
+    </div>`).join('');
 }
 function _renderSynonyms(){
   const q=(document.getElementById('syn-search').value||'').trim().toLowerCase();
-  // ko → words map
   const koMap=new Map();
   const wordByEn=new Map();
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
