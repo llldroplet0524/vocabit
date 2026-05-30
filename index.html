@@ -370,8 +370,9 @@ h1{text-align:left;padding:1.25em 0 .875em}
   <div class="prog-bar"><div class="prog-fill" id="q-prog"></div></div>
   <div id="q-badge" style="font-size:.78em;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.4em;text-align:center"></div>
   <div class="q-text" id="q-text"></div>
-  <div style="text-align:center;margin:.3em 0 1.2em">
+  <div style="display:flex;justify-content:center;align-items:center;gap:.5em;margin:.3em 0 1.2em">
     <button class="tts-word-btn" id="q-tts" onclick="ttsQuiz()" style="display:none">🔊 발음 듣기</button>
+    <button id="q-fav-btn" onclick="toggleFavorite(qEnWord);updateQFavBtn()" style="display:none;font-size:.78em;padding:.32em .9em;border:1.5px solid var(--border);border-radius:2em;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s">☆ 단어장</button>
   </div>
   <div id="q-opts" style="margin-top:4em"></div>
   <div id="q-type-area" style="display:none;margin-top:4em">
@@ -2748,7 +2749,8 @@ function renderQ(){
   document.getElementById('q-opts').style.display='';
   document.getElementById('q-type-area').style.display='none';
   document.getElementById('q-tts').style.display='none';
-  qOptWordsMap={};qEnWord=w.en;
+  document.getElementById('q-fav-btn').style.display='inline-flex';
+  qOptWordsMap={};qEnWord=w.en;updateQFavBtn();
   const badge=document.getElementById('q-badge');
   const qTextEl=document.getElementById('q-text');
   badge.style.textAlign='left';
@@ -3338,6 +3340,15 @@ function _doPassTyped(){
   document.getElementById('q-next').style.display='flex';
 }
 function ttsQuiz(){speak(qEnWord);}
+function updateQFavBtn(){
+  const btn=document.getElementById('q-fav-btn');
+  if(!btn||!qEnWord)return;
+  const active=favorites.has(qEnWord.toLowerCase());
+  btn.textContent=active?'⭐ 단어장':'☆ 단어장';
+  btn.style.borderColor=active?'#f59e0b':('var(--border)');
+  btn.style.color=active?'#f59e0b':('var(--muted)');
+  btn.style.background=active?'rgba(245,158,11,.08)':('var(--card)');
+}
 
 // ── HISTORY TRACKER ──
 function resetSecStats(secId){
