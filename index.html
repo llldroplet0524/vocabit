@@ -1638,15 +1638,18 @@ const ETYM={
     if(!_m.has(k))_m.set(k,[...w.ko]);
     else{const a=_m.get(k);w.ko.forEach(m=>{if(!a.includes(m))a.push(m);});}
   }));
-  // 2nd pass: apply merged meanings & remove duplicates (keep only first occurrence)
-  // c 섹션(단어장)은 중복 제거 대상에서 제외 - 독립 학습용
+  // 2nd pass: c 섹션(단어장) 우선 처리 → k/s 섹션에서 중복 제거
   const seen=new Set();
-  SECTIONS.forEach(s=>{
-    if(s.src==='c'){
-      // c 섹션: 의미만 병합, 중복 제거 안 함
-      s.words.forEach(w=>{w.ko=_m.get(w.en.toLowerCase().trim())||w.ko;});
-      return;
-    }
+  // 1) 단어장(c) 먼저 seen에 등록
+  SECTIONS.filter(s=>s.src==='c').forEach(s=>{
+    s.words.forEach(w=>{
+      const k=w.en.toLowerCase().trim();
+      seen.add(k);
+      w.ko=_m.get(k)||w.ko;
+    });
+  });
+  // 2) k/s 섹션: 단어장에 이미 있는 단어는 제거
+  SECTIONS.filter(s=>s.src!=='c').forEach(s=>{
     s.words=s.words.filter(w=>{
       const k=w.en.toLowerCase().trim();
       if(seen.has(k))return false;
