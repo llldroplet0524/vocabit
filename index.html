@@ -1767,7 +1767,7 @@ let dbSaveTimer = null;
 function dbSave(){
   const uaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
   try{localStorage.setItem('vocabit-ua',JSON.stringify(uaArr));}catch(e){}
-  if(allWrong.size>0){const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));try{localStorage.setItem('vocabit-wrong',JSON.stringify(wrongArr));}catch(e){}}
+  {const wrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));try{localStorage.setItem('vocabit-wrong',JSON.stringify(wrongArr));}catch(e){}}
   clearTimeout(dbSaveTimer);
   dbSaveTimer = setTimeout(async ()=>{
     try{
@@ -3123,9 +3123,9 @@ function markTypedCorrect(){
   const q=qQuestions[qIdx];const w=q.word;const key=w.en;
   const typed=document.getElementById('q-type-input').value.trim();
   qScore++;
-  if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
-  if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}}
-  if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
+  wrongMap.delete(key);
+  if(allWrong.has(key)){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}
+  if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1){h.results[li]=true;h.ts=Date.now();}}
   if(typed){
     const uk=key.toLowerCase();
     if(!userAnswers.has(uk))userAnswers.set(uk,new Set());
@@ -3134,20 +3134,23 @@ function markTypedCorrect(){
   }
   updateHomeWrongBtn();dbSave();
   document.getElementById('q-mark-correct-btn').style.display='none';
-  document.getElementById('q-expl-body').querySelector('span').textContent='✓ 정답으로 처리됨';
-  document.getElementById('q-expl-body').querySelector('span').style.color='var(--success)';
+  document.getElementById('q-mark-typo-btn').style.display='none';
+  const sp=document.getElementById('q-expl-body').querySelector('span');
+  if(sp){sp.textContent='✓ 정답으로 처리됨';sp.style.color='var(--success)';}
 }
 function markTypedTypo(){
   const q=qQuestions[qIdx];const w=q.word;const key=w.en;
+  const typed=document.getElementById('q-type-input').value.trim();
   qScore++;
-  if(wrongMap.has(key)){wrongMap.get(key).count--;if(wrongMap.get(key).count<=0)wrongMap.delete(key);}
-  if(allWrong.has(key)){allWrong.get(key).count--;if(allWrong.get(key).count<=0){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}}
-  if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1)h.results[li]=true;}
+  wrongMap.delete(key);
+  if(allWrong.has(key)){allWrong.delete(key);_wrongDeleted.set(key,Date.now());}
+  if(allHistory.has(key)){const h=allHistory.get(key);const li=h.results.lastIndexOf(false);if(li!==-1){h.results[li]=true;h.ts=Date.now();}}
+  if(typed){const uk=key.toLowerCase();if(!userAnswers.has(uk))userAnswers.set(uk,new Set());userAnswers.get(uk).add(typed);updateHomeUaBtn();}
   updateHomeWrongBtn();dbSave();
   document.getElementById('q-mark-correct-btn').style.display='none';
   document.getElementById('q-mark-typo-btn').style.display='none';
-  document.getElementById('q-expl-body').querySelector('span').textContent='⌨️ 오타로 정답 처리됨';
-  document.getElementById('q-expl-body').querySelector('span').style.color='var(--warning,#d97706)';
+  const sp2=document.getElementById('q-expl-body').querySelector('span');
+  if(sp2){sp2.textContent='⌨️ 오타로 정답 처리됨';sp2.style.color='var(--warning,#d97706)';}
 }
 function passTyped(){
   showConfirm('이 단어를 패스할까요?\n(오답으로 처리됩니다)',function(){_doPassTyped();});
