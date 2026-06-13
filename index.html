@@ -1771,97 +1771,84 @@ function dbSave(){
   clearTimeout(dbSaveTimer);
   dbSaveTimer = setTimeout(async ()=>{
     try{
-      const snap = await DOC.get();
-      const r = snap.exists ? snap.data() : {};
-      // merge tombstones first (before history/wrong merge)
-      (r.deletedHistData||[]).forEach(({en,ts})=>{
-        const cur=_histDeleted.get(en)||0;
-        if(ts>cur){_histDeleted.set(en,ts);allHistory.delete(en);}
+      // snapshot local state BEFORE entering transaction (prevents double-merge on retry)
+      const snapHistory=new Map([...allHistory.entries()].map(([en,v])=>[en,{...v,results:[...v.results]}]));
+      const snapWrong=new Map([...allWrong.entries()].map(([en,v])=>[en,{...v}]));
+      const snapTypeHist=new Map([...typeHistory.entries()].map(([en,v])=>[en,{...v,results:[...v.results]}]));
+      const snapFav=new Set(favorites);
+      const snapUa=new Map([...userAnswers.entries()].map(([en,s])=>[en,new Set(s)]));
+      const snapHistDel=new Map(_histDeleted);
+      const snapWrongDel=new Map(_wrongDeleted);
+      const snapResumeDel=new Set(_resumeDeleted);
+      const snapQuizLog=[...quizLog];
+      let histArr,typeHistArr,mergedWrongArr,mergedUaArr,resumeArr,deletedHistArr,deletedWrongArr,notesArr,mergedQuizLog;
+      await db.runTransaction(async (t)=>{
+        const snap=await t.get(DOC);
+        const r=snap.exists?snap.data():{};
+        // work on copies, not globals
+        const mHist=new Map(snapHistory);
+        const mWrong=new Map(snapWrong);
+        const mType=new Map(snapTypeHist);
+        const mFav=new Set(snapFav);
+        const mUa=new Map([...snapUa.entries()].map(([en,s])=>[en,new Set(s)]));
+        const mHistDel=new Map(snapHistDel);
+        const mWrongDel=new Map(snapWrongDel);
+        const mResumeDel=new Set(snapResumeDel);
+        const mLog=[...snapQuizLog];
+        // merge tombstones
+        (r.deletedHistData||[]).forEach(({en,ts})=>{const cur=mHistDel.get(en)||0;if(ts>cur){mHistDel.set(en,ts);mHist.delete(en);}});
+        (r.deletedWrongData||[]).forEach(({en,ts})=>{const cur=mWrongDel.get(en)||0;const wts=(mWrong.get(en)||{}).ts||0;if(ts>cur&&ts>wts){mWrongDel.set(en,ts);mWrong.delete(en);}});
+        // merge allHistory
+        (r.historyData||[]).forEach(v=>{const delTs=mHistDel.get(v.en)||0;if(delTs>=(v.ts||1))return;let res=v.results||[];if(!res.length&&(v.wrongs||v.corrects)){for(let i=0;i<(v.wrongs||0);i++)res.push(false);for(let i=0;i<(v.corrects||0);i++)res.push(true);}if(!mHist.has(v.en)){mHist.set(v.en,{word:{en:v.en,ko:v.ko||''},results:res,ts:v.ts||0});}else if((v.ts||0)>(mHist.get(v.en).ts||0)){mHist.get(v.en).results=res;mHist.get(v.en).ts=v.ts||0;}});
+        // merge typeHistory
+        (r.typeHistoryData||[]).forEach(v=>{if(!mType.has(v.en)){mType.set(v.en,{results:v.results||[],ts:v.ts||0});}else if((v.ts||0)>(mType.get(v.en).ts||0)){mType.get(v.en).results=v.results||[];mType.get(v.en).ts=v.ts||0;}});
+        // merge allWrong
+        (r.wrongData||[]).forEach(v=>{const delTs=mWrongDel.get(v.en)||0;if(delTs>0&&delTs>=(v.ts||0))return;if(!mWrong.has(v.en))mWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count,ts:v.ts||0});else if(v.count>mWrong.get(v.en).count){mWrong.get(v.en).count=v.count;mWrong.get(v.en).ts=v.ts||0;}});
+        // merge favorites, userAnswers
+        (r.favorites||[]).forEach(f=>mFav.add(f));
+        (r.userAnswersData||[]).forEach(v=>{if(!mUa.has(v.en))mUa.set(v.en,new Set(v.answers||[]));else(v.answers||[]).forEach(a=>mUa.get(v.en).add(a));});
+        // merge resumeDeleted
+        (r.resumeDeleted||[]).forEach(k=>mResumeDel.add(k));
+        // merge quizLog
+        const logTs=new Set(mLog.map(e=>e.ts));
+        (r.quizLogData||[]).forEach(e=>{if(e.mode==='type'&&!logTs.has(e.ts))mLog.push(e);});
+        mLog.sort((a,b)=>b.ts-a.ts);
+        if(mLog.length>500)mLog.splice(500);
+        // build save arrays
+        histArr=[...mHist.entries()].map(([en,v])=>({en,ko:v.word?.ko||'',results:v.results||[],ts:v.ts||0}));
+        typeHistArr=[...mType.entries()].map(([en,v])=>({en,results:v.results||[],ts:v.ts||0}));
+        mergedWrongArr=[...mWrong.entries()].filter(([en])=>!(mWrongDel.get(en)>0)).map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
+        mergedUaArr=[...mUa.entries()].map(([en,s])=>({en,answers:[...s]}));
+        deletedHistArr=[...mHistDel.entries()].map(([en,ts])=>({en,ts}));
+        deletedWrongArr=[...mWrongDel.entries()].map(([en,ts])=>({en,ts}));
+        notesArr=[...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}));
+        resumeArr=getAllProgKeys().filter(k=>!mResumeDel.has(k)).map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
+        mergedQuizLog=mLog;
+        t.set(DOC,{
+          favorites:[...mFav],wrongData:mergedWrongArr,historyData:histArr,
+          userAnswersData:mergedUaArr,typeHistoryData:typeHistArr,resumeData:resumeArr,
+          resumeDeleted:[...mResumeDel],deletedHistData:deletedHistArr,deletedWrongData:deletedWrongArr,
+          quizLogData:mergedQuizLog,notesData:notesArr
+        });
+        // apply merged state back to globals (after t.set, before transaction commits)
+        mHist.forEach((v,en)=>{if(!allHistory.has(en)||v.ts>allHistory.get(en).ts){allHistory.set(en,v);}});
+        mWrong.forEach((v,en)=>{if(!allWrong.has(en)||v.count>allWrong.get(en).count){allWrong.set(en,v);}});
+        mType.forEach((v,en)=>{if(!typeHistory.has(en)||v.ts>typeHistory.get(en).ts){typeHistory.set(en,v);}});
+        mFav.forEach(f=>favorites.add(f));
+        mUa.forEach((s,en)=>{if(!userAnswers.has(en))userAnswers.set(en,s);else s.forEach(a=>userAnswers.get(en).add(a));});
+        mHistDel.forEach((ts,en)=>{_histDeleted.set(en,ts);});
+        mWrongDel.forEach((ts,en)=>{_wrongDeleted.set(en,ts);});
+        mResumeDel.forEach(k=>_resumeDeleted.add(k));
+        quizLog=mergedQuizLog;
       });
-      (r.deletedWrongData||[]).forEach(({en,ts})=>{
-        const cur=_wrongDeleted.get(en)||0;
-        const wrongTs=(allWrong.get(en)||{}).ts||0;
-        if(ts>cur&&ts>wrongTs){_wrongDeleted.set(en,ts);allWrong.delete(en);}
-      });
-      try{localStorage.setItem('vocabit-hist-del',JSON.stringify([..._histDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
-      try{localStorage.setItem('vocabit-wrong-del',JSON.stringify([..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}))));}catch(e){}
-      // merge allHistory: newer ts wins, skip tombstoned
-      const rHist=new Map((r.historyData||[]).map(v=>[v.en,v]));
-      rHist.forEach((v,en)=>{
-        const delTs=_histDeleted.get(en)||0;
-        if(delTs>=(v.ts||1))return;
-        if(!allHistory.has(en)){allHistory.set(en,{word:{en,ko:v.ko||''},results:v.results||[],ts:v.ts||0});}
-        else if((v.ts||0)>(allHistory.get(en).ts||0)){const h=allHistory.get(en);h.results=v.results||[];h.ts=v.ts||0;}
-      });
-      // merge typeHistory: newer ts wins
-      const rType=new Map((r.typeHistoryData||[]).map(v=>[v.en,v]));
-      rType.forEach((v,en)=>{
-        if(!typeHistory.has(en)){typeHistory.set(en,{results:v.results||[],ts:v.ts||0});}
-        else if((v.ts||0)>(typeHistory.get(en).ts||0)){const t=typeHistory.get(en);t.results=v.results||[];t.ts=v.ts||0;}
-      });
-      // merge allWrong: remote-only added, take max count, skip tombstoned (ts comparison)
-      const rWrong=new Map((r.wrongData||[]).map(v=>[v.en,v]));
-      rWrong.forEach((v,en)=>{
-        const delTs=_wrongDeleted.get(en)||0;
-        if(delTs>0&&delTs>=(v.ts||0))return;
-        if(!allWrong.has(en)) allWrong.set(en,{word:{en,ko:v.ko},count:v.count,ts:v.ts||0});
-        else if(v.count>allWrong.get(en).count){allWrong.get(en).count=v.count;allWrong.get(en).ts=v.ts||0;}
-      });
-      // merge favorites: union
-      (r.favorites||[]).forEach(f=>favorites.add(f));
-      // merge userAnswers: union per word
-      (r.userAnswersData||[]).forEach(v=>{
-        if(!userAnswers.has(v.en)) userAnswers.set(v.en,new Set(v.answers||[]));
-        else (v.answers||[]).forEach(a=>userAnswers.get(v.en).add(a));
-      });
-      // merge resumeDeleted tombstones
-      (r.resumeDeleted||[]).forEach(k=>_resumeDeleted.add(k));
-      if((r.resumeDeleted||[]).length){
-        try{localStorage.setItem('vocabit-resume-del',JSON.stringify([..._resumeDeleted]));}catch(e){}
-        _resumeDeleted.forEach(k=>localStorage.removeItem(k));
-      }
-      // merge resumeData: remote entries added to local if not present or newer ts; skip tombstoned
-      const rResume=new Map((r.resumeData||[]).map(v=>[v.key,v.data]));
-      rResume.forEach((data,key)=>{
-        if(_resumeDeleted.has(key))return;
-        const localRaw=localStorage.getItem(key);
-        if(!localRaw){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
-        else{try{const ld=JSON.parse(localRaw);if((data.ts||0)>(ld.ts||0))localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
-      });
-      // apply tombstones to local keys
-      getAllProgKeys().forEach(k=>{if(_resumeDeleted.has(k))localStorage.removeItem(k);});
-      // merge quizLog: union by ts
-      const localLogTs=new Set(quizLog.map(e=>e.ts));
-      (r.quizLogData||[]).forEach(e=>{if(e.mode==='type'&&!localLogTs.has(e.ts))quizLog.push(e);});
-      quizLog.sort((a,b)=>b.ts-a.ts);
-      if(quizLog.length>500)quizLog=quizLog.slice(0,500);
-      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(quizLog));}catch(e){}
-      // build final arrays from merged state
-      const histArr=[...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||'',results:v.results||[],ts:v.ts||0}));
-      const typeHistArr=[...typeHistory.entries()].map(([en,v])=>({en,results:v.results||[],ts:v.ts||0}));
-      const mergedWrongArr=[...allWrong.entries()].filter(([en])=>!(_wrongDeleted.get(en)>0)).map(([en,v])=>({en,ko:v.word.ko,count:v.count,ts:v.ts||0}));
-      const mergedUaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
-      const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
-      const deletedHistArr=[..._histDeleted.entries()].map(([en,ts])=>({en,ts}));
-      const deletedWrongArr=[..._wrongDeleted.entries()].map(([en,ts])=>({en,ts}));
-      const notesArr=[...wordNotes.entries()].map(([en,v])=>({en,note:v.note,ts:v.ts}));
-      await DOC.set({
-        favorites:[...favorites],
-        wrongData:mergedWrongArr,
-        historyData:histArr,
-        userAnswersData:mergedUaArr,
-        typeHistoryData:typeHistArr,
-        resumeData:resumeArr,
-        resumeDeleted:[..._resumeDeleted],
-        deletedHistData:deletedHistArr,
-        deletedWrongData:deletedWrongArr,
-        quizLogData:quizLog,
-        notesData:notesArr
-      });
+      // localStorage updates after successful transaction
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify(typeHistArr));}catch(e){}
       try{localStorage.setItem('vocabit-wrong',JSON.stringify(mergedWrongArr));}catch(e){}
       try{localStorage.setItem('vocabit-ua',JSON.stringify(mergedUaArr));}catch(e){}
-      refreshSectionStats();
+      try{localStorage.setItem('vocabit-quiz-log',JSON.stringify(mergedQuizLog));}catch(e){}
+      try{localStorage.setItem('vocabit-hist-del',JSON.stringify(deletedHistArr));}catch(e){}
+      try{localStorage.setItem('vocabit-wrong-del',JSON.stringify(deletedWrongArr));}catch(e){}
+      updateHomeWrongBtn();refreshSectionStats();
     }catch(e){console.error('dbSave error',e);}
   }, 1000);
 }
