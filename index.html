@@ -2284,7 +2284,7 @@ function showSecLog(secId){
     html='<div style="color:var(--muted);text-align:center;padding:1.5em;font-size:.88em">아직 퀴즈 기록이 없습니다.</div>';
   }else{
     dates.forEach(date=>{
-      const dayEntries=grouped[date].sort((a,b)=>a.ts-b.ts);
+      const dayEntries=grouped[date].sort((a,b)=>b.ts-a.ts);
       const multi=dayEntries.length>1;
       dayEntries.forEach((e,i)=>{
         const pct=Math.round(e.score/e.total*100);
