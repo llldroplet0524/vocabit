@@ -2284,12 +2284,15 @@ function showSecLog(secId){
     html='<div style="color:var(--muted);text-align:center;padding:1.5em;font-size:.88em">아직 퀴즈 기록이 없습니다.</div>';
   }else{
     dates.forEach(date=>{
-      const dayEntries=grouped[date].sort((a,b)=>b.ts-a.ts);
-      const multi=dayEntries.length>1;
-      dayEntries.forEach((e,i)=>{
+      // ascending order to assign ①②③ labels (①=oldest/first quiz of the day)
+      const asc=grouped[date].slice().sort((a,b)=>a.ts-b.ts);
+      const multi=asc.length>1;
+      const withLabel=asc.map((e,i)=>({e,label:multi?' '+circs[i]:''}));
+      // reverse so newest entry appears at top
+      withLabel.reverse();
+      withLabel.forEach(({e,label})=>{
         const pct=Math.round(e.score/e.total*100);
         const color=pct>=80?'var(--success)':pct>=50?'var(--warning,#d97706)':'var(--danger)';
-        const label=multi?' '+circs[i]:'';
         html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:.45em 0;border-bottom:1px solid var(--border)">'+
           '<span style="font-size:.82em;color:var(--muted)">'+date+label+'</span>'+
           '<span style="font-weight:700;color:'+color+'">'+pct+'%</span>'+
