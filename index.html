@@ -2350,15 +2350,10 @@ function _renderAiResult(d){
   const p=d.pronunciation||{};
   const syls=p.syllables||[];
   let html='';
-  // 발음 헤더: IPA + 한국어 발음
-  if(p.ipa||p.ko){
-    html+=`<div style="margin-bottom:.5em;font-size:.9em">`;
-    if(p.ipa) html+=`<span style="color:var(--muted)">${p.ipa}</span>　`;
-    if(p.ko) html+=`<span style="font-weight:700;font-size:1.1em">${p.ko}</span>`;
-    html+=`</div>`;
-  } else if(p.syllableWord){
-    html+=`<div style="margin-bottom:.5em"><span style="font-weight:700;font-size:.95em">${p.syllableWord}</span> <span style="color:var(--muted);font-size:.85em">${p.ipa||''}</span></div>`;
-  }
+  // 발음 헤더: 발음: 퍼-포스-풀 + 영어로 표기하면 /ipa/
+  const sylsKo=syls.length?syls.map(s=>s.ko).join('-'):(p.ko||'');
+  if(sylsKo) html+=`<div style="margin-bottom:.15em;font-weight:700;font-size:1em">발음: ${sylsKo}</div>`;
+  if(p.ipa) html+=`<div style="margin-bottom:.45em;font-size:.82em;color:var(--muted)">영어로 표기하면 ${p.ipa}</div>`;
   // 음절 구분 (불릿 리스트 + 강세 요약)
   if(syls.length){
     html+='<div style="margin-bottom:.4em;font-size:.84em;line-height:1.9">';
