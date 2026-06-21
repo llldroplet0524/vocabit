@@ -21,64 +21,6 @@ const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 
 
 이제 "${word}" (${meaning}) JSON:`;
 
-const FOREIGN_RE = /[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ฀-๿؀-ۿ]/g;
-
-function stripForeignChars(str) {
-  return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
-}
-
-const VOWEL_RE = /[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉ]/gi;
-
-// IPA에서 ˈ(주강세)와 ˌ(보조강세) 위치를 음절 인덱스로 반환
-function stressPositionsFromIPA(ipa) {
-  const clean = (ipa || '').replace(/[\[\]\/\s]/g, '');
-  const result = {}; // { syllableIndex: 'primary'|'secondary' }
-  const countVowelsBefore = pos => {
-    VOWEL_RE.lastIndex = 0;
-    return (clean.substring(0, pos).match(VOWEL_RE) || []).length;
-  };
-  let i = clean.indexOf('ˈ');
-  if (i !== -1) result[countVowelsBefore(i)] = 'primary';
-  let j = 0;
-  while ((j = clean.indexOf('ˌ', j)) !== -1) {
-    const idx = countVowelsBefore(j);
-    if (!result[idx]) result[idx] = 'secondary';
-    j++;
-  }
-  return result;
-}
-
-function sanitize(parsed) {
-  const syls = parsed.pronunciation?.syllables || [];
-  syls.forEach(s => { s.ko = stripForeignChars(s.ko); });
-
-  // mnemonic·examples에서 외래어(일어·한자·태국어 등) 제거
-  FOREIGN_RE.lastIndex = 0;
-  if (parsed.mnemonic) parsed.mnemonic = parsed.mnemonic.replace(FOREIGN_RE, '');
-  if (parsed.examples) parsed.examples = parsed.examples.map(ex => {
-    FOREIGN_RE.lastIndex = 0;
-    return (ex || '').replace(FOREIGN_RE, '');
-  });
-
-  const ipa = parsed.pronunciation?.ipa || '';
-
-  if (syls.length === 1) {
-    // 단음절: 항상 강세
-    syls[0].stress = true;
-    syls[0].hint = '강세';
-  } else if (syls.length > 1) {
-    const pos = stressPositionsFromIPA(ipa);
-    if (Object.keys(pos).length > 0) {
-      syls.forEach((s, i) => {
-        const t = pos[i];
-        s.stress = t === 'primary';
-        s.hint = t === 'primary' ? '강세' : t === 'secondary' ? '보조강세' : '약하게';
-      });
-    }
-  }
-
-  return parsed;
-}
 
 
 async function callOpenAI(messages, apiKey) {
@@ -124,7 +66,7 @@ export default async function handler(req, res) {
       { role: 'user', content: GENERATE_PROMPT(word, meaning) }
     ], apiKey);
 
-    const parsed = sanitize(parseJSON(raw));
+    const parsed = parseJSON(raw);
     res.status(200).json(parsed);
   } catch(e) {
     console.error('handler error:', e.message);
