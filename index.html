@@ -4790,13 +4790,14 @@ function speak(t){
 <!-- 단어 검색 모달 -->
 <div id="word-search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto">
   <div style="background:var(--card);border-radius:1em;padding:1.2em;width:min(94vw,440px);max-height:85vh;overflow-y:auto;margin-bottom:2em">
-    <div style="display:flex;gap:.5em;margin-bottom:.8em">
+    <div style="display:flex;gap:.5em;margin-bottom:.5em">
       <input id="word-search-input" type="text" placeholder="영어 단어 입력..." autocomplete="off" spellcheck="false"
         onkeydown="if(event.key==='Enter')doWordSearch()"
         style="flex:1;padding:.5em .8em;border:1px solid var(--border);border-radius:.5em;font-size:.95em;background:var(--bg);color:var(--text);font-family:inherit;outline:none">
       <button onclick="doWordSearch()" style="padding:.5em 1em;background:var(--primary);color:#fff;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;font-size:.9em">검색</button>
       <button onclick="closeWordSearch()" style="padding:.5em .7em;background:none;border:1px solid var(--border);border-radius:.5em;cursor:pointer;color:var(--muted);font-size:.9em">✕</button>
     </div>
+    <div id="word-search-chips" style="display:none;margin-bottom:.7em;display:flex;flex-wrap:wrap;gap:.4em"></div>
     <div id="word-search-result"></div>
   </div>
 </div>
@@ -4806,6 +4807,33 @@ function openWordSearch(){
   const ov=document.getElementById('word-search-overlay');
   ov.style.display='flex';
   document.getElementById('word-search-input').focus();
+  // 현재 학습 중인 단어 칩 표시
+  const chips=document.getElementById('word-search-chips');
+  chips.innerHTML='';
+  const candidates=[];
+  if(typeof stWords!=='undefined'&&stWords&&stWords[stIdx]){
+    candidates.push({word:stWords[stIdx].en,label:'지금 단어'});
+  }
+  if(typeof _aiCurrentEn==='string'&&_aiCurrentEn){
+    if(!candidates.find(c=>c.word===_aiCurrentEn))
+      candidates.push({word:_aiCurrentEn,label:'최근 예시'});
+  }
+  if(candidates.length){
+    chips.style.display='flex';
+    candidates.forEach(c=>{
+      const btn=document.createElement('button');
+      btn.textContent=c.word;
+      btn.title=c.label;
+      btn.style.cssText='padding:.3em .75em;border:1px solid var(--primary);border-radius:2em;background:none;color:var(--primary);cursor:pointer;font-size:.85em;font-family:inherit;font-weight:600';
+      btn.onclick=()=>{
+        document.getElementById('word-search-input').value=c.word;
+        doWordSearch();
+      };
+      chips.appendChild(btn);
+    });
+  } else {
+    chips.style.display='none';
+  }
 }
 function closeWordSearch(){
   document.getElementById('word-search-overlay').style.display='none';
