@@ -13,9 +13,11 @@ examples: "영어문장 — 한국어구어체" 3개. 한국어 반드시 포함
 tip: 연음·묵음 등 실제 발음 팁 한 문장.
 JSON만 출력.`;
 
-const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 같은 형식·품질로:
+const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
 
-{"pronunciation":{"syllableWord":"un·sta·ble","ipa":"[ʌnˈsteɪbl]","syllables":[{"text":"un","ko":"언","hint":"약하게","stress":false},{"text":"sta","ko":"스테이","hint":"강세","stress":true},{"text":"ble","ko":"블","hint":"약하게","stress":false}],"combined":"언-스테이-블","tip":"'sta'에 힘주어 '언-스테이-블', 빠르면 '언스테이블'"},"mnemonic":"'언니 스테이크 블렌더' — 언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지","examples":["The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.","She has an unstable personality. — 그녀는 성격이 좀 불안정해.","The table is unstable and might fall over. — 그 테이블이 불안정해서 넘어질 것 같아."]}
+{"pronunciation":{"syllableWord":"un·sta·ble","ipa":"[ʌnˈsteɪbl]","syllables":[{"text":"un","ko":"언","hint":"약하게","stress":false},{"text":"sta","ko":"스테이","hint":"강세","stress":true},{"text":"ble","ko":"블","hint":"약하게","stress":false}],"combined":"언-스테이-블","tip":"sta에 힘주어 언-스테이-블, 빠르면 언스테이블"},"mnemonic":"언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지 = unstable(불안정한)","examples":["The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.","She has an unstable personality. — 그녀는 성격이 좀 불안정해.","The table is unstable and might fall over. — 그 테이블이 불안정해서 넘어질 것 같아."]}
+
+중요: mnemonic은 반드시 한국어 스토리 문장으로 채울 것. examples의 — 뒤는 반드시 자연스러운 한국어 번역으로 채울 것. 빈 칸 절대 금지.
 
 이제 "${word}" (${meaning}) JSON:`;
 
@@ -86,7 +88,7 @@ async function callGroq(messages, apiKey) {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages,
-      max_tokens: 700,
+      max_tokens: 1000,
       temperature: 0.7
     })
   });
