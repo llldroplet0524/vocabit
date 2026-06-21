@@ -1,42 +1,12 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
-반드시 아래 규칙을 따르세요:
-1. 모든 한국어 필드(ko, hint, mnemonic, examples 해석)는 순수 한글로만 작성
-2. 한자(漢字), 가타카나, 히라가나, 키릴 문자 절대 사용 금지
-3. examples의 한국어 해석에 영어 단어 절대 삽입 금지 (예: "세금申告" 금지, "multim으로" 금지)
-4. syllables의 "ko" 필드는 오직 그 음절의 영어 발음을 한글 소리로 적은 것. 의미 있는 단어일 필요 없음
-5. syllables의 "hint" 필드는 "강세" 또는 "약하게" 중 하나만
-6. mnemonic 규칙:
-   - 영어 단어를 그대로 한국어 발음으로 쓰는 것 절대 금지 (change→체인지 금지)
-   - 영어 발음과 비슷하게 들리는 전혀 다른 한국어 단어를 찾아 이미지나 스토리로 연결
-   - "외워요", "기억하세요", "연상하세요" 절대 금지
-7. JSON 외 다른 텍스트 출력 금지`;
+JSON 외 다른 텍스트 출력 금지.`;
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
+아래 JSON 형식으로 출력하세요.
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const { word, meaning } = req.body || {};
-  if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
-
-  const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
-아래 JSON 형식으로 출력하세요. ko와 hint 필드는 반드시 한국어로 채워야 합니다.
-
-중요 규칙:
-- "ko" 필드: 한국어 외래어 표기법으로 해당 음절 소리를 한글로 적으세요.
-  자음: b→브, d→드, f→프, g→그, k→크, l→ㄹ/르, m→므, n→느, p→프, r→르, s→스, t→트, v→브, w→우
-  모음: a→아/에이, e→에/이, i→이/아이, o→오/어, u→어/유
-  복합: dr→드r, bl→블, str→스트, th→드/쓰, sh→쉬, tion→션, ble→블
-  단어 예시: draw→드로, build→빌드, class→클래스, stable→스테이블, simple→심플, define→디파인
-- "hint" 필드: "강세" 또는 "약하게" 둘 중 하나만 쓰세요
-- examples 해석: 한글만 사용하세요
-
-출력 예시 (unstable 불안정한):
+출력 예시 (unstable / 불안정한):
 {
   "pronunciation": {
     "syllableWord": "un·sta·ble",
@@ -56,42 +26,101 @@ export default async function handler(req, res) {
   ]
 }
 
-이제 "${word}" (${meaning})에 대해 같은 형식으로 JSON을 출력하세요:`;
+이제 "${word}" (${meaning})에 대해 JSON을 출력하세요:`;
 
+const REVIEW_PROMPT = (word, meaning, json) => `아래는 "${word}" (${meaning})에 대한 JSON입니다.
+다음 문제를 수정해서 완성된 JSON만 출력하세요:
+- syllables의 "ko" 필드: 해당 음절 소리를 한국어 외래어 표기로 채우세요 (예: un→언, draw→드로, sta→스테이, ble→블, tion→션)
+- syllables의 "hint" 필드: "강세" 또는 "약하게" 중 하나만
+- examples의 "—" 뒤 한국어 해석: 자연스러운 한국어 구어체로 채우세요
+- mnemonic: 발음과 비슷한 한국어 단어로 연결하는 이미지/스토리 (영어 단어 직접 발음 금지)
+
+수정할 JSON:
+${json}`;
+
+function hasKorean(str) {
+  return /[가-힯ᄀ-ᇿ㄰-㆏]/.test(str || '');
+}
+
+function needsReview(parsed) {
+  const syls = (parsed.pronunciation?.syllables) || [];
+  if (syls.some(s => !hasKorean(s.ko))) return true;
+  if (syls.some(s => s.hint !== '강세' && s.hint !== '약하게')) return true;
+  const exs = parsed.examples || [];
+  if (exs.some(ex => {
+    const parts = (ex || '').split('—');
+    return parts.length < 2 || !hasKorean(parts[1]);
+  })) return true;
+  if (!hasKorean(parsed.mnemonic)) return true;
+  return false;
+}
+
+async function callGroq(messages, apiKey) {
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: SYSTEM },
-        { role: 'user', content: prompt }
-      ],
+      messages,
       max_tokens: 2000,
       temperature: 0.7
     })
   });
-
   if (!r.ok) {
     const err = await r.text();
-    console.error('Groq error status:', r.status, 'body:', err);
-    return res.status(500).json({ error: 'Groq error', status: r.status, detail: err });
+    throw new Error(`Groq ${r.status}: ${err}`);
   }
-
   const data = await r.json();
-  const finish = data.choices?.[0]?.finish_reason;
-  const raw = data.choices?.[0]?.message?.content?.trim() || '';
-  console.log('finish_reason:', finish, 'raw_len:', raw.length);
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
+
+function parseJSON(raw) {
+  const match = raw.match(/\{[\s\S]*\}/);
+  return JSON.parse(match ? match[0] : raw);
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { word, meaning } = req.body || {};
+  if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
+
+  const apiKey = process.env.GROQ_API_KEY;
 
   try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    // 1차 생성
+    const raw1 = await callGroq([
+      { role: 'system', content: SYSTEM },
+      { role: 'user', content: GENERATE_PROMPT(word, meaning) }
+    ], apiKey);
+    console.log('1차 raw_len:', raw1.length);
+
+    let parsed = parseJSON(raw1);
+
+    // 2차 검토·수정 (ko/hint/해석이 비어있거나 한국어가 아닌 경우)
+    if (needsReview(parsed)) {
+      console.log('문제 감지 → 2차 수정 요청');
+      const raw2 = await callGroq([
+        { role: 'system', content: SYSTEM },
+        { role: 'user', content: REVIEW_PROMPT(word, meaning, JSON.stringify(parsed, null, 2)) }
+      ], apiKey);
+      console.log('2차 raw_len:', raw2.length);
+      try {
+        parsed = parseJSON(raw2);
+      } catch(e) {
+        console.error('2차 parse error:', e.message);
+        // 2차 실패시 1차 결과라도 반환
+      }
+    }
+
     res.status(200).json(parsed);
   } catch(e) {
-    console.error('JSON parse error:', e.message, 'raw:', raw.substring(0, 300));
-    res.status(200).json({ mnemonic: raw });
+    console.error('handler error:', e.message);
+    res.status(500).json({ error: e.message });
   }
 }
