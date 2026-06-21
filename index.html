@@ -2368,10 +2368,8 @@ function _renderAiResult(d){
     });
     html+='</div>';
   }
-  // 팁
-  if(p.tip) html+=`<div style="margin-bottom:.5em;padding:.3em .5em;background:var(--bg);border-left:3px solid var(--border);font-size:.8em;color:var(--muted)">🔊 ${p.tip}</div>`;
-  // 연상메모
-  if(d.mnemonic) html+=`<div style="margin-bottom:.5em;padding:.4em .5em;background:var(--bg);border-left:3px solid var(--primary);font-size:.83em;line-height:1.6">💡 ${d.mnemonic}</div>`;
+  // 발음 팁
+  if(p.tip) html+=`<div style="margin-bottom:.5em;padding:.4em .5em;background:var(--bg);border-left:3px solid var(--primary);font-size:.83em;line-height:1.6">🔊 ${p.tip}</div>`;
   // 예문
   if(d.examples&&d.examples.length){
     html+='<div style="font-size:.82em;line-height:1.9;margin-bottom:.5em">';
