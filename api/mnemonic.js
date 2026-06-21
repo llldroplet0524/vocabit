@@ -8,6 +8,13 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    - ə(schwa): 어 또는 서/저 등 약한 소리 (usability의 sa→서, cancel의 cel→슬)
    - -ble: 블, -ple: 플, -tle: 틀, -tion: 션, -ness: 니스
 3. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
+4. mnemonic 규칙:
+   - 영어 단어의 한국어 발음 표기(애드밴테이지, 캔슬, 디테인 등)를 시작점으로 사용 금지
+   - 발음의 일부가 연상시키는 전혀 다른 한국어 단어를 찾고, 그 단어와 영어 뜻을 연결하는 스토리를 만들 것
+   - 스토리가 반드시 단어의 뜻과 연결되어야 함 (detain=억류 → 스토리에 '가두다/못 가게 하다'가 있어야 함)
+   - 나쁜 예: detain → '디테인' 사용, 스토리가 뜻과 무관
+   - 좋은 예: detain(억류하다) → '데려다가 테이블에 묶어두다' — 못 떠나게 붙잡는 이미지
+   - 좋은 예: ruin(망치다) → '루이비통 가방을 망가뜨리다' — 망치는 이미지 연결
 JSON 외 다른 텍스트 출력 금지.`;
 
 const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
@@ -33,7 +40,7 @@ const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "$
     ],
     "combined": "언-스테이-블"
   },
-  "mnemonic": "'언스테이블' → '언니가 스테이크를 블렌더에 갈았다' — 불안정하게 흔들리는 블렌더 이미지",
+  "mnemonic": "'언니 스테이크 블렌더' — 언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지",
   "examples": [
     "The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.",
     "She has an unstable personality. — 그녀는 성격이 좀 불안정해.",
@@ -48,7 +55,7 @@ const REVIEW_PROMPT = (word, meaning, json) => `아래는 "${word}" (${meaning})
 - syllables의 "ko" 필드: 국립국어원 외래어 표기법으로 채우세요. cancel→캔슬(can→캔,cel→슬), simple→심플(sim→심,ple→플), action→액션(ac→액,tion→션). "캔셀","심펄" 같은 잘못된 표기 금지
 - syllables의 "hint" 필드: "강세" 또는 "약하게" 중 하나만
 - examples의 "—" 뒤 한국어 해석: 자연스러운 한국어 구어체로 채우세요
-- mnemonic: 발음과 비슷한 한국어 단어로 연결하는 이미지/스토리 (영어 단어 직접 발음 금지)
+- mnemonic: 영어 발음 일부와 비슷한 전혀 다른 한국어 단어로 스토리를 만드세요. 스토리가 반드시 단어의 뜻(${meaning})과 연결되어야 합니다. 영어 단어의 한국어 발음 표기 사용 금지.
 
 수정할 JSON:
 ${json}`;
