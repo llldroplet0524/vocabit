@@ -4814,6 +4814,10 @@ function openWordSearch(){
   if(typeof stWords!=='undefined'&&stWords&&stWords[stIdx]){
     candidates.push({word:stWords[stIdx].en,label:'지금 단어'});
   }
+  const qBtn=document.getElementById('q-ai-btn');
+  if(qBtn&&qBtn.dataset.en&&!candidates.find(c=>c.word===qBtn.dataset.en)){
+    candidates.push({word:qBtn.dataset.en,label:'퀴즈 단어'});
+  }
   if(typeof _aiCurrentEn==='string'&&_aiCurrentEn){
     if(!candidates.find(c=>c.word===_aiCurrentEn))
       candidates.push({word:_aiCurrentEn,label:'최근 예시'});
