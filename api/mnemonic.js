@@ -1,11 +1,12 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
-const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 도와주는 JSON을 생성합니다.
-규칙:
-- 한자(漢字), 가타카나, 히라가나, 키릴 문자를 절대 사용하지 마세요
-- 예문 한국어 해석은 자연스러운 한국어 구어체로 작성하세요 (직역 금지)
-- 연상법은 한국어로만, 영어 단어 포함 금지
-- 반드시 유효한 JSON만 출력하세요`;
+const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
+반드시 아래 규칙을 따르세요:
+1. ko, hint, mnemonic, examples의 한국어 내용은 반드시 한국어(한글)로만 작성하세요
+2. 한자, 가타카나, 히라가나, 키릴 문자 절대 사용 금지
+3. mnemonic은 재미있는 스토리나 이미지로. "외워요", "기억하세요" 절대 금지
+4. examples 한국어 해석은 자연스러운 구어체로 (직역 금지)
+5. JSON 외 다른 텍스트 출력 금지`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -19,24 +20,30 @@ export default async function handler(req, res) {
   if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
 
   const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
-아래 JSON 형식으로만 출력하세요.
+아래 JSON 형식으로 출력하세요. ko와 hint 필드는 반드시 한국어로 채워야 합니다.
 
+출력 예시 (pollinator 수분매개체):
 {
   "pronunciation": {
-    "syllableWord": "음절 구분 (예: dis·dain)",
-    "ipa": "IPA 표기 (예: [dɪsˈdeɪn])",
+    "syllableWord": "pol·li·na·tor",
+    "ipa": "[ˈpɒlɪneɪtər]",
     "syllables": [
-      {"text": "음절", "ko": "한국어 발음", "hint": "강세 또는 약하게 또는 짧게", "stress": true또는false}
+      {"text": "pol", "ko": "팔", "hint": "강세", "stress": true},
+      {"text": "li", "ko": "리", "hint": "약하게", "stress": false},
+      {"text": "na", "ko": "내", "hint": "약하게", "stress": false},
+      {"text": "tor", "ko": "터", "hint": "약하게", "stress": false}
     ],
-    "combined": "전체 한국어 발음 (예: 디스-데인)"
+    "combined": "팔-리-내-터"
   },
-  "mnemonic": "발음이 비슷한 한국어 단어나 상황을 이용해 뜻을 연결하는 기억법. 예: '루인'→'루이'→루이비통 가방을 망가뜨린 이미지. 단순히 '외워요', '기억하세요' 같은 말은 절대 금지. 재미있는 스토리나 이미지로. 한국어만.",
+  "mnemonic": "팔(팔다)리(리어카)내(내가)터(터뜨린다) — 리어카에 꽃가루를 싣고 팔러 다니는 벌의 이미지",
   "examples": [
-    "짧은 영어 예문 — 자연스러운 한국어 해석",
-    "짧은 영어 예문 — 자연스러운 한국어 해석",
-    "짧은 영어 예문 — 자연스러운 한국어 해석"
+    "Bees are the most important pollinators in the world. — 벌은 세상에서 가장 중요한 수분매개체야.",
+    "Without pollinators, many plants cannot survive. — 수분매개체 없이는 많은 식물이 살아남지 못해.",
+    "The garden attracts pollinators with colorful flowers. — 그 정원은 알록달록한 꽃으로 수분매개체를 끌어들여."
   ]
-}`;
+}
+
+이제 "${word}" (${meaning})에 대해 같은 형식으로 JSON을 출력하세요:`;
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -51,8 +58,7 @@ export default async function handler(req, res) {
         { role: 'user', content: prompt }
       ],
       max_tokens: 2000,
-      temperature: 0.7,
-      response_format: { type: 'json_object' }
+      temperature: 0.7
     })
   });
 
@@ -67,13 +73,12 @@ export default async function handler(req, res) {
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
   console.log('finish_reason:', finish, 'raw_len:', raw.length);
 
-  const clean = raw.replace(/[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ]/g, '');
   try {
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     res.status(200).json(parsed);
   } catch(e) {
     console.error('JSON parse error:', e.message, 'raw:', raw.substring(0, 300));
-    res.status(200).json({ _raw: clean, mnemonic: clean });
+    res.status(200).json({ mnemonic: raw });
   }
 }
