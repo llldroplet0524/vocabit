@@ -8,7 +8,9 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    ɪ/iː→이, ʊ/uː→우, e/ɛ→에, æ→애, ɑː→아, ɔː→오, ʌ→어, ə(schwa)→어, ɜː→어
    eɪ→에이, oʊ→오우, aɪ→아이, aʊ→아우
    IPA 자음: p→프, b→브, t→트, d→드, k→크, g→그, f→프, v→브, s→스, z→즈, ʃ→쉬, tʃ→취, r→르, l→ㄹ/를, m→므, n→느
-   예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt ə=어)
+   핵심: ə(schwa)와 ʌ는 둘 다 반드시 "어"로 표기. "아", "오", "에"로 쓰면 안 됨.
+   예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt: ə→어)
+   예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
    예시: relationship [rɪˈleɪʃənʃɪp] → re=리(rɪ), la=레이(leɪ), tion=션(ʃən), ship=십(ʃɪp)
 2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
    예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
@@ -70,9 +72,15 @@ function hasKorean(str) {
   return /[가-힯ᄀ-ᇿ㄰-㆏]/.test(str || '');
 }
 
-// ko/hint 필드에서 한국어·ASCII·공백·기본부호 외 문자(일어·태국어 등) 제거
+const FOREIGN_RE = /[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ฀-๿؀-ۿ]/g; // 일어·한자·태국어·아랍어 등
+
+// ko 필드에서 한국어·ASCII 외 문자 제거
 function stripForeignChars(str) {
   return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
+}
+
+function hasForeignScript(str) {
+  return FOREIGN_RE.test(str || '');
 }
 
 const VOWEL_RE = /[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉ]/gi;
@@ -98,8 +106,14 @@ function stressPositionsFromIPA(ipa) {
 
 function sanitize(parsed) {
   const syls = parsed.pronunciation?.syllables || [];
-  syls.forEach(s => {
-    s.ko = stripForeignChars(s.ko);
+  syls.forEach(s => { s.ko = stripForeignChars(s.ko); });
+
+  // mnemonic·examples에서 외래어(일어·한자·태국어 등) 제거
+  FOREIGN_RE.lastIndex = 0;
+  if (parsed.mnemonic) parsed.mnemonic = parsed.mnemonic.replace(FOREIGN_RE, '');
+  if (parsed.examples) parsed.examples = parsed.examples.map(ex => {
+    FOREIGN_RE.lastIndex = 0;
+    return (ex || '').replace(FOREIGN_RE, '');
   });
 
   const ipa = parsed.pronunciation?.ipa || '';
@@ -131,6 +145,9 @@ function needsReview(parsed) {
     return parts.length < 2 || !hasKorean(parts[1]);
   })) return true;
   if (!hasKorean(parsed.mnemonic)) return true;
+  FOREIGN_RE.lastIndex = 0;
+  if (hasForeignScript(parsed.mnemonic)) return true;
+  if (parsed.examples?.some(ex => { FOREIGN_RE.lastIndex = 0; return hasForeignScript(ex); })) return true;
   return false;
 }
 
