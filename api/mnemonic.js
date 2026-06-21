@@ -28,28 +28,28 @@ export default async function handler(req, res) {
 아래 JSON 형식으로 출력하세요. ko와 hint 필드는 반드시 한국어로 채워야 합니다.
 
 중요 규칙:
-- "ko" 필드: 그 음절 소리를 한글로만 표기. sim→심, pli→플리, fy→파이, tion→션, dain→데인, ness→니스
-- "ko"는 발음 소리 표기일 뿐, 의미 있는 단어나 연상 단어를 쓰면 안 됩니다
-- "hint" 필드: "강세" 또는 "약하게" 중 하나만. 다른 말 금지
-- examples 해석: 한글만. 영어 단어나 한자 절대 혼입 금지
+- "ko" 필드: 영어 음절 소리를 한글로 표기. 반드시 한글(가나다라...)만 사용. 가타카나(ア イ ウ) 절대 금지.
+  예시: un→언, sta→스테이, ble→블, sim→심, pli→플리, fy→파이, tion→션, dain→데인
+- "hint" 필드: "강세" 또는 "약하게" 중 하나만. 다른 표현 절대 금지
+- examples 해석: 한글만. 영어·한자 혼입 절대 금지
 
-출력 예시 (simplify 단순화하다):
+출력 예시 (unstable 불안정한):
 {
   "pronunciation": {
-    "syllableWord": "sim·pli·fy",
-    "ipa": "[ˈsɪmplɪfaɪ]",
+    "syllableWord": "un·sta·ble",
+    "ipa": "[ʌnˈsteɪbl]",
     "syllables": [
-      {"text": "sim", "ko": "심", "hint": "강세", "stress": true},
-      {"text": "pli", "ko": "플리", "hint": "약하게", "stress": false},
-      {"text": "fy", "ko": "파이", "hint": "약하게", "stress": false}
+      {"text": "un", "ko": "언", "hint": "약하게", "stress": false},
+      {"text": "sta", "ko": "스테이", "hint": "강세", "stress": true},
+      {"text": "ble", "ko": "블", "hint": "약하게", "stress": false}
     ],
-    "combined": "심-플리-파이"
+    "combined": "언-스테이-블"
   },
-  "mnemonic": "'심플리파이' → '심(心)플하게 파이를 나눠' — 복잡한 파이 레시피를 심플하게 만드는 이미지",
+  "mnemonic": "'언스테이블' → '언니가 스테이크를 블렌더에 갈았다' — 불안정하게 흔들리는 블렌더 이미지",
   "examples": [
-    "We need to simplify this process. — 이 과정을 좀 단순하게 만들어야 해.",
-    "The teacher simplified the explanation. — 선생님이 설명을 알기 쉽게 풀어줬어.",
-    "Simplify your life by reducing distractions. — 신경 쓸 것들을 줄여서 삶을 단순하게 만들어봐."
+    "The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.",
+    "She has an unstable personality. — 그녀는 성격이 좀 불안정해.",
+    "The table is unstable and might fall over. — 그 테이블이 불안정해서 넘어질 것 같아."
   ]
 }
 
