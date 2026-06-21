@@ -1757,7 +1757,7 @@ let selSecs=new Set(),merged=[],stWords=[],stIdx=0;
 let qQuestions=[],qIdx=0,qScore=0,qMode='both',qEnWord='';
 let qOptWordsMap={};
 let wrongMap=new Map();
-let allHistory=new Map();
+let allHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-hist')||'[]');a.forEach(v=>m.set(v.en,{word:{en:v.en,ko:v.ko||[]},results:v.results||[],ts:v.ts||0}));}catch(e){}return m;})();
 let reviewingWrongMap=null;
 let wrongFromHome=false;
 let isWrongQuizMode=false;
@@ -1870,6 +1870,7 @@ function dbSave(){
         quizLog=mergedQuizLog;
       });
       // localStorage updates after successful transaction
+      try{localStorage.setItem('vocabit-hist',JSON.stringify(histArr));}catch(e){}
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify(typeHistArr));}catch(e){}
       try{localStorage.setItem('vocabit-wrong',JSON.stringify(mergedWrongArr));}catch(e){}
       try{localStorage.setItem('vocabit-ua',JSON.stringify(mergedUaArr));}catch(e){}
