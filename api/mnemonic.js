@@ -55,11 +55,13 @@ Output ONLY valid JSON, no other text.
 
   const data = await r.json();
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
+  // strip CJK characters (漢字) that may slip through
+  const clean = raw.replace(/[一-鿿㐀-䶿]/g, '');
   try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
     res.status(200).json(parsed);
   } catch(e) {
-    res.status(200).json({ mnemonic: raw });
+    res.status(200).json({ mnemonic: clean });
   }
 }

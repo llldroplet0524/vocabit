@@ -2376,10 +2376,12 @@ async function genAiMnemonic(ctx){
     const p=d.pronunciation||{};
     const lines=[];
     if(p.syllableWord||p.ipa)lines.push(`${p.syllableWord||''} ${p.ipa||''}`.trim());
-    if(p.syllables&&p.syllables.length)lines.push(p.syllables.map(s=>`${s.text}(${s.ko})${s.stress?'⭐':''}`).join(' - '));
+    if(p.syllables&&p.syllables.length){
+      p.syllables.forEach(s=>lines.push(`${s.stress?'▶':'  '} ${s.text} : ${s.ko}${s.stress?' ⭐':''}`));
+    }
     if(p.combined)lines.push(`→ ${p.combined}`);
-    if(d.mnemonic)lines.push(`💡 ${d.mnemonic}`);
-    if(d.examples&&d.examples.length)d.examples.forEach(ex=>lines.push(`• ${ex}`));
+    if(d.mnemonic){lines.push('');lines.push(`💡 ${d.mnemonic}`);}
+    if(d.examples&&d.examples.length){lines.push('');d.examples.forEach(ex=>lines.push(`• ${ex}`));}
     _aiCurrentText=lines.join('\n');
     resultEl.innerHTML=_renderAiResult(d);
     resultEl.style.display='block';
