@@ -2357,7 +2357,7 @@ function _renderAiResult(d){
     html+='<table style="width:100%;border-collapse:collapse;margin-bottom:.5em;font-size:.82em">';
     html+='<tr style="color:var(--muted);font-size:.78em;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:.2em .4em">음절</th><th style="text-align:left;padding:.2em .4em">발음</th><th style="text-align:left;padding:.2em .4em">힌트</th></tr>';
     syls.forEach(s=>{
-      const hint=(s.hint||'').replace('강세','강세 ⭐');
+      const hint=(s.hint||'')==='강세'?'강세 ⭐':(s.hint||'')==='보조강세'?'보조강세 ☆':(s.hint||'');
       const bold=s.stress?'font-weight:700;color:var(--primary)':'';
       html+=`<tr style="border-bottom:1px solid var(--border)"><td style="padding:.25em .4em;${bold}">${s.text||''}</td><td style="padding:.25em .4em;${bold}">${s.ko||''}</td><td style="padding:.25em .4em;color:var(--muted)">${hint}</td></tr>`;
     });

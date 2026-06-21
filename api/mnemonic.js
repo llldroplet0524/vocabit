@@ -3,22 +3,24 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
 
 발음 규칙:
-1. "ko" 필드는 음절 철자가 아닌 IPA 발음 기호를 기준으로 결정하세요.
-   - IPA leɪ → 레이 (예: re·la·tion·ship에서 la의 IPA가 leɪ이면 ko="레이")
-   - IPA ʃən → 션 (tion의 IPA가 ʃən이면 ko="션")
-   - IPA rɪ → 리, IPA ʃɪp → 십
-   - relationship 예: re→리, la→레이, tion→션, ship→십 / combined: 리-레이-션-십
-2. IPA 표기에서 ˈ 기호 바로 뒤 음절만 stress:true, 나머지는 모두 stress:false. 강세는 단 하나.
-   예: [rɪˈleɪʃənʃɪp] → ˈ가 leɪ 앞 → la만 stress:true
+1. "ko" 필드는 반드시 IPA 발음 기호 기준으로 결정하세요 (철자 기준 금지).
+   IPA 모음 → 한국어:
+   ɪ/iː→이, ʊ/uː→우, e/ɛ→에, æ→애, ɑː→아, ɔː→오, ʌ→어, ə(schwa)→어, ɜː→어
+   eɪ→에이, oʊ→오우, aɪ→아이, aʊ→아우
+   IPA 자음: p→프, b→브, t→트, d→드, k→크, g→그, f→프, v→브, s→스, z→즈, ʃ→쉬, tʃ→취, r→르, l→ㄹ/를, m→므, n→느
+   예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt ə=어)
+   예시: relationship [rɪˈleɪʃənʃɪp] → re=리(rɪ), la=레이(leɪ), tion=션(ʃən), ship=십(ʃɪp)
+2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
+   예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
 3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
-3. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
-4. mnemonic 규칙:
+4. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
+5. mnemonic 규칙:
+   - 반드시 발음(소리)과 뜻을 동시에 연결해야 함
    - 영어 단어의 한국어 발음 표기(애드밴테이지, 캔슬, 디테인 등)를 시작점으로 사용 금지
-   - 발음의 일부가 연상시키는 전혀 다른 한국어 단어를 찾고, 그 단어와 영어 뜻을 연결하는 스토리를 만들 것
-   - 스토리가 반드시 단어의 뜻과 연결되어야 함 (detain=억류 → 스토리에 '가두다/못 가게 하다'가 있어야 함)
-   - 나쁜 예: detain → '디테인' 사용, 스토리가 뜻과 무관
-   - 좋은 예: detain(억류하다) → '데려다가 테이블에 묶어두다' — 못 떠나게 붙잡는 이미지
-   - 좋은 예: ruin(망치다) → '루이비통 가방을 망가뜨리다' — 망치는 이미지 연결
+   - 발음 일부와 비슷한 전혀 다른 한국어 단어를 찾고, 그 단어로 뜻까지 연결하는 스토리를 만들 것
+   - 나쁜 예: detain → '디테인' 사용 (발음만, 뜻 연결 없음)
+   - 좋은 예: detain(억류하다) → '데'(데리고)+테이블에 묶어두다 → 못 떠나게 붙잡는 이미지 (발음+뜻 연결)
+   - 좋은 예: ruin(망치다) → '루이'(루이비통) 가방을 망가뜨리다 (발음+뜻 연결)
 JSON 외 다른 텍스트 출력 금지.`;
 
 const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
@@ -73,31 +75,46 @@ function stripForeignChars(str) {
   return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
 }
 
-// IPA에서 ˈ(주강세) 앞에 몇 개의 모음 핵이 있는지 세서 강세 음절 인덱스 반환
-function stressIndexFromIPA(ipa) {
+const VOWEL_RE = /[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉ]/gi;
+
+// IPA에서 ˈ(주강세)와 ˌ(보조강세) 위치를 음절 인덱스로 반환
+function stressPositionsFromIPA(ipa) {
   const clean = (ipa || '').replace(/[\[\]\/\s]/g, '');
-  const idx = clean.indexOf('ˈ');
-  if (idx === -1) return -1;
-  const before = clean.substring(0, idx);
-  const vowels = before.match(/[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉː]/gi) || [];
-  return vowels.length; // 0-based 인덱스
+  const result = {}; // { syllableIndex: 'primary'|'secondary' }
+  const countVowelsBefore = pos => {
+    VOWEL_RE.lastIndex = 0;
+    return (clean.substring(0, pos).match(VOWEL_RE) || []).length;
+  };
+  let i = clean.indexOf('ˈ');
+  if (i !== -1) result[countVowelsBefore(i)] = 'primary';
+  let j = 0;
+  while ((j = clean.indexOf('ˌ', j)) !== -1) {
+    const idx = countVowelsBefore(j);
+    if (!result[idx]) result[idx] = 'secondary';
+    j++;
+  }
+  return result;
 }
 
 function sanitize(parsed) {
   const syls = parsed.pronunciation?.syllables || [];
   syls.forEach(s => {
     s.ko = stripForeignChars(s.ko);
-    s.hint = stripForeignChars(s.hint);
   });
 
-  // IPA로 강세 위치 교정
-  if (syls.length > 1) {
-    const ipa = parsed.pronunciation?.ipa || '';
-    const si = stressIndexFromIPA(ipa);
-    if (si >= 0 && si < syls.length) {
+  const ipa = parsed.pronunciation?.ipa || '';
+
+  if (syls.length === 1) {
+    // 단음절: 항상 강세
+    syls[0].stress = true;
+    syls[0].hint = '강세';
+  } else if (syls.length > 1) {
+    const pos = stressPositionsFromIPA(ipa);
+    if (Object.keys(pos).length > 0) {
       syls.forEach((s, i) => {
-        s.stress = (i === si);
-        s.hint = s.stress ? '강세' : '약하게';
+        const t = pos[i];
+        s.stress = t === 'primary';
+        s.hint = t === 'primary' ? '강세' : t === 'secondary' ? '보조강세' : '약하게';
       });
     }
   }
@@ -108,7 +125,6 @@ function sanitize(parsed) {
 function needsReview(parsed) {
   const syls = (parsed.pronunciation?.syllables) || [];
   if (syls.some(s => !hasKorean(s.ko))) return true;
-  if (syls.some(s => s.hint !== '강세' && s.hint !== '약하게')) return true;
   const exs = parsed.examples || [];
   if (exs.some(ex => {
     const parts = (ex || '').split('—');
