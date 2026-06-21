@@ -13,7 +13,9 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt: ə→어)
    예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
    예시: relationship [rɪˈleɪʃənʃɪp] → re=릴(rɪ+다음음절l 연음→받침ㄹ추가), la=레이(leɪ), tion=션(ʃən), ship=쉽(ʃɪp: ʃ→쉬)
+   예시: simplify [ˈsɪm.plɪ.faɪ] → sim=심(sɪm), pli=플리(plɪ: ɪ→이 반드시 포함, "플" 아님), fy=파이(faɪ: aɪ→아이)
    연음 규칙: r+모음 음절 뒤에 l로 시작하는 음절이 올 때 받침 ㄹ 추가. 예: re+la→릴+레이
+   자음군+모음 규칙: pl/bl/kl/gl+모음 → 모음 반드시 포함. plɪ→플리, blɪ→블리, fleɪ→플레이
 2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
    예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
 3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
@@ -39,9 +41,9 @@ const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "$
 - cancel → 캔슬 (can→캔, cel→슬) ← "캔셀" 아님
 - simple → 심플 (sim→심, ple→플) ← "심펄" 아님
 - stable → 스테이블 (sta→스테이, ble→블)
-- action → 액션 (ac→액, tion→션) ← "액선" 아님, ʃ→sh 소리
-- ship → 쉽 (sh→쉬, ip→이+프) ← "십" 아님, ʃ→sh 소리
-- shop → 샵 (sh→샤, op→압) ← "솝" 아님
+- action → 액션 (ac→액, tion→션) ← "액선" 아님
+- ship → 쉽 (ʃɪp: ʃ→쉬, ɪ→이, p→프) ← "십" 아님
+- simplify → 심플리파이 (sim→심, pli→플리, fy→파이) ← "심플라이/심플라이" 아님, pli에서 ɪ=이 빠뜨리지 말 것
 - people → 피플 (peo→피, ple→플)
 - butter → 버터 (but→버, ter→터)
 
@@ -208,7 +210,7 @@ export default async function handler(req, res) {
 
     let parsed = sanitize(parseJSON(raw1));
 
-    // 2차 검토·수정 (ko/hint/해석이 비어있거나 한국어가 아닌 경우)
+    // 2차 검토·수정 (ko/hint/해석/연상메모가 비어있거나 한국어가 아닌 경우)
     if (needsReview(parsed)) {
       console.log('문제 감지 → 2차 수정 요청');
       const raw2 = await callGroq([
@@ -216,11 +218,26 @@ export default async function handler(req, res) {
         { role: 'user', content: REVIEW_PROMPT(word, meaning, JSON.stringify(parsed, null, 2)) }
       ], apiKey);
       console.log('2차 raw_len:', raw2.length);
+      let pass2ok = false;
       try {
         parsed = sanitize(parseJSON(raw2));
+        pass2ok = true;
       } catch(e) {
         console.error('2차 parse error:', e.message);
-        // 2차 실패시 1차 결과라도 반환
+      }
+      // 2차도 품질 불량이면 3차로 새 생성 시도
+      if (!pass2ok || needsReview(parsed)) {
+        console.log('2차 품질 미달 → 3차 새 생성');
+        try {
+          const raw3 = await callGroq([
+            { role: 'system', content: SYSTEM },
+            { role: 'user', content: GENERATE_PROMPT(word, meaning) }
+          ], apiKey);
+          console.log('3차 raw_len:', raw3.length);
+          parsed = sanitize(parseJSON(raw3));
+        } catch(e) {
+          console.error('3차 error:', e.message);
+        }
       }
     }
 
