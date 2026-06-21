@@ -50,7 +50,7 @@ export default async function handler(req, res) {
         { role: 'system', content: SYSTEM },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 500,
+      max_tokens: 900,
       temperature: 0.7
     })
   });
