@@ -2371,7 +2371,14 @@ async function genAiMnemonic(ctx){
     const r=await fetch(AI_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word:en,meaning:ko})});
     if(!r.ok)throw new Error('API error '+r.status);
     const d=await r.json();
-    _aiCurrentText=d.mnemonic||'';
+    const p=d.pronunciation||{};
+    const lines=[];
+    if(p.syllableWord||p.ipa)lines.push(`${p.syllableWord||''} ${p.ipa||''}`.trim());
+    if(p.syllables&&p.syllables.length)lines.push(p.syllables.map(s=>`${s.text}(${s.ko})${s.stress?'⭐':''}`).join(' - '));
+    if(p.combined)lines.push(`→ ${p.combined}`);
+    if(d.mnemonic)lines.push(`💡 ${d.mnemonic}`);
+    if(d.examples&&d.examples.length)d.examples.forEach(ex=>lines.push(`• ${ex}`));
+    _aiCurrentText=lines.join('\n');
     resultEl.innerHTML=_renderAiResult(d);
     resultEl.style.display='block';
     if(isQuiz)saveRow.style.display='inline-block';
