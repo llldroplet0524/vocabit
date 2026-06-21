@@ -1,10 +1,27 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
+syllables의 "ko" 필드는 반드시 국립국어원 외래어 표기법을 따라야 합니다.
+주요 규칙:
+- 받침 없는 l, r: 앞 모음에 붙임 (cancel→캔슬, simple→심플, sample→샘플, people→피플)
+- -ble: 블 (stable→스테이블, able→에이블)
+- -tle: 틀 (little→리틀, bottle→보틀)
+- -tion: 션 (nation→네이션, action→액션)
+- -ness: 니스 (happiness→해피니스)
+- 묵음 e: 표기 안 함 (make→메이크, name→네임)
+- 단모음+자음+e: 장모음으로 (cake→케이크, note→노트)
 JSON 외 다른 텍스트 출력 금지.`;
 
 const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
 아래 JSON 형식으로 출력하세요.
+
+외래어 표기 예시:
+- cancel → 캔슬 (can→캔, cel→슬) ← "캔셀" 아님
+- simple → 심플 (sim→심, ple→플) ← "심펄" 아님
+- stable → 스테이블 (sta→스테이, ble→블)
+- action → 액션 (ac→액, tion→션)
+- people → 피플 (peo→피, ple→플)
+- butter → 버터 (but→버, ter→터)
 
 출력 예시 (unstable / 불안정한):
 {
@@ -30,7 +47,7 @@ const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "$
 
 const REVIEW_PROMPT = (word, meaning, json) => `아래는 "${word}" (${meaning})에 대한 JSON입니다.
 다음 문제를 수정해서 완성된 JSON만 출력하세요:
-- syllables의 "ko" 필드: 해당 음절 소리를 한국어 외래어 표기로 채우세요 (예: un→언, draw→드로, sta→스테이, ble→블, tion→션)
+- syllables의 "ko" 필드: 국립국어원 외래어 표기법으로 채우세요. cancel→캔슬(can→캔,cel→슬), simple→심플(sim→심,ple→플), action→액션(ac→액,tion→션). "캔셀","심펄" 같은 잘못된 표기 금지
 - syllables의 "hint" 필드: "강세" 또는 "약하게" 중 하나만
 - examples의 "—" 뒤 한국어 해석: 자연스러운 한국어 구어체로 채우세요
 - mnemonic: 발음과 비슷한 한국어 단어로 연결하는 이미지/스토리 (영어 단어 직접 발음 금지)
