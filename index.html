@@ -2325,7 +2325,7 @@ function toggleQWeighted(){
   btn.style.borderColor=qWeighted?'var(--danger)':'var(--border)';
   desc.textContent=qWeighted?'오답 단어가 더 자주 출제됩니다':'';
 }
-const AI_API='https://vocabit.vercel.app/api/mnemonic';
+const AI_API='https://vocabit-six.vercel.app/api/mnemonic';
 let _aiCurrentEn='';let _aiCurrentText='';
 async function genAiMnemonic(ctx){
   const isQuiz=ctx==='quiz';
