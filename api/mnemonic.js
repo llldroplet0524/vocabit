@@ -14,10 +14,12 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
    예시: relationship [rɪˈleɪʃənʃɪp] → re=릴(rɪ+다음음절l 연음→받침ㄹ추가), la=레이(leɪ), tion=션(ʃən), ship=쉽(ʃɪp: ʃ→쉬)
    예시: simplify [ˈsɪm.plɪ.faɪ] → sim=심(sɪm), pli=플리(plɪ: ɪ→이 반드시 포함, "플" 아님), fy=파이(faɪ: aɪ→아이)
+   예시: interrupt [ˌɪntəˈrʌpt] → in=인(ˌɪn: 보조강세), ter=터(tər: ə→어, 약하게), rupt=럽트(ˈrʌpt: ʌ→어, 강세)
    연음 규칙: r+모음 음절 뒤에 l로 시작하는 음절이 올 때 받침 ㄹ 추가. 예: re+la→릴+레이
    자음군+모음 규칙: pl/bl/kl/gl+모음 → 모음 반드시 포함. plɪ→플리, blɪ→블리, fleɪ→플레이
 2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
    예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
+   중요: 다음절 단어의 IPA에 반드시 ˈ(주강세) 포함. 강세 기호 누락 금지.
 3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
 4. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
 5. mnemonic 규칙:
@@ -160,6 +162,11 @@ function needsReview(parsed) {
   FOREIGN_RE.lastIndex = 0;
   if (hasForeignScript(parsed.mnemonic)) return true;
   if (parsed.examples?.some(ex => { FOREIGN_RE.lastIndex = 0; return hasForeignScript(ex); })) return true;
+  // 다음절인데 IPA에 강세 기호가 없으면 수정 요청
+  if (syls.length > 1) {
+    const ipa = parsed.pronunciation?.ipa || '';
+    if (!ipa.includes('ˈ') && !ipa.includes('ˌ')) return true;
+  }
   return false;
 }
 
@@ -170,7 +177,7 @@ async function callGroq(messages, apiKey) {
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages,
-      max_tokens: 2000,
+      max_tokens: 700,
       temperature: 0.7
     })
   });
