@@ -26,24 +26,28 @@ export default async function handler(req, res) {
   const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
 아래 JSON 형식으로 출력하세요. ko와 hint 필드는 반드시 한국어로 채워야 합니다.
 
-출력 예시 (pollinator 수분매개체):
+중요:
+- syllables의 "ko" 필드 = 그 음절을 한국어로 발음할 때 소리 (예: "sim"→"심", "pli"→"플리", "fy"→"파이", "tion"→"션")
+- syllables의 "hint" 필드 = 강세 여부만: "강세" 또는 "약하게" 중 하나만 쓰세요
+- "ko"에 단어 뜻이나 설명을 쓰면 안 됩니다. 오직 발음 소리만!
+
+출력 예시 (simplify 단순화하다):
 {
   "pronunciation": {
-    "syllableWord": "pol·li·na·tor",
-    "ipa": "[ˈpɒlɪneɪtər]",
+    "syllableWord": "sim·pli·fy",
+    "ipa": "[ˈsɪmplɪfaɪ]",
     "syllables": [
-      {"text": "pol", "ko": "팔", "hint": "강세", "stress": true},
-      {"text": "li", "ko": "리", "hint": "약하게", "stress": false},
-      {"text": "na", "ko": "내", "hint": "약하게", "stress": false},
-      {"text": "tor", "ko": "터", "hint": "약하게", "stress": false}
+      {"text": "sim", "ko": "심", "hint": "강세", "stress": true},
+      {"text": "pli", "ko": "플리", "hint": "약하게", "stress": false},
+      {"text": "fy", "ko": "파이", "hint": "약하게", "stress": false}
     ],
-    "combined": "팔-리-내-터"
+    "combined": "심-플리-파이"
   },
-  "mnemonic": "'팔리내터' → '팔려고 내가 터뜨렸다' — 꽃가루 봉지를 팔려고 터뜨리는 벌 이미지. pollinator=꽃가루 옮기는 존재",
+  "mnemonic": "'심플리파이' → '심(心)플하게 파이를 나눠' — 복잡한 파이 레시피를 심플하게 만드는 이미지",
   "examples": [
-    "Bees are the most important pollinators in the world. — 벌은 세상에서 가장 중요한 수분매개체야.",
-    "Without pollinators, many plants cannot survive. — 수분매개체 없이는 많은 식물이 살아남지 못해.",
-    "The garden attracts pollinators with colorful flowers. — 그 정원은 알록달록한 꽃으로 수분매개체를 끌어들여."
+    "We need to simplify this process. — 이 과정을 좀 단순하게 만들어야 해.",
+    "The teacher simplified the explanation. — 선생님이 설명을 알기 쉽게 풀어줬어.",
+    "Simplify your life by reducing distractions. — 신경 쓸 것들을 줄여서 삶을 단순하게 만들어봐."
   ]
 }
 
