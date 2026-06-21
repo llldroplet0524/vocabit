@@ -1,85 +1,26 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
-const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
+const SYSTEM = `영어 단어 암기용 JSON 생성 AI. 한국어로만 작성.
 
-발음 규칙:
-1. "ko" 필드는 반드시 IPA 발음 기호 기준으로 결정하세요 (철자 기준 금지).
-   IPA 모음 → 한국어:
-   ɪ/iː→이, ʊ/uː→우, e/ɛ→에, æ→애, ɑː→아, ɔː→오, ʌ→어, ə(schwa)→어, ɜː→어
-   eɪ→에이, oʊ→오우, aɪ→아이, aʊ→아우
-   IPA 자음: p→프, b→브, t→트, d→드, k→크, g→그, f→프, v→브, s→스, z→즈, ʃ→쉬(sh 소리), tʃ→취, r→르, l→ㄹ/를, m→므, n→느
-   ʃ 주의: ʃ는 "sh" 발음 → 반드시 "ㅅ"이 아닌 "쉬/셔/션/쉽" 등으로 표기. 예: ship=/ʃɪp/→쉽, she=/ʃiː/→쉬
-   핵심: ə(schwa)와 ʌ는 둘 다 반드시 "어"로 표기. "아", "오", "에"로 쓰면 안 됨.
-   예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt: ə→어)
-   예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
-   예시: relationship [rɪˈleɪʃənʃɪp] → re=릴(rɪ+다음음절l 연음→받침ㄹ추가), la=레이(leɪ), tion=션(ʃən), ship=쉽(ʃɪp: ʃ→쉬)
-   예시: simplify [ˈsɪm.plɪ.faɪ] → sim=심(sɪm), pli=플리(plɪ: ɪ→이 반드시 포함, "플" 아님), fy=파이(faɪ: aɪ→아이)
-   예시: interrupt [ˌɪntəˈrʌpt] → in=인(ˌɪn: 보조강세), ter=터(tər: ə→어, 약하게), rupt=럽트(ˈrʌpt: ʌ→어, 강세)
-   연음 규칙: r+모음 음절 뒤에 l로 시작하는 음절이 올 때 받침 ㄹ 추가. 예: re+la→릴+레이
-   자음군+모음 규칙: pl/bl/kl/gl+모음 → 모음 반드시 포함. plɪ→플리, blɪ→블리, fleɪ→플레이
-2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
-   예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
-   중요: 다음절 단어의 IPA에 반드시 ˈ(주강세) 포함. 강세 기호 누락 금지.
-3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
-4. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
-5. mnemonic 규칙:
-   - 반드시 발음(소리)과 뜻을 동시에 연결해야 함
-   - 영어 단어의 한국어 발음 표기(애드밴테이지, 캔슬, 디테인 등)를 시작점으로 사용 금지
-   - 발음 일부와 비슷한 전혀 다른 한국어 단어를 찾고, 그 단어로 뜻까지 연결하는 스토리를 만들 것
-   - 나쁜 예: detain → '디테인' 사용 (발음만, 뜻 연결 없음)
-   - 좋은 예: detain(억류하다) → '데'(데리고)+테이블에 묶어두다 → 못 떠나게 붙잡는 이미지 (발음+뜻 연결)
-   - 좋은 예: ruin(망치다) → '루이'(루이비통) 가방을 망가뜨리다 (발음+뜻 연결)
-6. pronunciation.tip 규칙 (선택):
-   - 빠른 연음·묵음·강세 변화 등 실제 발음 팁을 한 문장으로 한국어로
-   - 예: "천천히 읽으면 '릴-레이-션-십', 빠르게 말하면 '릴레이션십'"
-   - 예: "'sump'의 p는 거의 묵음, 자연스럽게 '컨썸션'으로 이어져요"
-   - 예: "'t' 앞뒤 모음 사이에서 미국식 발음은 'd/r'처럼 발음돼요(flap t)"
-JSON 외 다른 텍스트 출력 금지.`;
+IPA→한국어: ə/ʌ→어, ɪ/iː→이, ʊ/uː→우, æ→애, ɑː→아, ɔː→오, eɪ→에이, aɪ→아이, aʊ→아우
+ʃ(sh소리)→쉬: ship→쉽, tion→션 ("선"/"십" 절대 금지)
+자음군: plɪ→플리, blɪ→블리 (모음 ɪ 빠뜨리지 말 것)
+연음: r+ɪ 뒤 l음절 → 받침ㄹ 추가 (re+la→릴레이)
+IPA: 다음절 단어 ˈ(주강세) 반드시 포함. ˌ→보조강세, ˈ→강세/stress:true, 나머지→약하게
 
-const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
-아래 JSON 형식으로 출력하세요.
+mnemonic: 발음 일부 소리와 비슷한 전혀 다른 한국어 단어로 뜻을 연결하는 스토리. 영어발음 직접 표기 금지.
+examples: "영어문장 — 한국어구어체" 3개. 한국어 반드시 포함, 영어단어·알파벳 혼입 금지.
+tip: 연음·묵음 등 실제 발음 팁 한 문장.
+JSON만 출력.`;
 
-외래어 표기 예시:
-- cancel → 캔슬 (can→캔, cel→슬) ← "캔셀" 아님
-- simple → 심플 (sim→심, ple→플) ← "심펄" 아님
-- stable → 스테이블 (sta→스테이, ble→블)
-- action → 액션 (ac→액, tion→션) ← "액선" 아님
-- ship → 쉽 (ʃɪp: ʃ→쉬, ɪ→이, p→프) ← "십" 아님
-- simplify → 심플리파이 (sim→심, pli→플리, fy→파이) ← "심플라이/심플라이" 아님, pli에서 ɪ=이 빠뜨리지 말 것
-- people → 피플 (peo→피, ple→플)
-- butter → 버터 (but→버, ter→터)
+const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력:
+{"pronunciation":{"syllableWord":"","ipa":"[ˈ...]","syllables":[{"text":"","ko":"","hint":"약하게","stress":false}],"combined":"","tip":""},"mnemonic":"'...' — ...이미지","examples":["영어문장 — 한국어해석","영어문장 — 한국어해석","영어문장 — 한국어해석"]}`;
 
-출력 예시 (unstable / 불안정한):
-{
-  "pronunciation": {
-    "syllableWord": "un·sta·ble",
-    "ipa": "[ʌnˈsteɪbl]",
-    "syllables": [
-      {"text": "un", "ko": "언", "hint": "약하게", "stress": false},
-      {"text": "sta", "ko": "스테이", "hint": "강세", "stress": true},
-      {"text": "ble", "ko": "블", "hint": "약하게", "stress": false}
-    ],
-    "combined": "언-스테이-블",
-    "tip": "빠르게 말하면 '언스테이블', 'sta'에 힘을 줘서 '언-스테이-블'"
-  },
-  "mnemonic": "'언니 스테이크 블렌더' — 언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지",
-  "examples": [
-    "The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.",
-    "She has an unstable personality. — 그녀는 성격이 좀 불안정해.",
-    "The table is unstable and might fall over. — 그 테이블이 불안정해서 넘어질 것 같아."
-  ]
-}
+const REVIEW_PROMPT = (word, meaning, json) => `"${word}"(${meaning}) JSON 수정 후 완성본만 출력:
+- ko: IPA 기준 한국어 발음 채우기 (ə/ʌ→어, ʃ→쉬)
+- examples "—" 뒤: 자연스러운 한국어 구어체 필수
+- mnemonic: 발음 일부와 비슷한 한국어 단어+뜻(${meaning}) 연결 스토리
 
-이제 "${word}" (${meaning})에 대해 JSON을 출력하세요:`;
-
-const REVIEW_PROMPT = (word, meaning, json) => `아래는 "${word}" (${meaning})에 대한 JSON입니다.
-다음 문제를 수정해서 완성된 JSON만 출력하세요:
-- syllables의 "ko" 필드: 국립국어원 외래어 표기법으로 채우세요. cancel→캔슬(can→캔,cel→슬), simple→심플(sim→심,ple→플), action→액션(ac→액,tion→션). "캔셀","심펄" 같은 잘못된 표기 금지
-- syllables의 "hint" 필드: "강세" 또는 "약하게" 중 하나만
-- examples의 "—" 뒤 한국어 해석: 자연스러운 한국어 구어체로 채우세요
-- mnemonic: 영어 발음 일부와 비슷한 전혀 다른 한국어 단어로 스토리를 만드세요. 스토리가 반드시 단어의 뜻(${meaning})과 연결되어야 합니다. 영어 단어의 한국어 발음 표기 사용 금지.
-
-수정할 JSON:
 ${json}`;
 
 function hasKorean(str) {
