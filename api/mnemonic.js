@@ -12,12 +12,16 @@ export default async function handler(req, res) {
   if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
 
   const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"야.
-이 단어를 한국인이 재미있고 쉽게 기억할 수 있는 연상법을 만들어줘.
-조건:
-- 순수 한글만 사용 (한자, 영어 섞지 말 것)
-- 발음 유사성이나 웃긴 이미지/스토리 활용
-- 짧고 임팩트 있게 2문장 이내
-- 라벨 없이 바로 내용만 출력`;
+아래 형식 그대로 출력해줘. 형식 외 다른 말은 절대 하지 마.
+
+🔊 발음: (발음이 연상시키는 한국어 단어나 느낌, 1줄)
+💡 연상: (재미있는 이미지나 스토리로 뜻 연결, 1~2줄)
+📝 예문:
+• (영어 예문 1 — 한국어 해석)
+• (영어 예문 2 — 한국어 해석)
+• (영어 예문 3 — 한국어 해석)
+
+조건: 한글·영어 혼용 가능, 한자는 쓰지 말 것.`;
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',

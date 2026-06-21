@@ -340,7 +340,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
           <button onclick="saveMemoBtn(this)" style="flex-shrink:0;padding:.25em .6em;font-size:.75em;border:1px solid var(--primary);border-radius:.45em;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;line-height:1.4">저장</button>
         </div>
       </div>
-      <div id="st-ai-result" style="display:none;margin-bottom:.4em;padding:.45em .6em;background:var(--bg);border:1px solid var(--border);border-radius:.45em;font-size:.8em;line-height:1.6;color:var(--text)"></div>
+      <div id="st-ai-result" style="display:none;margin-bottom:.4em;padding:.45em .6em;background:var(--bg);border:1px solid var(--border);border-radius:.45em;font-size:.8em;line-height:1.8;color:var(--text);white-space:pre-wrap"></div>
       <div id="st-ai-save-row" style="display:none;margin-bottom:.4em">
         <button onclick="saveAiMnemonic('study');event.stopPropagation()" style="font-size:.72em;padding:.25em .65em;background:var(--primary);color:#fff;border:none;border-radius:.4em;cursor:pointer;font-family:inherit;font-weight:600">연상메모에 저장</button>
       </div>
@@ -406,7 +406,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <button id="q-mark-correct-btn" style="display:none;margin-top:.5em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--success);color:var(--success);border-radius:.5em;cursor:pointer" onclick="markTypedCorrect()">+ 정답 추가</button>
     <button id="q-mark-typo-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--warning,#d97706);color:var(--warning,#d97706);border-radius:.5em;cursor:pointer" onclick="markTypedTypo()">⌨️ 오타</button>
     <button id="q-ai-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:.5em;cursor:pointer" onclick="genAiMnemonic('quiz')">✨ AI 연상법</button>
-    <div id="q-ai-result" style="display:none;margin-top:.5em;padding:.5em .7em;background:var(--card);border:1px solid var(--border);border-radius:.5em;font-size:.82em;line-height:1.6;color:var(--text)"></div>
+    <div id="q-ai-result" style="display:none;margin-top:.5em;padding:.5em .7em;background:var(--card);border:1px solid var(--border);border-radius:.5em;font-size:.82em;line-height:1.8;color:var(--text);white-space:pre-wrap"></div>
     <button id="q-ai-save-btn" style="display:none;margin-top:.4em;font-size:.75em;padding:.3em .7em;background:var(--primary);color:#fff;border:none;border-radius:.45em;cursor:pointer;font-family:inherit;font-weight:600" onclick="saveAiMnemonic('quiz')">연상메모에 저장</button>
   </div>
   <button class="btn btn-p btn-full" id="q-next" onclick="nextQ()" style="display:none">다음 →</button>
