@@ -2,16 +2,20 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `영어 단어 암기용 JSON 생성 AI. 한국어로만 작성.
 
-pronunciation.ko: 단어 전체 한국어 발음 (예: degree→디그리, important→임포턴트, consumption→컨썸션)
-pronunciation.syllables: 음절 배열. text(음절), ko(한국어 발음), stress(강세여부 boolean)
-meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현)
+pronunciation.ko: 단어 전체 한국어 발음 (예: degree→디그리, adoption→어답션, consumption→컨썸션)
+pronunciation.syllables: 반드시 IPA 음절 기준(점 위치)으로 분리. 영어 철자 기준 절대 금지.
+- adoption [ə.ˈdɑp.ʃən]: a→어(ə=어, 애 금지), dop→답(강세, ɑ=아), tion→션  ← ad/op/tion 분리하면 틀림
+- ə(schwa)는 무조건 "어". "애" 금지.
+- ɑ→아, ɪ→이, æ→애, ʊ→우
+- ʃ(sh)→쉬/션/쉽. tion=/ʃən/→션, ship=/ʃɪp/→쉽. "선"/"십" 금지.
+meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현), example_ko(그 예시 문장의 자연스러운 한국어 구어체 번역)
 examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국어 구어체 번역)
 mnemonic: 발음 일부와 비슷한 한국어 단어로 뜻을 연결하는 스토리. 영어발음 직접 표기 금지.
 JSON만 출력.`;
 
 const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
 
-{"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false},{"text":"gree","ko":"그리","stress":true}]},"meanings":[{"ko":"도 (온도·각도)","example":"30 degrees"},{"ko":"학위","example":"bachelor's degree"},{"ko":"정도, 수준","example":"to some degree"}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}],"mnemonic":"디스코장에서 그리워하며 리듬을 타다가 학위 수여식에 나타나는 이미지 = degree(학위·정도)"}
+{"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false},{"text":"gree","ko":"그리","stress":true}]},"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}],"mnemonic":"디스코장에서 그리워하며 리듬을 타다가 학위 수여식에 나타나는 이미지 = degree(학위·정도)"}
 
 중요: examples의 ko는 자연스러운 한국어 구어체. meanings와 examples 빈 칸 절대 금지.
 

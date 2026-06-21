@@ -2391,7 +2391,7 @@ function _renderAiResult(d){
     html+='<div style="font-size:.82em;border-top:1px solid var(--border);padding-top:.5em;margin-top:.3em">';
     html+='<div style="color:var(--muted);font-size:.85em;margin-bottom:.3em">대표 뜻</div>';
     d.meanings.forEach(m=>{
-      html+=`<div style="margin-bottom:.15em">• <strong>${m.ko||''}</strong>${m.example?` <span style="color:var(--muted);font-size:.9em">— ${m.example}</span>`:''}</div>`;
+      html+=`<div style="margin-bottom:.3em">• <strong>${m.ko||''}</strong>${m.example?` <span style="color:var(--muted);font-size:.9em">— ${m.example}</span>`:''}${m.example_ko?`<div style="padding-left:1em;color:var(--muted);font-size:.88em">→ ${m.example_ko}</div>`:''}</div>`;
     });
     html+='</div>';
   }
