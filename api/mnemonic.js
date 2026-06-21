@@ -115,11 +115,11 @@ function needsReview(parsed) {
 }
 
 async function callGroq(messages, apiKey) {
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'gpt-4o-mini',
       messages,
       max_tokens: 700,
       temperature: 0.7
@@ -149,7 +149,7 @@ export default async function handler(req, res) {
   const { word, meaning } = req.body || {};
   if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
 
   try {
     // 1차 생성
