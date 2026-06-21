@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'gemma2-9b-it',
       messages: [
         { role: 'system', content: SYSTEM },
         { role: 'user', content: prompt }
@@ -83,14 +83,12 @@ export default async function handler(req, res) {
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
   console.log('finish_reason:', finish, 'raw_len:', raw.length);
 
-  // strip CJK/Katakana/Hiragana/Cyrillic that slip through (Korean Hangul U+AC00-D7AF is safe)
-  const clean = raw.replace(/[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ]/g, '');
   try {
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     res.status(200).json(parsed);
   } catch(e) {
     console.error('JSON parse error:', e.message, 'raw:', raw.substring(0, 300));
-    res.status(200).json({ mnemonic: clean });
+    res.status(200).json({ mnemonic: raw });
   }
 }
