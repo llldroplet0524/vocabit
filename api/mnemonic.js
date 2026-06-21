@@ -13,13 +13,16 @@ examples: "영어문장 — 한국어구어체" 3개. 한국어 반드시 포함
 tip: 연음·묵음 등 실제 발음 팁 한 문장.
 JSON만 출력.`;
 
-const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력:
-{"pronunciation":{"syllableWord":"","ipa":"[ˈ...]","syllables":[{"text":"","ko":"","hint":"약하게","stress":false}],"combined":"","tip":""},"mnemonic":"'...' — ...이미지","examples":["영어문장 — 한국어해석","영어문장 — 한국어해석","영어문장 — 한국어해석"]}`;
+const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 같은 형식·품질로:
+
+{"pronunciation":{"syllableWord":"un·sta·ble","ipa":"[ʌnˈsteɪbl]","syllables":[{"text":"un","ko":"언","hint":"약하게","stress":false},{"text":"sta","ko":"스테이","hint":"강세","stress":true},{"text":"ble","ko":"블","hint":"약하게","stress":false}],"combined":"언-스테이-블","tip":"'sta'에 힘주어 '언-스테이-블', 빠르면 '언스테이블'"},"mnemonic":"'언니 스테이크 블렌더' — 언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지","examples":["The unstable economy is causing problems. — 불안정한 경제가 문제를 일으키고 있어.","She has an unstable personality. — 그녀는 성격이 좀 불안정해.","The table is unstable and might fall over. — 그 테이블이 불안정해서 넘어질 것 같아."]}
+
+이제 "${word}" (${meaning}) JSON:`;
 
 const REVIEW_PROMPT = (word, meaning, json) => `"${word}"(${meaning}) JSON 수정 후 완성본만 출력:
-- ko: IPA 기준 한국어 발음 채우기 (ə/ʌ→어, ʃ→쉬)
-- examples "—" 뒤: 자연스러운 한국어 구어체 필수
-- mnemonic: 발음 일부와 비슷한 한국어 단어+뜻(${meaning}) 연결 스토리
+- ko 비어있으면 IPA 기준으로 채우기 (ə/ʌ→어, ʃ→쉬, plɪ→플리)
+- examples "—" 뒤 한국어 비어있으면 자연스러운 구어체로 채우기
+- mnemonic 비어있거나 내용 없으면: 발음 일부 소리와 비슷한 한국어 단어+뜻(${meaning}) 연결 스토리로
 
 ${json}`;
 
