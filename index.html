@@ -2381,7 +2381,7 @@ function _renderAiResult(d){
         if(ex.ko) html+=`<div style="padding-left:1em;color:var(--muted)">→ ${ex.ko}</div>`;
       } else {
         const parts=(ex||'').split('—');
-        html+=`<div>• ${parts[0]||''}${parts[1]?`<span style="color:var(--muted)"> — ${parts[1]}</span>`:''}`;
+        html+=`<div>• ${parts[0]||''}${parts[1]?`<span style="color:var(--muted)"> — ${parts[1]}</span>`:''}</div>`;
       }
     });
     html+='</div>';
