@@ -1713,17 +1713,19 @@ const ETYM={
     if(!_m.has(k))_m.set(k,[...w.ko]);
     else{const a=_m.get(k);w.ko.forEach(m=>{if(!a.includes(m))a.push(m);});}
   }));
-  // 2nd pass: k 섹션(켈리) 우선 처리 → c/s 섹션에서 중복 제거
+  // 2nd pass: 전체 중복 제거 (k 우선, 뜻 합침)
   const seen=new Set();
-  // 1) 켈리(k) 먼저 seen에 등록
+  // 1) 켈리(k) 먼저 — 내부 중복도 제거
   SECTIONS.filter(s=>s.src==='k').forEach(s=>{
-    s.words.forEach(w=>{
+    s.words=s.words.filter(w=>{
       const k=w.en.toLowerCase().trim();
+      if(seen.has(k))return false;
       seen.add(k);
       w.ko=_m.get(k)||w.ko;
+      return true;
     });
   });
-  // 2) c/s 섹션: 켈리에 이미 있는 단어는 제거
+  // 2) c/s 섹션 — 켈리 포함 전체 중복 제거
   SECTIONS.filter(s=>s.src!=='k').forEach(s=>{
     s.words=s.words.filter(w=>{
       const k=w.en.toLowerCase().trim();
