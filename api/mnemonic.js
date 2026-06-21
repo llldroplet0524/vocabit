@@ -17,14 +17,18 @@ export default async function handler(req, res) {
 발음 유사성, 이미지, 짧은 스토리 등을 활용해서 2~3문장으로 재미있게.
 기억법만 출력하고 앞에 "기억법:" 같은 라벨은 붙이지 마.`;
 
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    }
-  );
+  const isOAuth = apiKey && apiKey.startsWith('AQ.');
+  const url = isOAuth
+    ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const headers = { 'Content-Type': 'application/json' };
+  if (isOAuth) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  const r = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  });
 
   if (!r.ok) {
     const err = await r.text();
