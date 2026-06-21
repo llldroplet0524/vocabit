@@ -3,10 +3,14 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
 
 발음 규칙:
-1. IPA 표기에서 ˈ(기본강세) 또는 ˌ(보조강세) 기호가 앞에 붙은 음절이 stress:true 입니다. 예: [ju:səˈbɪlɪti] → bil이 강세
-2. 국립국어원 외래어 표기법 준수:
-   - ə(schwa): 어 또는 서/저 등 약한 소리 (usability의 sa→서, cancel의 cel→슬)
-   - -ble: 블, -ple: 플, -tle: 틀, -tion: 션, -ness: 니스
+1. "ko" 필드는 음절 철자가 아닌 IPA 발음 기호를 기준으로 결정하세요.
+   - IPA leɪ → 레이 (예: re·la·tion·ship에서 la의 IPA가 leɪ이면 ko="레이")
+   - IPA ʃən → 션 (tion의 IPA가 ʃən이면 ko="션")
+   - IPA rɪ → 리, IPA ʃɪp → 십
+   - relationship 예: re→리, la→레이, tion→션, ship→십 / combined: 리-레이-션-십
+2. IPA 표기에서 ˈ 기호 바로 뒤 음절만 stress:true, 나머지는 모두 stress:false. 강세는 단 하나.
+   예: [rɪˈleɪʃənʃɪp] → ˈ가 leɪ 앞 → la만 stress:true
+3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
 3. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
 4. mnemonic 규칙:
    - 영어 단어의 한국어 발음 표기(애드밴테이지, 캔슬, 디테인 등)를 시작점으로 사용 금지
@@ -69,12 +73,35 @@ function stripForeignChars(str) {
   return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
 }
 
+// IPA에서 ˈ(주강세) 앞에 몇 개의 모음 핵이 있는지 세서 강세 음절 인덱스 반환
+function stressIndexFromIPA(ipa) {
+  const clean = (ipa || '').replace(/[\[\]\/\s]/g, '');
+  const idx = clean.indexOf('ˈ');
+  if (idx === -1) return -1;
+  const before = clean.substring(0, idx);
+  const vowels = before.match(/[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉː]/gi) || [];
+  return vowels.length; // 0-based 인덱스
+}
+
 function sanitize(parsed) {
   const syls = parsed.pronunciation?.syllables || [];
   syls.forEach(s => {
     s.ko = stripForeignChars(s.ko);
     s.hint = stripForeignChars(s.hint);
   });
+
+  // IPA로 강세 위치 교정
+  if (syls.length > 1) {
+    const ipa = parsed.pronunciation?.ipa || '';
+    const si = stressIndexFromIPA(ipa);
+    if (si >= 0 && si < syls.length) {
+      syls.forEach((s, i) => {
+        s.stress = (i === si);
+        s.hint = s.stress ? '강세' : '약하게';
+      });
+    }
+  }
+
   return parsed;
 }
 
