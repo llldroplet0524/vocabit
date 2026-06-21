@@ -5,7 +5,7 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
 - 한자(漢字), 가타카나, 히라가나, 키릴 문자를 절대 사용하지 마세요
 - 예문 한국어 해석은 자연스러운 한국어 구어체로 작성하세요 (직역 금지)
 - 연상법은 한국어로만, 영어 단어 포함 금지
-- JSON 외 다른 텍스트 출력 금지`;
+- 반드시 유효한 JSON만 출력하세요`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -50,8 +50,9 @@ export default async function handler(req, res) {
         { role: 'system', content: SYSTEM },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 900,
-      temperature: 0.7
+      max_tokens: 2000,
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
     })
   });
 
@@ -62,14 +63,17 @@ export default async function handler(req, res) {
   }
 
   const data = await r.json();
+  const finish = data.choices?.[0]?.finish_reason;
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
-  // strip non-Korean/English scripts that may slip through
+  console.log('finish_reason:', finish, 'raw_len:', raw.length);
+
   const clean = raw.replace(/[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ]/g, '');
   try {
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
     res.status(200).json(parsed);
   } catch(e) {
-    res.status(200).json({ mnemonic: clean });
+    console.error('JSON parse error:', e.message, 'raw:', raw.substring(0, 300));
+    res.status(200).json({ _raw: clean, mnemonic: clean });
   }
 }
