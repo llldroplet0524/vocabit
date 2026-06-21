@@ -3,11 +3,13 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 const SYSTEM = `영어 단어 암기용 JSON 생성 AI. 한국어로만 작성.
 
 pronunciation.ko: 단어 전체 한국어 발음 (예: degree→디그리, adoption→어답션, consumption→컨썸션)
-pronunciation.syllables: 반드시 IPA 음절 기준(점 위치)으로 분리. 영어 철자 기준 절대 금지.
-각 항목: text(음절), ko(한국어 발음), stress(boolean), desc(설명)
+pronunciation.syllables: 한국어 발음에 자연스러운 음절로 분리. 각 항목: text, ko, stress(boolean), desc
 - desc 값: "강세, 강하게"(stress:true) / "짧고 약하게"(약모음: ə ɪ 등) / "짧게"(일반 비강세)
-- ə(schwa)는 반드시 "어"로 표기. 단독이면 "어", 자음 뒤면 받침 없이 "어" 추가.
-  pro [prə] → "프러" (프+러). "프" 또는 "프로" 절대 금지.
+- 자음이 두 모음 사이에 있으면 반드시 다음 음절 시작(onset)으로 붙일 것.
+  demanding → de|man|ding (맨-딩) ← de|mand|ing (맨드-잉) 금지
+  consider → con|si|der ← con|sid|er 금지
+- ə(schwa)는 반드시 "어"로 표기. 자음 뒤면 "어" 추가.
+  pro [prə] → "프러". "프" 또는 "프로" 절대 금지.
   a·dop·tion [ə.ˈdɑp.ʃən] → a=어, dop=답(강세), tion=션
 이중모음 필수 규칙 (단순 단모음으로 줄이면 안 됨):
 - eɪ → "에이": hasten [heɪ.sən] has=헤이스(eɪ=에이), day=데이, say=쎄이
@@ -27,6 +29,8 @@ examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국�
 JSON만 출력.`;
 
 const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
+
+이중모음 필수 확인: eɪ→에이(la[leɪ]=레이, day=데이), oʊ→오우(go=고우), aɪ→아이(time=타임)
 
 {"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false,"desc":"짧고 약하게"},{"text":"gree","ko":"그리","stress":true,"desc":"강세, 강하게"}],"tip":"'de'는 '데'가 아닌 '디'로 짧게 읽어요."},"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
 
