@@ -2410,7 +2410,7 @@ async function genAiMnemonic(ctx){
   }catch(e){
     resultEl.textContent='AI 연결 실패. 잠시 후 다시 시도해 주세요.';resultEl.style.display='block';
   }finally{
-    btn.textContent='✨ AI';btn.disabled=false;
+    btn.textContent='✨ 예시';btn.disabled=false;
   }
 }
 function saveAiMnemonic(ctx){
@@ -2524,7 +2524,7 @@ function renderSt(){
   const stAiR=document.getElementById('st-ai-result');if(stAiR){stAiR.style.display='none';}
   const stAiS=document.getElementById('st-ai-save-row');if(stAiS){stAiS.style.display='none';}
   const stAiNA=document.getElementById('st-ai-note-area');if(stAiNA){stAiNA.style.display='none';}
-  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';stMemoTa.style.height='auto';stMemoTa.readOnly=false;stMemoTa.style.opacity='1';stMemoTa.style.cursor='';const stMemoBtn=stMemoTa.closest('.card')&&stMemoTa.closest('.card').querySelector('button');if(stMemoBtn)stMemoBtn.textContent='저장';initMemoRow(stMemoTa,stMemoBtn);
+  const stMemoTa=document.getElementById('st-memo');stMemoTa.dataset.memoEn=w.en;stMemoTa.value=(wordNotes.get(w.en.toLowerCase().trim())||{}).note||'';stMemoTa.style.height='auto';stMemoTa.readOnly=false;stMemoTa.style.opacity='1';stMemoTa.style.cursor='';const stMemoBtn=stMemoTa.closest('.card')&&stMemoTa.closest('.card').querySelector('button[onclick*="saveMemoBtn"]');if(stMemoBtn)stMemoBtn.textContent='저장';initMemoRow(stMemoTa,stMemoBtn);
   updateFavBtn();
   // etymology
   const etym=ETYM[w.en.toLowerCase()];
