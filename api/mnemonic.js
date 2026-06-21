@@ -2,14 +2,14 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `영어 단어 암기용 JSON 생성 AI. 한국어로만 작성.
 
-meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현), example_ko(그 예시 문장의 자연스러운 한국어 구어체 번역)
-examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국어 구어체 번역)
-중요: examples·meanings 빈 칸 절대 금지. ko는 자연스러운 구어체.
+meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현), example_ko(그 예시 문장의 자연스러운 한국어 번역, ~했다/~한다 체)
+examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국어 번역, ~했다/~한다/~이다 체. "~했어/~해/~야" 금지)
+중요: examples·meanings 빈 칸 절대 금지.
 JSON만 출력.`;
 
 const GENERATE_PROMPT = (word, meaning) => `"${word}"${meaning?` (${meaning})`:''} JSON 출력. 아래 예시와 동일한 형식·품질:
 
-{"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
+{"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도이다."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았다."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이다."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도이다."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있다."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이다."}]}
 
 이제 "${word}" (${meaning}) JSON:`;
 

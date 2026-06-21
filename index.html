@@ -345,7 +345,10 @@ h1{text-align:left;padding:1.25em 0 .875em}
         <button onclick="saveAiNote('study');event.stopPropagation()" style="font-size:.72em;padding:.25em .65em;background:var(--success);color:#fff;border:none;border-radius:.4em;cursor:pointer;font-family:inherit;font-weight:600">📌 AI 메모 저장</button>
       </div>
       <div id="st-ai-note-area" style="display:none;margin-bottom:.4em;padding:.45em .6em;background:var(--bg);border:1px solid var(--border);border-radius:.45em;color:var(--text)">
-        <div style="font-size:.72em;color:var(--muted);margin-bottom:.35em;font-weight:600">📌 저장된 AI 메모</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35em">
+          <span style="font-size:.72em;color:var(--muted);font-weight:600">📌 저장된 AI 메모</span>
+          <button onclick="deleteAiNote('study');event.stopPropagation()" style="font-size:.7em;padding:.15em .5em;border:1px solid var(--border);border-radius:.35em;background:none;color:var(--muted);cursor:pointer">🗑 삭제</button>
+        </div>
         <div id="st-ai-note-body"></div>
       </div>
       <div class="memo-row">
@@ -414,7 +417,10 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <button id="q-ai-save-btn" style="display:none"></button>
     <button id="q-ai-note-btn" style="display:none;margin-top:.4em;font-size:.75em;padding:.3em .7em;background:var(--success);color:#fff;border:none;border-radius:.45em;cursor:pointer;font-family:inherit;font-weight:600" onclick="saveAiNote('quiz')">📌 AI 메모 저장</button>
     <div id="q-ai-note-area" style="display:none;margin-top:.6em;padding:.5em .7em;background:var(--card);border:1px solid var(--border);border-radius:.5em;color:var(--text)">
-      <div style="font-size:.72em;color:var(--muted);margin-bottom:.35em;font-weight:600">📌 저장된 AI 메모</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35em">
+        <span style="font-size:.72em;color:var(--muted);font-weight:600">📌 저장된 AI 메모</span>
+        <button onclick="deleteAiNote('quiz');event.stopPropagation()" style="font-size:.7em;padding:.15em .5em;border:1px solid var(--border);border-radius:.35em;background:none;color:var(--muted);cursor:pointer">🗑 삭제</button>
+      </div>
       <div id="q-ai-note-body"></div>
     </div>
   </div>
@@ -2437,6 +2443,19 @@ function saveAiNote(ctx){
   _showSavedAiNote(_aiCurrentEn,isQuiz?'quiz':'study');
   const saveRow=document.getElementById(isQuiz?'q-ai-save-btn':'st-ai-save-row');
   if(saveRow)saveRow.style.display='none';
+}
+function deleteAiNote(ctx){
+  const en=_aiCurrentEn;
+  if(!en)return;
+  const k=en.toLowerCase().trim();
+  aiNotes.delete(k);
+  try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
+  DOC.set({aiNotesData:[...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))},{merge:true}).catch(e=>console.error(e));
+  const isQuiz=ctx==='quiz';
+  const area=document.getElementById(isQuiz?'q-ai-note-area':'st-ai-note-area');
+  if(area)area.style.display='none';
+  const saveRow=document.getElementById(isQuiz?'q-ai-save-btn':'st-ai-save-row');
+  if(saveRow)saveRow.style.display='block';
 }
 function _showSavedAiNote(en,ctx){
   const isQuiz=ctx==='quiz';
