@@ -19,26 +19,10 @@ const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 
 
 이제 "${word}" (${meaning}) JSON:`;
 
-const REVIEW_PROMPT = (word, meaning, json) => `"${word}"(${meaning}) JSON 수정 후 완성본만 출력:
-- ko 비어있으면 IPA 기준으로 채우기 (ə/ʌ→어, ʃ→쉬, plɪ→플리)
-- examples "—" 뒤 한국어 비어있으면 자연스러운 구어체로 채우기
-- mnemonic 비어있거나 내용 없으면: 발음 일부 소리와 비슷한 한국어 단어+뜻(${meaning}) 연결 스토리로
+const FOREIGN_RE = /[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ฀-๿؀-ۿ]/g;
 
-${json}`;
-
-function hasKorean(str) {
-  return /[가-힯ᄀ-ᇿ㄰-㆏]/.test(str || '');
-}
-
-const FOREIGN_RE = /[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ฀-๿؀-ۿ]/g; // 일어·한자·태국어·아랍어 등
-
-// ko 필드에서 한국어·ASCII 외 문자 제거
 function stripForeignChars(str) {
   return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
-}
-
-function hasForeignScript(str) {
-  return FOREIGN_RE.test(str || '');
 }
 
 const VOWEL_RE = /[aeiouæɑɒɔəɛɪɨʊʌɜɐɘɵʉ]/gi;
@@ -94,25 +78,6 @@ function sanitize(parsed) {
   return parsed;
 }
 
-function needsReview(parsed) {
-  const syls = (parsed.pronunciation?.syllables) || [];
-  if (syls.some(s => !hasKorean(s.ko))) return true;
-  const exs = parsed.examples || [];
-  if (exs.some(ex => {
-    const parts = (ex || '').split('—');
-    return parts.length < 2 || !hasKorean(parts[1]);
-  })) return true;
-  if (!hasKorean(parsed.mnemonic)) return true;
-  FOREIGN_RE.lastIndex = 0;
-  if (hasForeignScript(parsed.mnemonic)) return true;
-  if (parsed.examples?.some(ex => { FOREIGN_RE.lastIndex = 0; return hasForeignScript(ex); })) return true;
-  // 다음절인데 IPA에 강세 기호가 없으면 수정 요청
-  if (syls.length > 1) {
-    const ipa = parsed.pronunciation?.ipa || '';
-    if (!ipa.includes('ˈ') && !ipa.includes('ˌ')) return true;
-  }
-  return false;
-}
 
 async function callGroq(messages, apiKey) {
   const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -152,46 +117,12 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   try {
-    // 1차 생성
-    const raw1 = await callGroq([
+    const raw = await callGroq([
       { role: 'system', content: SYSTEM },
       { role: 'user', content: GENERATE_PROMPT(word, meaning) }
     ], apiKey);
-    console.log('1차 raw_len:', raw1.length);
 
-    let parsed = sanitize(parseJSON(raw1));
-
-    // 2차 검토·수정 (ko/hint/해석/연상메모가 비어있거나 한국어가 아닌 경우)
-    if (needsReview(parsed)) {
-      console.log('문제 감지 → 2차 수정 요청');
-      const raw2 = await callGroq([
-        { role: 'system', content: SYSTEM },
-        { role: 'user', content: REVIEW_PROMPT(word, meaning, JSON.stringify(parsed, null, 2)) }
-      ], apiKey);
-      console.log('2차 raw_len:', raw2.length);
-      let pass2ok = false;
-      try {
-        parsed = sanitize(parseJSON(raw2));
-        pass2ok = true;
-      } catch(e) {
-        console.error('2차 parse error:', e.message);
-      }
-      // 2차도 품질 불량이면 3차로 새 생성 시도
-      if (!pass2ok || needsReview(parsed)) {
-        console.log('2차 품질 미달 → 3차 새 생성');
-        try {
-          const raw3 = await callGroq([
-            { role: 'system', content: SYSTEM },
-            { role: 'user', content: GENERATE_PROMPT(word, meaning) }
-          ], apiKey);
-          console.log('3차 raw_len:', raw3.length);
-          parsed = sanitize(parseJSON(raw3));
-        } catch(e) {
-          console.error('3차 error:', e.message);
-        }
-      }
-    }
-
+    const parsed = sanitize(parseJSON(raw));
     res.status(200).json(parsed);
   } catch(e) {
     console.error('handler error:', e.message);
