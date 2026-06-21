@@ -1,5 +1,12 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
+const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 도와주는 JSON을 생성합니다.
+규칙:
+- 한자(漢字), 가타카나, 히라가나, 키릴 문자를 절대 사용하지 마세요
+- 예문 한국어 해석은 자연스러운 한국어 구어체로 작성하세요 (직역 금지)
+- 연상법은 한국어로만, 영어 단어 포함 금지
+- JSON 외 다른 텍스트 출력 금지`;
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -11,25 +18,23 @@ export default async function handler(req, res) {
   const { word, meaning } = req.body || {};
   if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
 
-  const prompt = `[IMPORTANT] Never use Chinese/Japanese characters (漢字). Only Korean (한글), English, numbers, and symbols are allowed.
-
-English word: "${word}", meaning: "${meaning}"
-Output ONLY valid JSON, no other text.
+  const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
+아래 JSON 형식으로만 출력하세요.
 
 {
   "pronunciation": {
-    "syllableWord": "syllables with dots (e.g. in·crease)",
-    "ipa": "IPA (e.g. [ɪnˈkriːs])",
+    "syllableWord": "음절 구분 (예: dis·dain)",
+    "ipa": "IPA 표기 (예: [dɪsˈdeɪn])",
     "syllables": [
-      {"text": "syllable", "ko": "Korean pronunciation", "hint": "강세 or 약하게 or 짧게", "stress": true or false}
+      {"text": "음절", "ko": "한국어 발음", "hint": "강세 또는 약하게 또는 짧게", "stress": true또는false}
     ],
-    "combined": "full Korean reading (e.g. 인-크리스)"
+    "combined": "전체 한국어 발음 (예: 디스-데인)"
   },
-  "mnemonic": "Creative mnemonic using sound or image. MUST be written entirely in Korean (한국어). No English sentences here. NO Chinese characters.",
+  "mnemonic": "발음에서 연상되는 재미있는 한국어 기억법. 한국어만 사용. 1~2문장.",
   "examples": [
-    "English sentence — Korean translation",
-    "English sentence — Korean translation",
-    "English sentence — Korean translation"
+    "짧은 영어 예문 — 자연스러운 한국어 해석",
+    "짧은 영어 예문 — 자연스러운 한국어 해석",
+    "짧은 영어 예문 — 자연스러운 한국어 해석"
   ]
 }`;
 
@@ -41,9 +46,12 @@ Output ONLY valid JSON, no other text.
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 400,
-      temperature: 0.8
+      messages: [
+        { role: 'system', content: SYSTEM },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
     })
   });
 
@@ -55,8 +63,8 @@ Output ONLY valid JSON, no other text.
 
   const data = await r.json();
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
-  // strip CJK characters (漢字) that may slip through
-  const clean = raw.replace(/[一-鿿㐀-䶿]/g, '');
+  // strip non-Korean/English scripts that may slip through
+  const clean = raw.replace(/[぀-ヿ㐀-鿿豈-﫿Ѐ-ӿ]/g, '');
   try {
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
