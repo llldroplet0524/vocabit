@@ -25,7 +25,7 @@ Output ONLY valid JSON, no other text.
     ],
     "combined": "full Korean reading (e.g. 인-크리스)"
   },
-  "mnemonic": "Creative Korean mnemonic using sound or image. 1-2 sentences. Korean and English only, NO Chinese characters.",
+  "mnemonic": "Creative mnemonic using sound or image. MUST be written entirely in Korean (한국어). No English sentences here. NO Chinese characters.",
   "examples": [
     "English sentence — Korean translation",
     "English sentence — Korean translation",
