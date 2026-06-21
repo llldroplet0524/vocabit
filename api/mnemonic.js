@@ -7,7 +7,7 @@ examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국�
 중요: examples·meanings 빈 칸 절대 금지. ko는 자연스러운 구어체.
 JSON만 출력.`;
 
-const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
+const GENERATE_PROMPT = (word, meaning) => `"${word}"${meaning?` (${meaning})`:''} JSON 출력. 아래 예시와 동일한 형식·품질:
 
 {"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { word, meaning } = req.body || {};
-  if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
+  if (!word) return res.status(400).json({ error: 'word required' });
 
   const apiKey = process.env.OPENAI_API_KEY;
 
