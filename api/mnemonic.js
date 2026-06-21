@@ -6,7 +6,10 @@ pronunciation.ko: 단어 전체 한국어 발음 (예: degree→디그리, adopt
 pronunciation.syllables: 반드시 IPA 음절 기준(점 위치)으로 분리. 영어 철자 기준 절대 금지.
 각 항목: text(음절), ko(한국어 발음), stress(boolean), desc(설명)
 - desc 값: "강세, 강하게"(stress:true) / "짧고 약하게"(약모음: ə ɪ 등) / "짧게"(일반 비강세)
-- adoption [ə.ˈdɑp.ʃən]: a→어(ə=어 "애" 금지), dop→답(강세, ɑ=아), tion→션  ← ad/op/tion 분리 절대 금지
+- ə(schwa)는 반드시 "어"로 표기. 단독이면 "어", 자음 뒤면 받침 없이 "어" 추가.
+  pro [prə] → "프러" (프+러). "프" 또는 "프로" 절대 금지.
+  a·dop·tion [ə.ˈdɑp.ʃən] → a=어, dop=답(강세), tion=션
+- oʊ(이중모음) → "오우" 또는 "우" 살짝 추가. mote [moʊt] → "모우트". "모트" 금지.
 - ɑ→아, ɪ→이, æ→애, ʊ→우
 - ʃ(sh)→쉬/션/쉽. tion=/ʃən/→션, ship=/ʃɪp/→쉽. "선"/"십" 금지.
 pronunciation.tip: 한국어 화자가 실제로 틀리기 쉬운 발음이 있을 때만 작성. 없으면 빈 문자열 "".
