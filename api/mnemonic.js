@@ -1,15 +1,13 @@
 const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암기를 위한 JSON을 생성합니다.
-syllables의 "ko" 필드는 반드시 국립국어원 외래어 표기법을 따라야 합니다.
-주요 규칙:
-- 받침 없는 l, r: 앞 모음에 붙임 (cancel→캔슬, simple→심플, sample→샘플, people→피플)
-- -ble: 블 (stable→스테이블, able→에이블)
-- -tle: 틀 (little→리틀, bottle→보틀)
-- -tion: 션 (nation→네이션, action→액션)
-- -ness: 니스 (happiness→해피니스)
-- 묵음 e: 표기 안 함 (make→메이크, name→네임)
-- 단모음+자음+e: 장모음으로 (cake→케이크, note→노트)
+
+발음 규칙:
+1. IPA 표기에서 ˈ(기본강세) 또는 ˌ(보조강세) 기호가 앞에 붙은 음절이 stress:true 입니다. 예: [ju:səˈbɪlɪti] → bil이 강세
+2. 국립국어원 외래어 표기법 준수:
+   - ə(schwa): 어 또는 서/저 등 약한 소리 (usability의 sa→서, cancel의 cel→슬)
+   - -ble: 블, -ple: 플, -tle: 틀, -tion: 션, -ness: 니스
+3. examples 한국어 해석에 영어 단어·알파벳·특수문자 혼입 절대 금지
 JSON 외 다른 텍스트 출력 금지.`;
 
 const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
@@ -57,6 +55,20 @@ ${json}`;
 
 function hasKorean(str) {
   return /[가-힯ᄀ-ᇿ㄰-㆏]/.test(str || '');
+}
+
+// ko/hint 필드에서 한국어·ASCII·공백·기본부호 외 문자(일어·태국어 등) 제거
+function stripForeignChars(str) {
+  return (str || '').replace(/[^가-힯ᄀ-ᇿ㄰-㆏ -~]/g, '').trim();
+}
+
+function sanitize(parsed) {
+  const syls = parsed.pronunciation?.syllables || [];
+  syls.forEach(s => {
+    s.ko = stripForeignChars(s.ko);
+    s.hint = stripForeignChars(s.hint);
+  });
+  return parsed;
 }
 
 function needsReview(parsed) {
@@ -117,7 +129,7 @@ export default async function handler(req, res) {
     ], apiKey);
     console.log('1차 raw_len:', raw1.length);
 
-    let parsed = parseJSON(raw1);
+    let parsed = sanitize(parseJSON(raw1));
 
     // 2차 검토·수정 (ko/hint/해석이 비어있거나 한국어가 아닌 경우)
     if (needsReview(parsed)) {
@@ -128,7 +140,7 @@ export default async function handler(req, res) {
       ], apiKey);
       console.log('2차 raw_len:', raw2.length);
       try {
-        parsed = parseJSON(raw2);
+        parsed = sanitize(parseJSON(raw2));
       } catch(e) {
         console.error('2차 parse error:', e.message);
         // 2차 실패시 1차 결과라도 반환
