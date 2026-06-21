@@ -8,15 +8,19 @@ pronunciation.syllables: 반드시 IPA 음절 기준(점 위치)으로 분리. �
 - ə(schwa)는 무조건 "어". "애" 금지.
 - ɑ→아, ɪ→이, æ→애, ʊ→우
 - ʃ(sh)→쉬/션/쉽. tion=/ʃən/→션, ship=/ʃɪp/→쉽. "선"/"십" 금지.
-pronunciation.tip: 한국어 화자가 실수하기 쉬운 발음 포인트를 짚어주는 1~2문장 팁. 한글로 표기.
-  예) "첫 음절 'con'은 '컨'으로 짧게, 'sump'에 강세를 줘서 '컨-썸션' 으로 발음하면 자연스러워요."
+pronunciation.tip: 한국어 화자가 실수하기 쉬운 발음 포인트를 짚어주는 1~2문장. 반드시 아래 형식:
+  ① 틀리기 쉬운 특정 음절(들)을 지목
+  ② "X가 아니라 Y예요" 형식으로 올바른 발음 제시
+  ③ 자연스럽게 빠르게 말할 때의 발음도 언급
+  예) "'spir' 부분이 핵심인데, '스피어'가 아니라 '스파이어'예요. 빠르게 말하면 '인스파이링'처럼 '어'가 거의 안 들리기도 해요."
+  예) "'usa'를 '유사'가 아니라 '유저'로 발음하는 게 포인트예요. s가 z 소리로 바뀌거든요. 자연스럽게 이어지면 '유저빌리티'예요."
 meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현), example_ko(그 예시 문장의 자연스러운 한국어 구어체 번역)
 examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국어 구어체 번역)
 JSON만 출력.`;
 
 const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
 
-{"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false},{"text":"gree","ko":"그리","stress":true}],"tip":"'gree'에 강세를 줘서 '디-그리'로 발음해요. 첫 음절 'de'는 짧고 약하게, 두 번째 'gree'를 길게 늘여서 읽으면 자연스러워요."},"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
+{"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false},{"text":"gree","ko":"그리","stress":true}],"tip":"'de'를 '데'가 아니라 '디'로 짧게 발음하는 게 포인트예요. 강세는 'gree'에 있어서 자연스럽게 말하면 '디-그리'예요."},"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
 
 중요: examples의 ko는 자연스러운 한국어 구어체. meanings와 examples 빈 칸 절대 금지.
 
