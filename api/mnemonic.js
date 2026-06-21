@@ -81,7 +81,7 @@ function sanitize(parsed) {
 }
 
 
-async function callGroq(messages, apiKey) {
+async function callOpenAI(messages, apiKey) {
   const r = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -94,7 +94,7 @@ async function callGroq(messages, apiKey) {
   });
   if (!r.ok) {
     const err = await r.text();
-    throw new Error(`Groq ${r.status}: ${err}`);
+    throw new Error(`OpenAI ${r.status}: ${err}`);
   }
   const data = await r.json();
   return data.choices?.[0]?.message?.content?.trim() || '';
@@ -119,7 +119,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   try {
-    const raw = await callGroq([
+    const raw = await callOpenAI([
       { role: 'system', content: SYSTEM },
       { role: 'user', content: GENERATE_PROMPT(word, meaning) }
     ], apiKey);
