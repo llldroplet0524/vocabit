@@ -12,7 +12,8 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    핵심: ə(schwa)와 ʌ는 둘 다 반드시 "어"로 표기. "아", "오", "에"로 쓰면 안 됨.
    예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt: ə→어)
    예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
-   예시: relationship [rɪˈleɪʃənʃɪp] → re=리(rɪ), la=레이(leɪ), tion=션(ʃən), ship=십(ʃɪp)
+   예시: relationship [rɪˈleɪʃənʃɪp] → re=릴(rɪ+다음음절l 연음→받침ㄹ추가), la=레이(leɪ), tion=션(ʃən), ship=쉽(ʃɪp: ʃ→쉬)
+   연음 규칙: r+모음 음절 뒤에 l로 시작하는 음절이 올 때 받침 ㄹ 추가. 예: re+la→릴+레이
 2. IPA 표기에서 ˈ(기본강세) 음절만 stress:true/hint:"강세", ˌ(보조강세) 음절은 hint:"보조강세", 나머지는 hint:"약하게"
    예: [ɪmˈpɔːrtənt] → ˈ가 pɔː 앞 → por만 강세
 3. 국립국어원 외래어 표기법: -tion→션, -ble→블, -ple→플, schwa(ə)→어/서
@@ -24,6 +25,11 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    - 나쁜 예: detain → '디테인' 사용 (발음만, 뜻 연결 없음)
    - 좋은 예: detain(억류하다) → '데'(데리고)+테이블에 묶어두다 → 못 떠나게 붙잡는 이미지 (발음+뜻 연결)
    - 좋은 예: ruin(망치다) → '루이'(루이비통) 가방을 망가뜨리다 (발음+뜻 연결)
+6. pronunciation.tip 규칙 (선택):
+   - 빠른 연음·묵음·강세 변화 등 실제 발음 팁을 한 문장으로 한국어로
+   - 예: "천천히 읽으면 '릴-레이-션-십', 빠르게 말하면 '릴레이션십'"
+   - 예: "'sump'의 p는 거의 묵음, 자연스럽게 '컨썸션'으로 이어져요"
+   - 예: "'t' 앞뒤 모음 사이에서 미국식 발음은 'd/r'처럼 발음돼요(flap t)"
 JSON 외 다른 텍스트 출력 금지.`;
 
 const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "${meaning}"입니다.
@@ -49,7 +55,8 @@ const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "$
       {"text": "sta", "ko": "스테이", "hint": "강세", "stress": true},
       {"text": "ble", "ko": "블", "hint": "약하게", "stress": false}
     ],
-    "combined": "언-스테이-블"
+    "combined": "언-스테이-블",
+    "tip": "빠르게 말하면 '언스테이블', 'sta'에 힘을 줘서 '언-스테이-블'"
   },
   "mnemonic": "'언니 스테이크 블렌더' — 언니가 스테이크를 블렌더에 갈다가 불안정하게 넘어지는 이미지",
   "examples": [

@@ -2362,7 +2362,8 @@ function _renderAiResult(d){
       html+=`<tr style="border-bottom:1px solid var(--border)"><td style="padding:.25em .4em;${bold}">${s.text||''}</td><td style="padding:.25em .4em;${bold}">${s.ko||''}</td><td style="padding:.25em .4em;color:var(--muted)">${hint}</td></tr>`;
     });
     html+='</table>';
-    if(p.combined)html+=`<div style="margin-bottom:.6em;font-size:.82em;color:var(--muted)">→ ${p.combined}</div>`;
+    if(p.combined)html+=`<div style="margin-bottom:.4em;font-size:.82em;color:var(--muted)">→ ${p.combined}</div>`;
+    if(p.tip)html+=`<div style="margin-bottom:.6em;padding:.3em .5em;background:var(--bg);border-left:3px solid var(--border);font-size:.78em;color:var(--muted);line-height:1.5">🔊 ${p.tip}</div>`;
   }
   if(d.mnemonic){
     html+=`<div style="margin-bottom:.5em;padding:.4em .5em;background:var(--bg);border-left:3px solid var(--primary);font-size:.83em;line-height:1.6">💡 ${d.mnemonic}</div>`;
