@@ -11,23 +11,25 @@ export default async function handler(req, res) {
   const { word, meaning } = req.body || {};
   if (!word || !meaning) return res.status(400).json({ error: 'word and meaning required' });
 
-  const prompt = `영어 단어 "${word}"의 뜻은 "${meaning}"야.
-아래 JSON 형식으로만 출력해줘. JSON 외 다른 텍스트는 절대 출력하지 마.
+  const prompt = `[IMPORTANT] Never use Chinese/Japanese characters (漢字). Only Korean (한글), English, numbers, and symbols are allowed.
+
+English word: "${word}", meaning: "${meaning}"
+Output ONLY valid JSON, no other text.
 
 {
   "pronunciation": {
-    "syllableWord": "음절 점으로 나눈 단어 (예: al·most)",
-    "ipa": "IPA 표기 (예: [ˈɔːlmoʊst])",
+    "syllableWord": "syllables with dots (e.g. in·crease)",
+    "ipa": "IPA (e.g. [ɪnˈkriːs])",
     "syllables": [
-      {"text": "음절", "ko": "한국어 발음", "hint": "강세 ⭐ 또는 약하게 또는 짧게 등", "stress": true또는false}
+      {"text": "syllable", "ko": "Korean pronunciation", "hint": "강세 or 약하게 or 짧게", "stress": true or false}
     ],
-    "combined": "전체 한국어 발음 (예: 올-모스트)"
+    "combined": "full Korean reading (e.g. 인-크리스)"
   },
-  "mnemonic": "발음이나 생김새에서 뜻을 연결하는 재미있고 창의적인 연상법 1~2문장. 한자 금지.",
+  "mnemonic": "Creative Korean mnemonic using sound or image. 1-2 sentences. Korean and English only, NO Chinese characters.",
   "examples": [
-    "영어 예문 1 — 한국어 해석",
-    "영어 예문 2 — 한국어 해석",
-    "영어 예문 3 — 한국어 해석"
+    "English sentence — Korean translation",
+    "English sentence — Korean translation",
+    "English sentence — Korean translation"
   ]
 }`;
 
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 300,
+      max_tokens: 400,
       temperature: 0.8
     })
   });
