@@ -2445,7 +2445,10 @@ function saveAiNote(ctx){
   if(saveRow)saveRow.style.display='none';
 }
 function deleteAiNote(ctx){
-  const en=_aiCurrentEn;
+  const isQuiz=ctx==='quiz';
+  let en;
+  if(isQuiz){const qBtn=document.getElementById('q-ai-btn');en=qBtn&&qBtn.dataset.en;}
+  else{en=(typeof stWords!=='undefined'&&stWords&&stWords[stIdx])?stWords[stIdx].en:_aiCurrentEn;}
   if(!en)return;
   const k=en.toLowerCase().trim();
   aiNotes.delete(k);
