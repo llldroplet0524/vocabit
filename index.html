@@ -2359,20 +2359,20 @@ function _renderAiResult(d){
   } else if(p.syllableWord){
     html+=`<div style="margin-bottom:.5em"><span style="font-weight:700;font-size:.95em">${p.syllableWord}</span> <span style="color:var(--muted);font-size:.85em">${p.ipa||''}</span></div>`;
   }
-  // 음절 구분 (표)
+  // 음절 구분 (불릿 리스트 + 강세 요약)
   if(syls.length){
-    html+='<table style="border-collapse:collapse;font-size:.82em;margin-bottom:.5em;width:auto">';
-    html+='<thead><tr>';
+    html+='<div style="margin-bottom:.4em;font-size:.84em;line-height:1.9">';
     syls.forEach(s=>{
-      const stressed=s.stress;
-      html+=`<th style="padding:.2em .6em;border:1px solid var(--border);${stressed?'color:var(--primary);font-weight:700':'color:var(--muted);font-weight:400'}">${s.text}${stressed?' <span style="font-size:.75em">↑</span>':''}</th>`;
+      const desc=s.desc||(s.stress?'강세, 강하게':'짧게');
+      html+=`<div>• <span style="${s.stress?'font-weight:700;color:var(--primary)':''}">${s.text}</span> → "${s.ko}" <span style="color:var(--muted);font-size:.88em">(${desc})</span></div>`;
     });
-    html+='</tr></thead><tbody><tr>';
-    syls.forEach(s=>{
-      const stressed=s.stress;
-      html+=`<td style="padding:.2em .6em;border:1px solid var(--border);text-align:center;${stressed?'font-weight:700;color:var(--primary)':''}">${s.ko}</td>`;
-    });
-    html+='</tr></tbody></table>';
+    html+='</div>';
+    const si=syls.findIndex(s=>s.stress);
+    if(si>=0){
+      const ord=['첫 번째','두 번째','세 번째','네 번째','다섯 번째'];
+      const fullKo=syls.map(s=>s.ko).join('');
+      html+=`<div style="margin-bottom:.5em;font-size:.82em;color:var(--muted)">강세는 ${ord[si]||`${si+1}번째`} 음절 '<strong style="color:var(--fg)">${syls[si].ko}</strong>' 에 있어요. → ${fullKo}</div>`;
+    }
   }
   // 발음 팁
   if(p.tip) html+=`<div style="margin-bottom:.5em;padding:.4em .5em;background:var(--bg);border-left:3px solid var(--primary);font-size:.83em;line-height:1.6">🔊 ${p.tip}</div>`;
