@@ -4839,10 +4839,21 @@ function openWordSearch(){
     chips.style.display='none';
   }
 }
+let _searchLastData=null;
 function closeWordSearch(){
   document.getElementById('word-search-overlay').style.display='none';
   document.getElementById('word-search-result').innerHTML='';
   document.getElementById('word-search-input').value='';
+  _searchLastData=null;
+}
+function saveSearchResult(word,data){
+  if(!word||!data)return;
+  const k=word.toLowerCase().trim();
+  aiNotes.set(k,{data,ts:Date.now()});
+  try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
+  DOC.set({aiNotesData:[...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))},{merge:true}).catch(e=>console.error(e));
+  const btn=document.getElementById('search-save-btn');
+  if(btn){btn.textContent='✓ 저장됨';btn.disabled=true;}
 }
 async function doWordSearch(){
   const word=(document.getElementById('word-search-input').value||'').trim();
@@ -4853,10 +4864,15 @@ async function doWordSearch(){
     const r=await fetch(AI_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word,meaning:''})});
     if(!r.ok)throw new Error('API error '+r.status);
     const d=await r.json();
+    const safeWord=word.replace(/'/g,"\\'");
     resultEl.innerHTML=`<div style="display:flex;align-items:center;gap:.6em;margin-bottom:.6em;padding-bottom:.5em;border-bottom:1px solid var(--border)">
       <span style="font-weight:800;font-size:1.15em">${word}</span>
-      <button onclick="speak('${word.replace(/'/g,"\\'")}');event.stopPropagation()" style="padding:.2em .5em;font-size:.85em;border:1px solid var(--border);border-radius:.4em;background:none;cursor:pointer;color:var(--muted)">🔊</button>
-    </div>`+_renderAiResult(d,word);
+      <button onclick="speak('${safeWord}');event.stopPropagation()" style="padding:.2em .5em;font-size:.85em;border:1px solid var(--border);border-radius:.4em;background:none;cursor:pointer;color:var(--muted)">🔊</button>
+    </div>`+_renderAiResult(d,word)+
+    `<div style="margin-top:.6em;padding-top:.5em;border-top:1px solid var(--border)">
+      <button id="search-save-btn" onclick="saveSearchResult('${safeWord}',_searchLastData)" style="padding:.35em .9em;background:var(--primary);color:#fff;border:none;border-radius:.45em;cursor:pointer;font-family:inherit;font-weight:600;font-size:.85em">📌 저장</button>
+    </div>`;
+    _searchLastData=d;
   }catch(e){
     resultEl.innerHTML=`<div style="color:var(--danger,#dc2626);font-size:.85em">검색 실패: ${e.message}</div>`;
   }
