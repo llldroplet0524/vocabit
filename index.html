@@ -2451,14 +2451,13 @@ function deleteAiNote(ctx){
   else{en=(typeof stWords!=='undefined'&&stWords&&stWords[stIdx])?stWords[stIdx].en:_aiCurrentEn;}
   if(!en)return;
   const k=en.toLowerCase().trim();
-  aiNotes.delete(k);
-  try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
-  DOC.set({aiNotesData:[...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))},{merge:true}).catch(e=>console.error(e));
-  const isQuiz=ctx==='quiz';
   const area=document.getElementById(isQuiz?'q-ai-note-area':'st-ai-note-area');
   if(area)area.style.display='none';
   const saveRow=document.getElementById(isQuiz?'q-ai-save-btn':'st-ai-save-row');
   if(saveRow)saveRow.style.display='block';
+  aiNotes.delete(k);
+  try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
+  DOC.set({aiNotesData:[...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))},{merge:true}).catch(e=>console.error(e));
 }
 function _showSavedAiNote(en,ctx){
   const isQuiz=ctx==='quiz';
