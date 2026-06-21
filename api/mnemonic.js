@@ -28,10 +28,13 @@ export default async function handler(req, res) {
 아래 JSON 형식으로 출력하세요. ko와 hint 필드는 반드시 한국어로 채워야 합니다.
 
 중요 규칙:
-- "ko" 필드: 영어 음절 소리를 한글로 표기. 반드시 한글(가나다라...)만 사용. 가타카나(ア イ ウ) 절대 금지.
-  예시: un→언, sta→스테이, ble→블, sim→심, pli→플리, fy→파이, tion→션, dain→데인
-- "hint" 필드: "강세" 또는 "약하게" 중 하나만. 다른 표현 절대 금지
-- examples 해석: 한글만. 영어·한자 혼입 절대 금지
+- "ko" 필드: 한국어 외래어 표기법으로 해당 음절 소리를 한글로 적으세요.
+  자음: b→브, d→드, f→프, g→그, k→크, l→ㄹ/르, m→므, n→느, p→프, r→르, s→스, t→트, v→브, w→우
+  모음: a→아/에이, e→에/이, i→이/아이, o→오/어, u→어/유
+  복합: dr→드r, bl→블, str→스트, th→드/쓰, sh→쉬, tion→션, ble→블
+  단어 예시: draw→드로, build→빌드, class→클래스, stable→스테이블, simple→심플, define→디파인
+- "hint" 필드: "강세" 또는 "약하게" 둘 중 하나만 쓰세요
+- examples 해석: 한글만 사용하세요
 
 출력 예시 (unstable 불안정한):
 {
