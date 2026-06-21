@@ -2347,30 +2347,7 @@ function toggleQWeighted(){
 const AI_API='https://vocabit-six.vercel.app/api/mnemonic';
 let _aiCurrentEn='';let _aiCurrentText='';let _aiCurrentData=null;
 function _renderAiResult(d,word){
-  const p=d.pronunciation||{};
-  const syls=p.syllables||[];
   let html='';
-  // 발음 헤더: simplify 발음: 심-플리-파이 + 영어로 표기하면 /ipa/
-  const sylsKo=syls.length?syls.map(s=>s.ko).join('-'):(p.ko||'');
-  if(sylsKo) html+=`<div style="margin-bottom:.15em;font-weight:700;font-size:1em">${word?word+' ':''}발음: ${sylsKo}</div>`;
-  if(p.ipa) html+=`<div style="margin-bottom:.45em;font-size:.82em;color:var(--muted)">영어로 표기하면 ${p.ipa}</div>`;
-  // 음절 구분 (불릿 리스트 + 강세 요약)
-  if(syls.length){
-    html+='<div style="margin-bottom:.4em;font-size:.84em;line-height:1.9">';
-    syls.forEach(s=>{
-      const desc=s.desc||(s.stress?'강세, 강하게':'짧게');
-      html+=`<div>• <span style="${s.stress?'font-weight:700;color:var(--primary)':''}">${s.text}</span> → "${s.ko}" <span style="color:var(--muted);font-size:.88em">(${desc})</span></div>`;
-    });
-    html+='</div>';
-    const si=syls.findIndex(s=>s.stress);
-    if(si>=0){
-      const ord=['첫 번째','두 번째','세 번째','네 번째','다섯 번째'];
-      const fullKo=syls.map(s=>s.ko).join('');
-      html+=`<div style="margin-bottom:.5em;font-size:.82em;color:var(--muted)">강세는 ${ord[si]||`${si+1}번째`} 음절 '<strong style="color:var(--fg)">${syls[si].ko}</strong>' 에 있어요. → ${fullKo}</div>`;
-    }
-  }
-  // 발음 팁
-  if(p.tip) html+=`<div style="margin-bottom:.5em;padding:.4em .5em;background:var(--bg);border-left:3px solid var(--primary);font-size:.83em;line-height:1.6">🔊 ${p.tip}</div>`;
   // 예문
   if(d.examples&&d.examples.length){
     html+='<div style="font-size:.82em;line-height:1.9;margin-bottom:.5em">';

@@ -2,39 +2,14 @@ const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
 
 const SYSTEM = `영어 단어 암기용 JSON 생성 AI. 한국어로만 작성.
 
-pronunciation.ko: 단어 전체 한국어 발음 (예: degree→디그리, adoption→어답션, consumption→컨썸션)
-pronunciation.syllables: 한국어 발음에 자연스러운 음절로 분리. 각 항목: text, ko, stress(boolean), desc
-- desc 값: "강세, 강하게"(stress:true) / "짧고 약하게"(약모음: ə ɪ 등) / "짧게"(일반 비강세)
-- 자음이 두 모음 사이에 있으면 반드시 다음 음절 시작(onset)으로 붙일 것.
-  demanding → de|man|ding (맨-딩) ← de|mand|ing (맨드-잉) 금지
-  consider → con|si|der ← con|sid|er 금지
-- ə(schwa)는 반드시 "어"로 표기. 자음 뒤면 "어" 추가.
-  pro [prə] → "프러". "프" 또는 "프로" 절대 금지.
-  a·dop·tion [ə.ˈdɑp.ʃən] → a=어, dop=답(강세), tion=션
-이중모음 필수 규칙 (단순 단모음으로 줄이면 안 됨):
-- eɪ → "에이": hasten [heɪ.sən] has=헤이스(eɪ=에이), day=데이, say=쎄이
-- oʊ → "오우": mote [moʊt]=모우트, go=고우
-- aɪ → "아이": time=타임, fly=플라이
-- aʊ → "아우": now=나우, sound=사운드
-- 단모음: ɑ→아, ɪ→이, æ→애, ʊ→우, ə→어
-- ʃ(sh)→쉬/션/쉽. tion=/ʃən/→션, ship=/ʃɪp/→쉽. "선"/"십" 금지.
-pronunciation.tip: 한국어 화자가 실제로 틀리기 쉬운 발음이 있을 때만 작성. 없으면 빈 문자열 "".
-  형식 강요 없음. 짧고 자연스럽게 핵심만.
-  좋은 예) "'spir'는 '스피어'가 아니라 '스파이어'예요." — 실제 오류 교정
-  나쁜 예) "자연스럽게 말하면 '그린하우스'예요." — 당연한 말, 쓸모없음
-  나쁜 예) "빠르게 말하면 '유저빌리티'처럼..." — 억지 형식, 금지
-  greenhouse처럼 한국어로 그대로 읽으면 되는 단어: tip = ""
 meanings: 대표 뜻 2~4개. 각 항목: ko(한국어 뜻), example(영어 예시 표현), example_ko(그 예시 문장의 자연스러운 한국어 구어체 번역)
 examples: 예문 3개. 각 항목: en(영어 문장), ko(자연스러운 한국어 구어체 번역)
+중요: examples·meanings 빈 칸 절대 금지. ko는 자연스러운 구어체.
 JSON만 출력.`;
 
 const GENERATE_PROMPT = (word, meaning) => `"${word}" (${meaning}) JSON 출력. 아래 예시와 동일한 형식·품질:
 
-이중모음 필수 확인: eɪ→에이(la[leɪ]=레이, day=데이), oʊ→오우(go=고우), aɪ→아이(time=타임)
-
-{"pronunciation":{"ipa":"[dɪˈɡriː]","ko":"디그리","syllables":[{"text":"de","ko":"디","stress":false,"desc":"짧고 약하게"},{"text":"gree","ko":"그리","stress":true,"desc":"강세, 강하게"}],"tip":"'de'는 '데'가 아닌 '디'로 짧게 읽어요."},"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
-
-중요: examples의 ko는 자연스러운 한국어 구어체. meanings와 examples 빈 칸 절대 금지.
+{"meanings":[{"ko":"도 (온도·각도)","example":"It's 30 degrees.","example_ko":"30도야."},{"ko":"학위","example":"She got a bachelor's degree.","example_ko":"그녀는 학사 학위를 받았어."},{"ko":"정도, 수준","example":"To some degree, that's true.","example_ko":"어느 정도는 맞는 말이야."}],"examples":[{"en":"It's 25 degrees today.","ko":"오늘은 25도야."},{"en":"She has a bachelor's degree.","ko":"그녀는 학사 학위가 있어."},{"en":"To some degree, that's true.","ko":"어느 정도는 맞는 말이야."}]}
 
 이제 "${word}" (${meaning}) JSON:`;
 
