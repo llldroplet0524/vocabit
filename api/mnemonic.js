@@ -54,7 +54,8 @@ export default async function handler(req, res) {
   const data = await r.json();
   const raw = data.choices?.[0]?.message?.content?.trim() || '';
   try {
-    const parsed = JSON.parse(raw.replace(/^```json\n?|\n?```$/g, ''));
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     res.status(200).json(parsed);
   } catch(e) {
     res.status(200).json({ mnemonic: raw });
