@@ -7,7 +7,8 @@ const SYSTEM = `당신은 한국인 영어 선생님입니다. 영어 단어 암
    IPA 모음 → 한국어:
    ɪ/iː→이, ʊ/uː→우, e/ɛ→에, æ→애, ɑː→아, ɔː→오, ʌ→어, ə(schwa)→어, ɜː→어
    eɪ→에이, oʊ→오우, aɪ→아이, aʊ→아우
-   IPA 자음: p→프, b→브, t→트, d→드, k→크, g→그, f→프, v→브, s→스, z→즈, ʃ→쉬, tʃ→취, r→르, l→ㄹ/를, m→므, n→느
+   IPA 자음: p→프, b→브, t→트, d→드, k→크, g→그, f→프, v→브, s→스, z→즈, ʃ→쉬(sh 소리), tʃ→취, r→르, l→ㄹ/를, m→므, n→느
+   ʃ 주의: ʃ는 "sh" 발음 → 반드시 "ㅅ"이 아닌 "쉬/셔/션/쉽" 등으로 표기. 예: ship=/ʃɪp/→쉽, she=/ʃiː/→쉬
    핵심: ə(schwa)와 ʌ는 둘 다 반드시 "어"로 표기. "아", "오", "에"로 쓰면 안 됨.
    예시: important [ɪmˈpɔːrtənt] → im=임(ɪm), por=포(ˈpɔːr), tant=턴트(tənt: ə→어)
    예시: consumption [kənˈsʌmpʃən] → con=컨(kən: ə→어), sump=썸(sʌmp: ʌ→어), tion=션(ʃən)
@@ -32,7 +33,9 @@ const GENERATE_PROMPT = (word, meaning) => `영어 단어 "${word}"의 뜻은 "$
 - cancel → 캔슬 (can→캔, cel→슬) ← "캔셀" 아님
 - simple → 심플 (sim→심, ple→플) ← "심펄" 아님
 - stable → 스테이블 (sta→스테이, ble→블)
-- action → 액션 (ac→액, tion→션)
+- action → 액션 (ac→액, tion→션) ← "액선" 아님, ʃ→sh 소리
+- ship → 쉽 (sh→쉬, ip→이+프) ← "십" 아님, ʃ→sh 소리
+- shop → 샵 (sh→샤, op→압) ← "솝" 아님
 - people → 피플 (peo→피, ple→플)
 - butter → 버터 (but→버, ter→터)
 
