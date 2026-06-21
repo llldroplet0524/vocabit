@@ -258,16 +258,6 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <!-- 섹션 선택 카드 -->
     <div class="card">
       <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>단어장</span>
-        <div style="display:flex;gap:.375em">
-          <button class="btn btn-s sel-btn" onclick="selAll('c')">전체선택</button>
-          <button class="btn btn-s sel-btn" onclick="selNone('c')">전체해제</button>
-        </div>
-      </div>
-      <div class="sec-grid" id="grid-c"></div>
-    </div>
-    <div class="card">
-      <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
         <span>켈리지텔프 독해 단어</span>
         <div style="display:flex;gap:.375em">
           <button class="btn btn-s sel-btn" onclick="selAll('k')">전체선택</button>
@@ -275,6 +265,16 @@ h1{text-align:left;padding:1.25em 0 .875em}
         </div>
       </div>
       <div class="sec-grid" id="grid-k"></div>
+    </div>
+    <div class="card">
+      <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>단어장</span>
+        <div style="display:flex;gap:.375em">
+          <button class="btn btn-s sel-btn" onclick="selAll('c')">전체선택</button>
+          <button class="btn btn-s sel-btn" onclick="selNone('c')">전체해제</button>
+        </div>
+      </div>
+      <div class="sec-grid" id="grid-c"></div>
     </div>
     <div class="card">
       <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -1713,18 +1713,18 @@ const ETYM={
     if(!_m.has(k))_m.set(k,[...w.ko]);
     else{const a=_m.get(k);w.ko.forEach(m=>{if(!a.includes(m))a.push(m);});}
   }));
-  // 2nd pass: c 섹션(단어장) 우선 처리 → k/s 섹션에서 중복 제거
+  // 2nd pass: k 섹션(켈리) 우선 처리 → c/s 섹션에서 중복 제거
   const seen=new Set();
-  // 1) 단어장(c) 먼저 seen에 등록 (뜻은 원본 그대로 유지)
-  SECTIONS.filter(s=>s.src==='c').forEach(s=>{
+  // 1) 켈리(k) 먼저 seen에 등록
+  SECTIONS.filter(s=>s.src==='k').forEach(s=>{
     s.words.forEach(w=>{
       const k=w.en.toLowerCase().trim();
       seen.add(k);
-      // w.ko는 수정하지 않음 - 단어장 원본 뜻 유지
+      w.ko=_m.get(k)||w.ko;
     });
   });
-  // 2) k/s 섹션: 단어장에 이미 있는 단어는 제거
-  SECTIONS.filter(s=>s.src!=='c').forEach(s=>{
+  // 2) c/s 섹션: 켈리에 이미 있는 단어는 제거
+  SECTIONS.filter(s=>s.src!=='k').forEach(s=>{
     s.words=s.words.filter(w=>{
       const k=w.en.toLowerCase().trim();
       if(seen.has(k))return false;
