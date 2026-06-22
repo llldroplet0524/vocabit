@@ -1871,15 +1871,10 @@ function dbSave(){
       const mergedWrongArr=[...allWrong.entries()].map(([en,v])=>({en,ko:v.word.ko,count:v.count}));
       const mergedUaArr=[...userAnswers.entries()].map(([en,s])=>({en,answers:[...s]}));
       const resumeArr=getAllProgKeys().map(k=>{try{return{key:k,data:JSON.parse(localStorage.getItem(k))};}catch{return null;}}).filter(Boolean);
-      const now=Date.now();
-      try{localStorage.setItem('vocabit-wrong-ts',String(now));}catch(e){}
-      try{localStorage.setItem('vocabit-history-ts',String(now));}catch(e){}
       await DOC.set({
         favorites:[...favorites],
         wrongData:mergedWrongArr,
-        wrongSavedAt:now,
         historyData:histArr,
-        historySavedAt:now,
         userAnswersData:mergedUaArr,
         typeHistoryData:typeHistArr,
         resumeData:resumeArr
@@ -1917,45 +1912,27 @@ function dbLoad(){
         updateHomeFavBtn();
       }
     }
-    if(d.wrongData !== undefined){
-      const fbTs=d.wrongSavedAt||0;
-      const localTs=parseInt(localStorage.getItem('vocabit-wrong-ts')||'0');
-      if(fbTs>localTs){
-        // Firebase가 더 최신 → 삭제 포함 완전 교체
-        allWrong=new Map((d.wrongData||[]).map(v=>[v.en,{word:{en:v.en,ko:v.ko},count:v.count}]));
-        try{localStorage.setItem('vocabit-wrong-ts',String(fbTs));}catch(e){}
-        try{localStorage.setItem('vocabit-wrong',JSON.stringify(d.wrongData||[]));}catch(e){}
-      } else {
-        // 로컬이 더 최신 → merge(추가/max)만
-        (d.wrongData||[]).forEach(v=>{
-          if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count});
-          else if(v.count>allWrong.get(v.en).count) allWrong.get(v.en).count=v.count;
-        });
-      }
+    if(d.wrongData && d.wrongData.length){
+      d.wrongData.forEach(v=>{
+        if(!allWrong.has(v.en)) allWrong.set(v.en,{word:{en:v.en,ko:v.ko},count:v.count});
+        else if(v.count>allWrong.get(v.en).count) allWrong.get(v.en).count=v.count;
+      });
       updateHomeWrongBtn();
     }
-    if(d.historyData !== undefined){
-      const fbTs=d.historySavedAt||0;
-      const localTs=parseInt(localStorage.getItem('vocabit-history-ts')||'0');
-      if(fbTs>localTs){
-        // Firebase가 더 최신 → 삭제 포함 완전 교체
-        allHistory=new Map();
-        (d.historyData||[]).forEach(v=>{
-          let results=v.results||[];
-          if(!results.length&&(v.wrongs||v.corrects)){for(let i=0;i<(v.wrongs||0);i++)results.push(false);for(let i=0;i<(v.corrects||0);i++)results.push(true);}
+    if(d.historyData && d.historyData.length){
+      d.historyData.forEach(v=>{
+        let results=v.results||[];
+        if(!results.length&&(v.wrongs||v.corrects)){
+          for(let i=0;i<(v.wrongs||0);i++)results.push(false);
+          for(let i=0;i<(v.corrects||0);i++)results.push(true);
+        }
+        if(!allHistory.has(v.en)){
           allHistory.set(v.en,{word:{en:v.en,ko:v.ko},results,ts:v.ts||0});
-        });
-        try{localStorage.setItem('vocabit-history-ts',String(fbTs));}catch(e){}
-        try{localStorage.setItem('vocabit-history',JSON.stringify([...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||[],results:v.results||[],ts:v.ts||0}))));}catch(e){}
-      } else {
-        // 로컬이 더 최신 → 항목별 ts 비교 merge
-        (d.historyData||[]).forEach(v=>{
-          let results=v.results||[];
-          if(!results.length&&(v.wrongs||v.corrects)){for(let i=0;i<(v.wrongs||0);i++)results.push(false);for(let i=0;i<(v.corrects||0);i++)results.push(true);}
-          if(!allHistory.has(v.en)){allHistory.set(v.en,{word:{en:v.en,ko:v.ko},results,ts:v.ts||0});}
-          else if((v.ts||0)>(allHistory.get(v.en).ts||0)){const h=allHistory.get(v.en);h.results=results;h.ts=v.ts||0;}
-        });
-      }
+        } else if((v.ts||0)>(allHistory.get(v.en).ts||0)){
+          const h=allHistory.get(v.en);h.results=results;h.ts=v.ts||0;
+        }
+      });
+      try{localStorage.setItem('vocabit-history',JSON.stringify([...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||[],results:v.results||[],ts:v.ts||0}))));}catch(e){}
       if(document.getElementById('sc-history').classList.contains('active'))goHistory();
     }
     if(d.userAnswersData && d.userAnswersData.length){
