@@ -2063,7 +2063,7 @@ var _etymGroups=[];
   dbLoad();
   updateHomeResume();
   if(favorites.size>0)setTimeout(dbSaveFavNow,1500);
-  if(allWrong.size>0)setTimeout(dbSave,2000);
+  if(allWrong.size>0||allHistory.size>0||userAnswers.size>0||aiNotes.size>0)setTimeout(dbSave,2000);
   // 직접입력(type)이 아닌 퀴즈 기록 + k021 기록 일괄 삭제 (Firebase 직접 덮어쓰기)
   (function(){
     const before=quizLog.length;
