@@ -5090,7 +5090,8 @@ function openRelatedWords(en){
   let baseKo=[];
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{if(w.en.toLowerCase()===s&&!baseKo.length)baseKo=w.ko||[];}));
   const titleEl=document.getElementById('rel-word-title');
-  titleEl.innerHTML=`<span>${en}</span>${baseKo.length?`<span style="font-size:.75em;font-weight:400;color:var(--muted);margin-left:.5em">${_dedupeKo(baseKo).join(' / ')}</span>`:''}`;
+  const safeEn=en.replace(/'/g,"\\'");
+  titleEl.innerHTML=`<span style="display:flex;align-items:center;gap:.4em"><button onclick="speak('${safeEn}')" class="tts" style="font-size:.78em;padding:.1em .35em;flex-shrink:0">🔊</button><span>${en}</span>${baseKo.length?`<span style="font-size:.75em;font-weight:400;color:var(--muted)">${_dedupeKo(baseKo).join(' / ')}</span>`:''}</span>`;
 
   document.getElementById('rel-modal').style.display='flex';
   _renderRelList(en);
