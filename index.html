@@ -254,6 +254,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goHistory()">📊 회독 체크</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" id="home-ua-btn" onclick="goUserAnswers()">📝 추가 정답</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goMemos()">📝 연상메모</button>
+      <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em;grid-column:span 4" onclick="manualSync(this)">☁️ 지금 동기화</button>
     </div>
     <!-- 섹션 선택 카드 -->
     <div class="card">
@@ -2179,6 +2180,13 @@ window.addEventListener('hashchange',()=>{
   navigateToHash(h);
 });
 function goHome(){showSc('home');updateHomeResume();refreshSectionStats();}
+function manualSync(btn){
+  const orig=btn.textContent;
+  btn.textContent='저장 중...';btn.disabled=true;
+  dbSave();
+  setTimeout(()=>{btn.textContent='✅ 저장됨';},1500);
+  setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},3000);
+}
 function switchHomeTab(tab){
   document.getElementById('home-tab-study').style.display=tab==='study'?'':'none';
   document.getElementById('home-tab-browse').style.display=tab==='browse'?'':'none';
@@ -4965,20 +4973,34 @@ function openRelatedWords(en){
     if(seen.has(k)||k===s)return;
     if(k.includes(s)||s.includes(k)){seen.add(k);found.push(w);}
   }));
-  // 제외 목록 적용
+  // 제외/추가 목록
   const excKey='rel-excl-'+s;
+  const addKey='rel-add-'+s;
   let excluded=new Set();
+  let manualAdded=[];
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
-  const visible=found.filter(w=>!excluded.has(w.en.toLowerCase()));
+  try{manualAdded=JSON.parse(localStorage.getItem(addKey)||'[]');}catch(e){}
+
+  // 수동 추가 단어 DB에서 찾기
+  const addedWords=[];
+  manualAdded.forEach(q=>{
+    if(seen.has(q))return;
+    SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+      if(w.en.toLowerCase()===q&&!seen.has(q)){seen.add(q);addedWords.push({...w,_manual:true});}
+    }));
+  });
+
+  const visible=[...found,...addedWords].filter(w=>!excluded.has(w.en.toLowerCase()));
 
   document.getElementById('rel-word-title').textContent=en;
   const list=document.getElementById('rel-list');
-  if(visible.length===0&&found.length===0){
-    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">관련 단어가 없습니다.</div>';
+  const undoBtn=_lastExcluded&&_lastExcluded.base===en?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기</button>`:'';
+  if(visible.length===0&&found.length===0&&addedWords.length===0){
+    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>';
   } else if(visible.length===0){
-    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">모든 단어가 제외됐습니다. <button onclick="clearRelExcluded(\''+en+'\')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:1em;text-decoration:underline">초기화</button></div>';
+    list.innerHTML=`<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">모든 단어가 제외됐습니다.${undoBtn} <button onclick="clearRelExcluded('${en}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;text-decoration:underline">전체초기화</button></div>`;
   } else {
-    list.innerHTML=visible.map(w=>{
+    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+visible.map(w=>{
       // 매칭 부분 강조
       const k=w.en.toLowerCase();
       const matchStr=k.includes(s)?s:k; // 어느 쪽이 포함되는지
@@ -4988,19 +5010,44 @@ function openRelatedWords(en){
         const before=w.en.slice(0,idx);
         const match=w.en.slice(idx,idx+matchStr.length);
         const after=w.en.slice(idx+matchStr.length);
-        highlighted=`${before}<span style="color:var(--primary);font-weight:800">${match}</span>${after}`;
+        highlighted=`${before}<span style="color:#2563eb;font-weight:800">${match}</span>${after}`;
       }
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${highlighted}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
     }).join('');
   }
+  // 단어 추가 입력창
+  list.innerHTML+=`<div style="margin-top:.75em;padding-top:.6em;border-top:1px solid var(--border);display:flex;gap:.4em"><input id="rel-add-input" type="text" placeholder="단어 직접 추가..." style="flex:1;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addRelWord('${en}')"><button onclick="addRelWord('${en}')" style="padding:.4em .75em;border:none;background:#2563eb;color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">추가</button></div>`;
   document.getElementById('rel-modal').style.display='flex';
 }
+let _lastExcluded=null; // 되돌리기용
 function excludeRelWord(base,target){
   const excKey='rel-excl-'+base.toLowerCase();
   let excluded=new Set();
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
+  _lastExcluded={base,target,excKey};
   excluded.add(target);
   try{localStorage.setItem(excKey,JSON.stringify([...excluded]));}catch(e){}
+  openRelatedWords(base);
+}
+function undoExcludeRelWord(){
+  if(!_lastExcluded)return;
+  const {base,target,excKey}=_lastExcluded;
+  let excluded=new Set();
+  try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
+  excluded.delete(target);
+  try{localStorage.setItem(excKey,JSON.stringify([...excluded]));}catch(e){}
+  _lastExcluded=null;
+  openRelatedWords(base);
+}
+function addRelWord(base){
+  const q=document.getElementById('rel-add-input').value.trim().toLowerCase();
+  if(!q)return;
+  const addKey='rel-add-'+base.toLowerCase();
+  let added=[];
+  try{added=JSON.parse(localStorage.getItem(addKey)||'[]');}catch(e){}
+  if(!added.includes(q)){added.push(q);}
+  try{localStorage.setItem(addKey,JSON.stringify(added));}catch(e){}
+  document.getElementById('rel-add-input').value='';
   openRelatedWords(base);
 }
 function clearRelExcluded(base){
