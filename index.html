@@ -2166,15 +2166,12 @@ window.addEventListener('hashchange',()=>{
 });
 function goHome(){showSc('home');updateHomeResume();refreshSectionStats();}
 function showDataCount(){
-  DOC.get().then(snap=>{
-    const d=snap.exists?snap.data():{};
-    const wrong=(d.wrongData||[]).length;
-    const hist=(d.historyData||[]).length;
-    const fav=(d.favorites||[]).length;
-    const notes=(d.notesData||[]).length;
-    const ua=(d.userAnswersData||[]).length;
-    alert(`📊 Firebase 저장 데이터\n\n오답 단어: ${wrong}개\n회독 기록: ${hist}개\n단어장: ${fav}개\nAI 메모: ${notes}개\n추가 정답: ${ua}개`);
-  }).catch(e=>alert('오류: '+e.message));
+  const wrong=typeof allWrong!=='undefined'?allWrong.size:0;
+  const hist=typeof allHistory!=='undefined'?allHistory.size:0;
+  const fav=typeof favorites!=='undefined'?favorites.size:0;
+  const ua=typeof userAnswers!=='undefined'?userAnswers.size:0;
+  const notes=typeof aiNotes!=='undefined'?aiNotes.size:0;
+  alert(`📊 현재 로드된 데이터\n\n오답 단어: ${wrong}개\n회독 기록: ${hist}개\n단어장: ${fav}개\nAI 메모: ${notes}개\n추가 정답: ${ua}개`);
 }
 function switchHomeTab(tab){
   document.getElementById('home-tab-study').style.display=tab==='study'?'':'none';
