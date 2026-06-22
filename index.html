@@ -5028,16 +5028,8 @@ function _dedupeKo(koArr){
     return true;
   });
 }
-function openRelatedWords(en){
-  if(!en)return;
+function _renderRelList(en, aiWords){
   const s=en.toLowerCase();
-  const found=[],seen=new Set();
-  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    const k=w.en.toLowerCase();
-    if(seen.has(k)||k===s)return;
-    if(k.includes(s)||s.includes(k)){seen.add(k);found.push(w);}
-  }));
-  // 제외/추가 목록
   const excKey='rel-excl-'+s;
   const addKey='rel-add-'+s;
   let excluded=new Set();
@@ -5045,48 +5037,62 @@ function openRelatedWords(en){
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
   try{manualAdded=JSON.parse(localStorage.getItem(addKey)||'[]');}catch(e){}
 
-  // 수동 추가 단어 DB에서 찾기
+  // AI 어원 관련 단어 (저장된 단어 중에서 필터)
+  const aiSet=new Set((aiWords||[]).map(w=>w.toLowerCase()));
+  const aiFound=[],seen=new Set([s]);
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    const k=w.en.toLowerCase();
+    if(seen.has(k)||excluded.has(k))return;
+    if(aiSet.has(k)){seen.add(k);aiFound.push(w);}
+  }));
+
+  // 수동 추가 단어
   const addedWords=[];
   manualAdded.forEach(q=>{
-    if(seen.has(q))return;
+    if(seen.has(q)||excluded.has(q))return;
     SECTIONS.forEach(sec=>sec.words.forEach(w=>{
       if(w.en.toLowerCase()===q&&!seen.has(q)){seen.add(q);addedWords.push({...w,_manual:true});}
     }));
   });
 
-  const visible=[...found,...addedWords].filter(w=>!excluded.has(w.en.toLowerCase()));
+  const list=document.getElementById('rel-list');
+  const undoBtn=_lastExcluded&&_lastExcluded.base===en?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기</button>`:'';
+  const allVisible=[...aiFound,...addedWords];
 
-  // 기준 단어 뜻 찾기
+  function _wordRow(w){
+    const k=w.en.toLowerCase();
+    const safeEn=w.en.replace(/'/g,"\\'");
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${w.en}</span>${w._manual?'<span style="font-size:.72em;color:var(--muted);margin-left:.35em">직접추가</span>':''} <span style="color:var(--muted);font-size:.85em">— ${_dedupeKo(w.ko).slice(0,2).join(' / ')}</span></div><button onclick="excludeRelWord('${en}','${k}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
+  }
+
+  if(allVisible.length===0){
+    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">저장된 어원 관련 단어가 없습니다.</div>';
+  } else {
+    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+allVisible.map(_wordRow).join('');
+  }
+  list.innerHTML+=`<div style="margin-top:.75em;padding-top:.6em;border-top:1px solid var(--border);display:flex;gap:.4em"><input id="rel-add-input" type="text" placeholder="단어 직접 추가..." style="flex:1;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addRelWord('${en}')"><button onclick="addRelWord('${en}')" style="padding:.4em .75em;border:none;background:#2563eb;color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">추가</button></div>`;
+}
+const RELATED_API='https://vocabit-six.vercel.app/api/related';
+async function openRelatedWords(en){
+  if(!en)return;
+  const s=en.toLowerCase();
+
+  // 기준 단어 뜻
   let baseKo=[];
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{if(w.en.toLowerCase()===s&&!baseKo.length)baseKo=w.ko||[];}));
   const titleEl=document.getElementById('rel-word-title');
   titleEl.innerHTML=`<span>${en}</span>${baseKo.length?`<span style="font-size:.75em;font-weight:400;color:var(--muted);margin-left:.5em">${_dedupeKo(baseKo).join(' / ')}</span>`:''}`;
 
-  const list=document.getElementById('rel-list');
-  const undoBtn=_lastExcluded&&_lastExcluded.base===en?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기</button>`:'';
-  if(visible.length===0&&found.length===0&&addedWords.length===0){
-    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>';
-  } else if(visible.length===0){
-    list.innerHTML=`<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">모든 단어가 제외됐습니다.${undoBtn} <button onclick="clearRelExcluded('${en}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;text-decoration:underline">전체초기화</button></div>`;
-  } else {
-    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+visible.map(w=>{
-      // 매칭 부분 강조
-      const k=w.en.toLowerCase();
-      const matchStr=k.includes(s)?s:k; // 어느 쪽이 포함되는지
-      const idx=w.en.toLowerCase().indexOf(matchStr);
-      let highlighted=w.en;
-      if(idx>=0){
-        const before=w.en.slice(0,idx);
-        const match=w.en.slice(idx,idx+matchStr.length);
-        const after=w.en.slice(idx+matchStr.length);
-        highlighted=`${before}<span style="color:#2563eb;font-weight:800">${match}</span>${after}`;
-      }
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${highlighted}</span> <span style="color:var(--muted);font-size:.85em">— ${_dedupeKo(w.ko).slice(0,2).join(' / ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
-    }).join('');
-  }
-  // 단어 추가 입력창
-  list.innerHTML+=`<div style="margin-top:.75em;padding-top:.6em;border-top:1px solid var(--border);display:flex;gap:.4em"><input id="rel-add-input" type="text" placeholder="단어 직접 추가..." style="flex:1;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addRelWord('${en}')"><button onclick="addRelWord('${en}')" style="padding:.4em .75em;border:none;background:#2563eb;color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">추가</button></div>`;
+  document.getElementById('rel-list').innerHTML='<div style="color:var(--muted);font-size:.85em;padding:.75em 0">🔍 AI로 어원 분석 중...</div>';
   document.getElementById('rel-modal').style.display='flex';
+
+  try{
+    const r=await fetch(RELATED_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word:en})});
+    const d=r.ok?await r.json():{related:[]};
+    _renderRelList(en, d.related||[]);
+  }catch(e){
+    _renderRelList(en,[]);
+  }
 }
 let _lastExcluded=null; // 되돌리기용
 function excludeRelWord(base,target){
