@@ -5067,7 +5067,10 @@ function _renderRelList(en){
 
   const list=document.getElementById('rel-list');
   const _stackForEn=_excludeStack.filter(x=>x.base===en);
-  const undoBtn=_stackForEn.length?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기 (${_stackForEn.length})</button>`:'';
+  const _hasExcluded=(()=>{try{return JSON.parse(localStorage.getItem('rel-excl-'+en.toLowerCase())||'[]').length>0;}catch(e){return false;}})();
+  const undoBtn=_stackForEn.length?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer">↩ 되돌리기 (${_stackForEn.length})</button>`:'';
+  const resetBtn=_hasExcluded?`<button onclick="clearRelExcluded('${en}')" style="font-size:.75em;color:var(--muted);background:none;border:1px solid var(--border);border-radius:.35em;padding:.15em .5em;cursor:pointer">전체 초기화</button>`:'';
+  const btnRow=(undoBtn||resetBtn)?`<div style="padding:.3em 0;font-size:.8em;display:flex;gap:.4em">${undoBtn}${resetBtn}</div>`:'';
   const allVisible=[...aiFound,...addedWords];
 
   function _wordRow(w){
@@ -5077,9 +5080,9 @@ function _renderRelList(en){
   }
 
   if(allVisible.length===0){
-    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+`<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>`;
+    list.innerHTML=btnRow+`<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>`;
   } else {
-    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+allVisible.map(_wordRow).join('');
+    list.innerHTML=btnRow+allVisible.map(_wordRow).join('');
   }
   list.innerHTML+=`<div style="margin-top:.75em;padding-top:.6em;border-top:1px solid var(--border);display:flex;gap:.4em"><input id="rel-add-input" type="text" placeholder="단어 직접 추가..." style="flex:1;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addRelWord('${en}')"><button onclick="addRelWord('${en}')" style="padding:.4em .75em;border:none;background:#2563eb;color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">추가</button></div>`;
 }
