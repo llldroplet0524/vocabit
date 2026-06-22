@@ -1775,6 +1775,7 @@ let _wrongDeleted=(function(){const m=new Map();try{JSON.parse(localStorage.getI
 let quizLog=(function(){try{return JSON.parse(localStorage.getItem('vocabit-quiz-log')||'[]');}catch(e){return[];}})();
 let wordNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-notes')||'[]').forEach(v=>m.set(v.en,{note:v.note,ts:v.ts||0}));}catch(e){}return m;})();
 let aiNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-ai-notes')||'[]').forEach(v=>m.set(v.en,{data:v.data,ts:v.ts||0}));}catch(e){}return m;})();
+let chatNotes=(function(){const m=new Map();try{JSON.parse(localStorage.getItem('vocabit-chat-notes')||'[]').forEach(v=>m.set(v.en,v.items||[]));}catch(e){}return m;})();
 let _resumeDeleted=(function(){try{return new Set(JSON.parse(localStorage.getItem('vocabit-resume-del')||'[]'));}catch(e){return new Set();}})();
 let _wrongCorrectedAt=new Map(); // en -> timestamp when marked correct this session
 let qWeighted=false;
@@ -2000,6 +2001,15 @@ function dbLoad(){
         if(!cur||(ts||0)>(cur.ts||0))aiNotes.set(en,{data,ts:ts||0});
       });
       try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
+    }
+    if(d.chatNotesData&&d.chatNotesData.length){
+      d.chatNotesData.forEach(v=>{
+        const k=v.en;
+        if(!chatNotes.has(k)||chatNotes.get(k).length<(v.items||[]).length){
+          chatNotes.set(k,v.items||[]);
+        }
+      });
+      try{localStorage.setItem('vocabit-chat-notes',JSON.stringify([...chatNotes.entries()].map(([en,items])=>({en,items}))));}catch(e){}
     }
     _doInitNav();
     refreshSectionStats();
@@ -4930,6 +4940,7 @@ document.getElementById('word-search-overlay').addEventListener('click',function
       <input id="aichat-key-input" type="password" placeholder="sk-..." style="width:100%;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')saveOaiKey()">
       <button onclick="saveOaiKey()" style="margin-top:.4em;width:100%;padding:.45em;border:none;background:var(--primary);color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">저장</button>
     </div>
+    <div id="aichat-notes" style="display:none;max-height:40vh;overflow-y:auto;margin-bottom:.5em"></div>
     <div style="display:flex;gap:.4em">
       <input id="aichat-input" type="text" placeholder="질문하세요 (발음, 예문, 어원, 관련 단어...)" style="flex:1;padding:.5em .75em;border:1.5px solid var(--border);border-radius:.5em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAiChat()}">
       <button onclick="sendAiChat()" style="padding:.5em .9em;border:none;background:var(--primary);color:#fff;border-radius:.5em;cursor:pointer;font-size:.85em;font-weight:600;flex-shrink:0">전송</button>
@@ -4945,19 +4956,42 @@ document.getElementById('word-search-overlay').addEventListener('click',function
 function openRelatedWords(en){
   if(!en)return;
   const s=en.toLowerCase();
-  if(s.length<3){alert('단어가 너무 짧습니다.');return;}
+  if(s.length<4){document.getElementById('rel-word-title').textContent=en;document.getElementById('rel-list').innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">단어가 너무 짧아 관련 단어를 검색할 수 없습니다.</div>';document.getElementById('rel-modal').style.display='flex';return;}
   const found=[],seen=new Set();
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
     const k=w.en.toLowerCase();
     if(seen.has(k)||k===s)return;
-    if(k.includes(s)||s.includes(k)){seen.add(k);found.push(w);}
+    // 현재 단어가 DB 단어에 포함되는 경우만 (단방향, 최소 4글자)
+    if(k.includes(s)){seen.add(k);found.push(w);}
   }));
+  // 제외 목록 적용
+  const excKey='rel-excl-'+en.toLowerCase();
+  let excluded=new Set();
+  try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
+  const visible=found.filter(w=>!excluded.has(w.en.toLowerCase()));
+
   document.getElementById('rel-word-title').textContent=en;
   const list=document.getElementById('rel-list');
-  list.innerHTML=found.length
-    ?found.map(w=>`<div style="padding:.55em 0;border-bottom:1px solid var(--border)"><span style="font-weight:700">${w.en}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div>`).join('')
-    :'<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">관련 단어가 없습니다.</div>';
+  if(visible.length===0&&found.length===0){
+    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">관련 단어가 없습니다.</div>';
+  } else if(visible.length===0){
+    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">모든 단어가 제외됐습니다. <button onclick="clearRelExcluded(\''+en+'\')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:1em;text-decoration:underline">초기화</button></div>';
+  } else {
+    list.innerHTML=visible.map(w=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${w.en}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`).join('');
+  }
   document.getElementById('rel-modal').style.display='flex';
+}
+function excludeRelWord(base,target){
+  const excKey='rel-excl-'+base.toLowerCase();
+  let excluded=new Set();
+  try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
+  excluded.add(target);
+  try{localStorage.setItem(excKey,JSON.stringify([...excluded]));}catch(e){}
+  openRelatedWords(base);
+}
+function clearRelExcluded(base){
+  localStorage.removeItem('rel-excl-'+base.toLowerCase());
+  openRelatedWords(base);
 }
 function closeRelatedModal(){document.getElementById('rel-modal').style.display='none';}
 
@@ -4972,6 +5006,7 @@ function openAiChat(en,ko){
   const key=localStorage.getItem('vocabit-oai-key')||'';
   document.getElementById('aichat-key-area').style.display=key?'none':'block';
   document.getElementById('aichat-modal').style.display='flex';
+  renderChatNotes();
   if(key)setTimeout(()=>document.getElementById('aichat-input').focus(),80);
 }
 function closeAiChat(){document.getElementById('aichat-modal').style.display='none';}
@@ -4987,7 +5022,13 @@ function _chatBubble(role,text){
   const d=document.createElement('div');
   const u=role==='user';
   d.style.cssText=`margin-bottom:.5em;display:flex;${u?'justify-content:flex-end':''}`;
-  d.innerHTML=`<div style="max-width:88%;padding:.45em .7em;border-radius:.7em;font-size:.85em;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:${u?'var(--primary)':'var(--bg)'};color:${u?'#fff':'var(--text)'};border:${u?'none':'1px solid var(--border)'}">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  const esc=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const saveBtn=u?'':'<div style="text-align:right;margin-top:.3em"><button class="chat-save-btn" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.2em .55em;font-size:.72em;cursor:pointer;color:var(--muted)">💾 저장</button></div>';
+  d.innerHTML=`<div style="max-width:88%;padding:.45em .7em;border-radius:.7em;font-size:.85em;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:${u?'var(--primary)':'var(--bg)'};color:${u?'#fff':'var(--text)'};border:${u?'none':'1px solid var(--border)'}">${esc}${saveBtn}</div>`;
+  if(!u){
+    const btn=d.querySelector('.chat-save-btn');
+    if(btn) btn.addEventListener('click',()=>saveChatNote(text));
+  }
   c.appendChild(d);c.scrollTop=c.scrollHeight;
 }
 async function sendAiChat(){
@@ -5034,5 +5075,63 @@ async function sendAiChat(){
 </script>
 
 
+
+<script>
+// ── Chat Notes ──
+function _saveChatNotes(){
+  const arr=[...chatNotes.entries()].map(([en,items])=>({en,items}));
+  try{localStorage.setItem('vocabit-chat-notes',JSON.stringify(arr));}catch(e){}
+  DOC.set({chatNotesData:arr},{merge:true}).catch(e=>console.error('chatNotes err',e));
+}
+function saveChatNote(text){
+  if(!_chatWord||!text.trim())return;
+  const k=_chatWord.toLowerCase().trim();
+  if(!chatNotes.has(k))chatNotes.set(k,[]);
+  chatNotes.get(k).push({id:Date.now().toString(),text:text.trim(),ts:Date.now()});
+  _saveChatNotes();
+  renderChatNotes();
+}
+function deleteChatNote(en,id){
+  const k=en.toLowerCase().trim();
+  if(!chatNotes.has(k))return;
+  const filtered=chatNotes.get(k).filter(i=>i.id!==id);
+  if(filtered.length===0)chatNotes.delete(k); else chatNotes.set(k,filtered);
+  _saveChatNotes();
+  renderChatNotes();
+}
+function startEditChatNote(en,id){
+  const el=document.getElementById('cnote-'+id);
+  if(!el)return;
+  const textEl=el.querySelector('.cnote-text');
+  const btnEl=el.querySelector('.cnote-btns');
+  const orig=textEl.textContent;
+  textEl.innerHTML=`<textarea style="width:100%;box-sizing:border-box;padding:.35em;border:1.5px solid var(--primary);border-radius:.35em;font-size:.9em;font-family:inherit;resize:vertical;min-height:5em;outline:none">${orig.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>`;
+  btnEl.innerHTML=`<button onclick="saveEditedNote('${en}','${id}',this)" style="background:var(--primary);border:none;border-radius:.35em;padding:.25em .65em;font-size:.78em;cursor:pointer;color:#fff;font-weight:600">저장</button><button onclick="renderChatNotes()" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.25em .5em;font-size:.78em;cursor:pointer;color:var(--text);margin-left:.3em">취소</button>`;
+  textEl.querySelector('textarea').focus();
+}
+function saveEditedNote(en,id,btn){
+  const k=en.toLowerCase().trim();
+  if(!chatNotes.has(k))return;
+  const item=chatNotes.get(k).find(i=>i.id===id);
+  if(!item)return;
+  const ta=document.getElementById('cnote-'+id).querySelector('textarea');
+  const newText=ta?ta.value.trim():'';
+  if(!newText)return;
+  item.text=newText;item.ts=Date.now();
+  _saveChatNotes();
+  renderChatNotes();
+}
+function renderChatNotes(){
+  const container=document.getElementById('aichat-notes');
+  if(!container)return;
+  const k=_chatWord?_chatWord.toLowerCase().trim():'';
+  const items=k?chatNotes.get(k)||[]:[];
+  if(items.length===0){container.style.display='none';container.innerHTML='';return;}
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  container.style.display='block';
+  container.innerHTML=`<div style="font-size:.78em;font-weight:700;color:var(--muted);margin-bottom:.4em;padding-top:.6em;border-top:1px solid var(--border)">💾 저장된 메모 (${items.length}개)</div>`+
+  items.map(item=>`<div id="cnote-${item.id}" style="background:var(--bg);border:1px solid var(--border);border-radius:.5em;padding:.5em .65em;margin-bottom:.35em"><div class="cnote-text" style="font-size:.83em;line-height:1.65;white-space:pre-wrap;word-break:break-word;margin-bottom:.35em">${esc(item.text)}</div><div class="cnote-btns" style="display:flex;justify-content:flex-end;gap:.35em"><button onclick="startEditChatNote('${esc(_chatWord)}','${item.id}')" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--text)">✏️ 수정</button><button onclick="deleteChatNote('${esc(_chatWord)}','${item.id}')" style="background:none;border:1px solid var(--danger);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--danger)">🗑 삭제</button></div></div>`).join('');
+}
+</script>
 </body>
 </html>
