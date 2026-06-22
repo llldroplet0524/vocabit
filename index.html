@@ -369,6 +369,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
   </div>
   <div style="margin-top:.4em">
     <button class="btn btn-s btn-full" style="font-size:.9em;padding:.65em 1em" onclick="manualSaveStudy(this)">💾 여기까지 하고 저장</button>
+    <button class="btn btn-s btn-full" style="font-size:.9em;padding:.65em 1em" onclick="openRelatedWords(stWords[stIdx]?stWords[stIdx].en:'')">🔗 관련 단어</button>
   </div>
 </div>
 
@@ -412,7 +413,8 @@ h1{text-align:left;padding:1.25em 0 .875em}
     </div>
     <button id="q-mark-correct-btn" style="display:none;margin-top:.5em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--success);color:var(--success);border-radius:.5em;cursor:pointer" onclick="markTypedCorrect()">+ 정답 추가</button>
     <button id="q-mark-typo-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--warning,#d97706);color:var(--warning,#d97706);border-radius:.5em;cursor:pointer" onclick="markTypedTypo()">⌨️ 오타</button>
-    <button id="q-ai-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:.5em;cursor:pointer" onclick="genAiMnemonic('quiz')">✨ 예시</button>
+    <button id="q-ai-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:.5em;cursor:pointer" onclick="openAiChat(qQuestions[qIdx].word.en,qQuestions[qIdx].word.ko?qQuestions[qIdx].word.ko[0]:'')">💬 AI 질문</button>
+    <button id="q-related-btn" style="display:none;margin-top:.5em;margin-left:.4em;font-size:.78em;padding:.35em .8em;background:none;border:1px solid var(--success);color:var(--success);border-radius:.5em;cursor:pointer" onclick="openRelatedWords(qQuestions[qIdx].word.en)">🔗 관련 단어</button>
     <div id="q-ai-result" style="display:none;margin-top:.5em;padding:.5em .7em;background:var(--card);border:1px solid var(--border);border-radius:.5em;color:var(--text)"></div>
     <button id="q-ai-save-btn" style="display:none"></button>
     <button id="q-ai-note-btn" style="display:none;margin-top:.4em;font-size:.75em;padding:.3em .7em;background:var(--success);color:#fff;border:none;border-radius:.45em;cursor:pointer;font-family:inherit;font-weight:600" onclick="saveAiNote('quiz')">📌 AI 메모 저장</button>
@@ -2727,6 +2729,7 @@ function renderQ(){
   document.getElementById('q-expl').classList.remove('show');
   document.getElementById('q-memo-area').style.display='none';
   document.getElementById('q-ai-btn').style.display='none';
+  document.getElementById('q-related-btn').style.display='none';
   document.getElementById('q-ai-result').style.display='none';
   document.getElementById('q-ai-save-btn').style.display='none';
   document.getElementById('q-ai-note-area').style.display='none';
@@ -2859,7 +2862,7 @@ function pick(sel,correct,word){
     `<span style="font-weight:700;color:${ok?'var(--success)':'var(--danger)'};display:block;margin-bottom:.375em">${ok?'✓ 정답!':'✗ 오답'}</span>${etym}`;
   const qMemoTa=document.getElementById('q-memo-input');qMemoTa.dataset.memoEn=word.en;qMemoTa.value=(wordNotes.get(word.en.toLowerCase().trim())||{}).note||'';qMemoTa.style.height='auto';qMemoTa.readOnly=false;qMemoTa.style.opacity='1';qMemoTa.style.cursor='';const qMemoBtn=qMemoTa.closest('.memo-row')&&qMemoTa.closest('.memo-row').querySelector('button');if(qMemoBtn)qMemoBtn.textContent='저장';initMemoRow(qMemoTa,qMemoBtn);requestAnimationFrame(()=>{qMemoTa.style.height='auto';qMemoTa.style.height=qMemoTa.scrollHeight+'px';});
   document.getElementById('q-memo-area').style.display='block';
-  document.getElementById('q-ai-btn').style.display='inline-block';document.getElementById('q-ai-btn').dataset.en=word.en;document.getElementById('q-ai-btn').dataset.ko=(word.ko||[])[0]||'';
+  document.getElementById('q-ai-btn').style.display='inline-block';document.getElementById('q-related-btn').style.display='inline-block';document.getElementById('q-ai-btn').dataset.en=word.en;document.getElementById('q-ai-btn').dataset.ko=(word.ko||[])[0]||'';
   _showSavedAiNote(word.en,'quiz');
   var nb=document.getElementById('q-next');nb.style.display='flex';nb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -4904,5 +4907,130 @@ document.getElementById('word-search-overlay').addEventListener('click',function
 });
 </script>
 
+
+<!-- 관련 단어 모달 -->
+<div id="rel-modal" onclick="if(event.target===this)closeRelatedModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1em">
+  <div style="background:var(--card);border-radius:1em;padding:1.25em;max-width:440px;width:100%;max-height:75vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <button onclick="closeRelatedModal()" style="position:absolute;top:.75em;right:.75em;background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted)">✕</button>
+    <div style="font-size:.85em;color:var(--muted);font-weight:600;margin-bottom:.25em">🔗 관련 단어</div>
+    <div id="rel-word-title" style="font-size:1.1em;font-weight:800;color:var(--primary);margin-bottom:.875em"></div>
+    <div id="rel-list"></div>
+  </div>
+</div>
+
+<!-- AI 채팅 모달 -->
+<div id="aichat-modal" onclick="if(event.target===this)closeAiChat()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1em">
+  <div style="background:var(--card);border-radius:1em;padding:1.25em;max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <button onclick="closeAiChat()" style="position:absolute;top:.75em;right:.75em;background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted)">✕</button>
+    <div style="font-size:.85em;color:var(--muted);font-weight:600;margin-bottom:.2em">💬 AI 질문</div>
+    <div id="aichat-word" style="font-size:1.1em;font-weight:800;color:var(--primary);margin-bottom:.75em"></div>
+    <div id="aichat-msgs" style="flex:1;overflow-y:auto;min-height:5em;max-height:48vh;margin-bottom:.625em"></div>
+    <div id="aichat-key-area" style="display:none;margin-bottom:.625em;padding:.75em;background:var(--bg);border-radius:.5em;border:1px solid var(--border)">
+      <div style="font-size:.8em;color:var(--muted);margin-bottom:.4em">OpenAI API 키 입력 (한 번만)</div>
+      <input id="aichat-key-input" type="password" placeholder="sk-..." style="width:100%;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')saveOaiKey()">
+      <button onclick="saveOaiKey()" style="margin-top:.4em;width:100%;padding:.45em;border:none;background:var(--primary);color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">저장</button>
+    </div>
+    <div style="display:flex;gap:.4em">
+      <input id="aichat-input" type="text" placeholder="질문하세요 (발음, 예문, 어원, 관련 단어...)" style="flex:1;padding:.5em .75em;border:1.5px solid var(--border);border-radius:.5em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAiChat()}">
+      <button onclick="sendAiChat()" style="padding:.5em .9em;border:none;background:var(--primary);color:#fff;border-radius:.5em;cursor:pointer;font-size:.85em;font-weight:600;flex-shrink:0">전송</button>
+    </div>
+    <div style="margin-top:.35em;text-align:right">
+      <button onclick="document.getElementById('aichat-key-area').style.display='block'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72em;padding:0">⚙️ API 키 변경</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 관련 단어 ──
+function openRelatedWords(en){
+  if(!en)return;
+  const s=en.toLowerCase();
+  if(s.length<3){alert('단어가 너무 짧습니다.');return;}
+  const found=[],seen=new Set();
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{
+    const k=w.en.toLowerCase();
+    if(seen.has(k)||k===s)return;
+    if(k.includes(s)||s.includes(k)){seen.add(k);found.push(w);}
+  }));
+  document.getElementById('rel-word-title').textContent=en;
+  const list=document.getElementById('rel-list');
+  list.innerHTML=found.length
+    ?found.map(w=>`<div style="padding:.55em 0;border-bottom:1px solid var(--border)"><span style="font-weight:700">${w.en}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div>`).join('')
+    :'<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">관련 단어가 없습니다.</div>';
+  document.getElementById('rel-modal').style.display='flex';
+}
+function closeRelatedModal(){document.getElementById('rel-modal').style.display='none';}
+
+// ── AI 채팅 ──
+let _chatHist=[],_chatWord='';
+function openAiChat(en,ko){
+  if(!en)return;
+  _chatWord=en;_chatHist=[];
+  document.getElementById('aichat-word').textContent=en;
+  document.getElementById('aichat-msgs').innerHTML='';
+  document.getElementById('aichat-input').value='';
+  const key=localStorage.getItem('vocabit-oai-key')||'';
+  document.getElementById('aichat-key-area').style.display=key?'none':'block';
+  document.getElementById('aichat-modal').style.display='flex';
+  if(key)setTimeout(()=>document.getElementById('aichat-input').focus(),80);
+}
+function closeAiChat(){document.getElementById('aichat-modal').style.display='none';}
+function saveOaiKey(){
+  const k=document.getElementById('aichat-key-input').value.trim();
+  if(!k)return;
+  localStorage.setItem('vocabit-oai-key',k);
+  document.getElementById('aichat-key-area').style.display='none';
+  setTimeout(()=>document.getElementById('aichat-input').focus(),80);
+}
+function _chatBubble(role,text){
+  const c=document.getElementById('aichat-msgs');
+  const d=document.createElement('div');
+  const u=role==='user';
+  d.style.cssText=`margin-bottom:.5em;display:flex;${u?'justify-content:flex-end':''}`;
+  d.innerHTML=`<div style="max-width:88%;padding:.45em .7em;border-radius:.7em;font-size:.85em;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:${u?'var(--primary)':'var(--bg)'};color:${u?'#fff':'var(--text)'};border:${u?'none':'1px solid var(--border)'}">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+async function sendAiChat(){
+  const input=document.getElementById('aichat-input');
+  const text=input.value.trim();if(!text)return;
+  const key=localStorage.getItem('vocabit-oai-key')||'';
+  if(!key){document.getElementById('aichat-key-area').style.display='block';return;}
+  input.value='';input.disabled=true;
+  _chatBubble('user',text);
+  _chatHist.push({role:'user',content:text});
+  const load=document.createElement('div');
+  load.id='aichat-load';load.style.cssText='color:var(--muted);font-size:.8em;padding:.25em 0;animation:none';load.textContent='입력 중...';
+  document.getElementById('aichat-msgs').appendChild(load);
+  document.getElementById('aichat-msgs').scrollTop=999999;
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'gpt-4o-mini',
+        messages:[
+          {role:'system',content:'너는 한국인 영어 학습자를 위한 영어 튜터야. 지금 학습 중인 단어는 "'+_chatWord+'"이야.\n- 반드시 한국어로만 답해 (영어 단어/문장 자체는 제외)\n- 발음은 한글로만 표기해 (예: force → 포스)\n- 연상법은 어원(접두사·어근·접미사) 기반으로만 설명해\n- 간결하게 핵심만 답해'},
+          ..._chatHist
+        ],
+        max_tokens:600
+      })
+    });
+    document.getElementById('aichat-load')?.remove();
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      if(res.status===401){localStorage.removeItem('vocabit-oai-key');document.getElementById('aichat-key-area').style.display='block';}
+      _chatBubble('assistant','오류: '+(e.error?.message||'요청 실패 ('+res.status+')'));
+    }else{
+      const d=await res.json();
+      const reply=d.choices[0].message.content;
+      _chatHist.push({role:'assistant',content:reply});
+      _chatBubble('assistant',reply);
+    }
+  }catch(e){
+    document.getElementById('aichat-load')?.remove();
+    _chatBubble('assistant','네트워크 오류: '+e.message);
+  }finally{input.disabled=false;input.focus();}
+}
+</script>
 </body>
 </html>
