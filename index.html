@@ -5034,19 +5034,21 @@ function _renderRelList(en){
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
   try{manualAdded=JSON.parse(localStorage.getItem(addKey)||'[]');}catch(e){}
 
-  // substring 매칭 (4자 이상 공통 부분)
+  // substring 매칭 (단어 길이에 따라 최소 3~4자)
   const stem=s.replace(/[^a-z]/g,'');
+  const minLen=Math.max(3,Math.min(4,stem.length));
   const aiFound=[],seen=new Set([s]);
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
     const k=w.en.toLowerCase().replace(/[^a-z]/g,'');
     const key=w.en.toLowerCase();
     if(seen.has(key)||excluded.has(key))return;
     let match=false;
-    if(stem.length>=4&&k.includes(stem))match=true;
-    else if(k.length>=4&&stem.includes(k))match=true;
-    else if(stem.length>=4&&k.length>=4){
-      for(let i=0;i<=stem.length-4;i++){
-        const sub=stem.slice(i,i+4);
+    if(k.includes(stem)&&stem.length>=minLen)match=true;
+    else if(stem.includes(k)&&k.length>=minLen)match=true;
+    else if(stem.length>=minLen&&k.length>=minLen){
+      const ml=Math.min(minLen,stem.length,k.length);
+      for(let i=0;i<=stem.length-ml;i++){
+        const sub=stem.slice(i,i+ml);
         if(k.includes(sub)){match=true;break;}
       }
     }
@@ -5069,7 +5071,7 @@ function _renderRelList(en){
   function _wordRow(w){
     const k=w.en.toLowerCase();
     const safeEn=w.en.replace(/'/g,"\\'");
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${w.en}</span>${w._manual?'<span style="font-size:.72em;color:var(--muted);margin-left:.35em">직접추가</span>':''} <span style="color:var(--muted);font-size:.85em">— ${_dedupeKo(w.ko).slice(0,2).join(' / ')}</span></div><button onclick="excludeRelWord('${en}','${k}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:.4em"><button onclick="speak('${safeEn}')" class="tts" style="font-size:.75em;padding:.1em .35em;flex-shrink:0">🔊</button><span><span style="font-weight:700">${w.en}</span>${w._manual?'<span style="font-size:.72em;color:var(--muted);margin-left:.35em">직접추가</span>':''} <span style="color:var(--muted);font-size:.85em">— ${_dedupeKo(w.ko).slice(0,2).join(' / ')}</span></span></div><button onclick="excludeRelWord('${en}','${k}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
   }
 
   if(allVisible.length===0){
