@@ -4911,11 +4911,12 @@ async function doWordSearch(){
     const r=await fetch(AI_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word,meaning:''})});
     if(!r.ok)throw new Error('API error '+r.status);
     const d=await r.json();
-    const safeWord=word.replace(/'/g,"\\'");
+    const displayWord=d.resolvedWord||word;
+    const safeWord=displayWord.replace(/'/g,"\\'");
     resultEl.innerHTML=`<div style="display:flex;align-items:center;gap:.6em;margin-bottom:.6em;padding-bottom:.5em;border-bottom:1px solid var(--border)">
-      <span style="font-weight:800;font-size:1.15em">${word}</span>
+      <span style="font-weight:800;font-size:1.15em">${displayWord}</span>
       <button onclick="speak('${safeWord}');event.stopPropagation()" style="padding:.2em .5em;font-size:.85em;border:1px solid var(--border);border-radius:.4em;background:none;cursor:pointer;color:var(--muted)">🔊</button>
-    </div>`+_renderAiResult(d,word)+
+    </div>`+_renderAiResult(d,displayWord)+
     `<div style="margin-top:.6em;padding-top:.5em;border-top:1px solid var(--border)">
       <button id="search-save-btn" onclick="saveSearchResult('${safeWord}',_searchLastData)" style="padding:.35em .9em;background:var(--primary);color:#fff;border:none;border-radius:.45em;cursor:pointer;font-family:inherit;font-weight:600;font-size:.85em">📌 저장</button>
     </div>`;

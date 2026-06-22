@@ -37,6 +37,10 @@ function parseJSON(raw) {
   return JSON.parse(match ? match[0] : raw);
 }
 
+function isNaturalLanguage(str) {
+  return /[가-힣]/.test(str) || str.includes('?') || str.trim().includes(' ');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -45,18 +49,29 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { word, meaning } = req.body || {};
+  let { word, meaning } = req.body || {};
   if (!word) return res.status(400).json({ error: 'word required' });
 
   const apiKey = process.env.OPENAI_API_KEY;
 
   try {
+    let resolvedWord = word;
+    if (isNaturalLanguage(word)) {
+      const raw = await callOpenAI([{
+        role: 'user',
+        content: `다음 설명/질문에 가장 잘 맞는 영어 단어 하나만 답해 (설명 없이 단어만):\n"${word}"`
+      }], apiKey);
+      resolvedWord = raw.trim().split(/[\s,.()\n]/)[0];
+    }
+
     const raw = await callOpenAI([
       { role: 'system', content: SYSTEM },
-      { role: 'user', content: GENERATE_PROMPT(word, meaning) }
+      { role: 'user', content: GENERATE_PROMPT(resolvedWord, meaning) }
     ], apiKey);
 
-    res.status(200).json(parseJSON(raw));
+    const result = parseJSON(raw);
+    result.resolvedWord = resolvedWord;
+    res.status(200).json(result);
   } catch(e) {
     console.error('handler error:', e.message);
     res.status(500).json({ error: e.message });
