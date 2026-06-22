@@ -1797,7 +1797,7 @@ let selSecs=new Set(),merged=[],stWords=[],stIdx=0;
 let qQuestions=[],qIdx=0,qScore=0,qMode='both',qEnWord='';
 let qOptWordsMap={};
 let wrongMap=new Map();
-let allHistory=new Map();
+let allHistory=(function(){const m=new Map();try{const a=JSON.parse(localStorage.getItem('vocabit-history')||'[]');a.forEach(v=>{let results=v.results||[];m.set(v.en,{word:{en:v.en,ko:v.ko||[]},results,ts:v.ts||0});});}catch(e){}return m;})();
 let reviewingWrongMap=null;
 let wrongFromHome=false;
 let isWrongQuizMode=false;
@@ -1887,6 +1887,7 @@ function dbSave(){
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify(typeHistArr));}catch(e){}
       try{localStorage.setItem('vocabit-wrong',JSON.stringify(mergedWrongArr));}catch(e){}
       try{localStorage.setItem('vocabit-ua',JSON.stringify(mergedUaArr));}catch(e){}
+      try{localStorage.setItem('vocabit-history',JSON.stringify(histArr));}catch(e){}
       refreshSectionStats();
     }catch(e){console.error('dbSave error',e);}
   }, 1000);
@@ -1945,6 +1946,7 @@ function dbLoad(){
           allHistory.set(v.en,{word:{en:v.en,ko:v.ko},results,ts:v.ts||0});
         });
         try{localStorage.setItem('vocabit-history-ts',String(fbTs));}catch(e){}
+        try{localStorage.setItem('vocabit-history',JSON.stringify([...allHistory.entries()].map(([en,v])=>({en,ko:v.word?.ko||[],results:v.results||[],ts:v.ts||0}))));}catch(e){}
       } else {
         // 로컬이 더 최신 → 항목별 ts 비교 merge
         (d.historyData||[]).forEach(v=>{
@@ -1972,11 +1974,14 @@ function dbLoad(){
       try{localStorage.setItem('vocabit-type-hist',JSON.stringify([...typeHistory.entries()].map(([en,v])=>({en,results:v.results,ts:v.ts||0}))));}catch(e){}
     }
     if(d.resumeData !== undefined){
-      // Firebase에 없는 로컬 resume 키 삭제 (다른 기기에서 삭제한 이어하기 반영)
-      const fbKeys=new Set((d.resumeData||[]).map(r=>r.key));
-      getAllProgKeys().forEach(key=>{
-        if(!fbKeys.has(key))localStorage.removeItem(key);
-      });
+      // Firebase에 없는 로컬 resume 키 삭제 (Firebase에 데이터가 있을 때만 적용)
+      const fbResumeArr=d.resumeData||[];
+      if(fbResumeArr.length>0){
+        const fbKeys=new Set(fbResumeArr.map(r=>r.key));
+        getAllProgKeys().forEach(key=>{
+          if(!fbKeys.has(key))localStorage.removeItem(key);
+        });
+      }
       (d.resumeData||[]).forEach(({key,data})=>{
         if(!data)return;
         const localRaw=localStorage.getItem(key);
