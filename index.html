@@ -4280,6 +4280,12 @@ function renderUserAnswers(){
     const enSpan=document.createElement('span');
     enSpan.style.cssText='font-weight:700;font-size:.93em';
     enSpan.textContent=enKey;
+    if(wordObj.ko.length){
+      const koSpan=document.createElement('span');
+      koSpan.style.cssText='font-weight:400;font-size:.78em;color:var(--muted);margin-left:.5em';
+      koSpan.textContent=wordObj.ko.join(' / ');
+      enSpan.appendChild(koSpan);
+    }
     const delAllBtn=document.createElement('button');
     delAllBtn.style.cssText='background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78em;padding:.1em .3em';
     delAllBtn.textContent='전체삭제';
@@ -4288,15 +4294,6 @@ function renderUserAnswers(){
     });
     hdr.appendChild(enSpan);hdr.appendChild(delAllBtn);
     card.appendChild(hdr);
-    // stored meaning
-    if(wordObj.ko.length){
-      const koDiv=document.createElement('div');
-      koDiv.style.cssText='font-size:.76em;color:var(--muted);margin-bottom:.35em;padding:.3em .45em;background:var(--bg);border-radius:.375em';
-      const koLabel=document.createElement('span');koLabel.style.fontWeight='600';koLabel.textContent='저장된 뜻: ';
-      koDiv.appendChild(koLabel);
-      koDiv.appendChild(document.createTextNode(wordObj.ko.join(' / ')));
-      card.appendChild(koDiv);
-    }
     // pills
     const pillsDiv=document.createElement('div');
     pillsDiv.style.cssText='display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.4em';
