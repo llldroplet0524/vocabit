@@ -5013,6 +5013,21 @@ document.getElementById('word-search-overlay').addEventListener('click',function
 
 <script>
 // ── 관련 단어 ──
+function _dedupeKo(koArr){
+  const seen=new Set();
+  return koArr.filter(item=>{
+    const core=item.replace(/\s*\([^)]*\)/g,'').trim();
+    if(!core.includes(',')&&!core.includes(' ')){
+      // 단일 단어 → 다른 항목에 포함되면 제거
+      if(koArr.some(o=>o!==item&&o.replace(/\s*\([^)]*\)/g,'').includes(core)))return false;
+    }
+    const parts=core.split(/[,/]\s*/).map(s=>s.trim()).filter(Boolean);
+    const newParts=parts.filter(p=>p&&!seen.has(p));
+    if(!newParts.length&&parts.length)return false;
+    parts.forEach(p=>seen.add(p));
+    return true;
+  });
+}
 function openRelatedWords(en){
   if(!en)return;
   const s=en.toLowerCase();
@@ -5041,7 +5056,12 @@ function openRelatedWords(en){
 
   const visible=[...found,...addedWords].filter(w=>!excluded.has(w.en.toLowerCase()));
 
-  document.getElementById('rel-word-title').textContent=en;
+  // 기준 단어 뜻 찾기
+  let baseKo=[];
+  SECTIONS.forEach(sec=>sec.words.forEach(w=>{if(w.en.toLowerCase()===s&&!baseKo.length)baseKo=w.ko||[];}));
+  const titleEl=document.getElementById('rel-word-title');
+  titleEl.innerHTML=`<span>${en}</span>${baseKo.length?`<span style="font-size:.75em;font-weight:400;color:var(--muted);margin-left:.5em">${_dedupeKo(baseKo).join(' / ')}</span>`:''}`;
+
   const list=document.getElementById('rel-list');
   const undoBtn=_lastExcluded&&_lastExcluded.base===en?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기</button>`:'';
   if(visible.length===0&&found.length===0&&addedWords.length===0){
@@ -5061,7 +5081,7 @@ function openRelatedWords(en){
         const after=w.en.slice(idx+matchStr.length);
         highlighted=`${before}<span style="color:#2563eb;font-weight:800">${match}</span>${after}`;
       }
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${highlighted}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${highlighted}</span> <span style="color:var(--muted);font-size:.85em">— ${_dedupeKo(w.ko).slice(0,2).join(' / ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
     }).join('');
   }
   // 단어 추가 입력창
