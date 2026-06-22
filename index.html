@@ -5076,7 +5076,7 @@ function _renderRelList(en){
   }
 
   if(allVisible.length===0){
-    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>';
+    list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+`<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>`;
   } else {
     list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+allVisible.map(_wordRow).join('');
   }
