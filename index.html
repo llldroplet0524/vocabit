@@ -252,6 +252,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
       <button class="btn btn-danger home-btn" style="font-size:.78em;padding:.75em .4em" id="home-wrong-btn" onclick="goWrongFromHome()">❌ 오답 복습</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goHistory()">📊 회독 체크</button>
+      <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em;color:var(--danger);border-color:var(--danger)" onclick="checkAndRecoverData()">🔄 데이터 복구</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" id="home-ua-btn" onclick="goUserAnswers()">📝 추가 정답</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goMemos()">📝 연상메모</button>
     </div>
@@ -5030,6 +5031,46 @@ async function sendAiChat(){
     document.getElementById('aichat-load')?.remove();
     _chatBubble('assistant','네트워크 오류: '+e.message);
   }finally{input.disabled=false;input.focus();}
+}
+</script>
+
+<script>
+function checkAndRecoverData(){
+  const wrong = localStorage.getItem('vocabit-wrong');
+  const ua    = localStorage.getItem('vocabit-ua');
+  const fav   = localStorage.getItem('vocabit-fav');
+  const hist  = localStorage.getItem('vocabit-hist');
+
+  const wArr  = wrong ? JSON.parse(wrong) : [];
+  const uArr  = ua    ? JSON.parse(ua)    : [];
+  const fArr  = fav   ? JSON.parse(fav)   : [];
+  const hArr  = hist  ? JSON.parse(hist)  : [];
+
+  const msg = [
+    '📦 이 기기 localStorage 현황:',
+    '',
+    '오답 단어:   ' + wArr.length + '개',
+    '추가 정답:   ' + uArr.length + '개',
+    '단어장:      ' + fArr.length + '개',
+    '회독 기록:   ' + hArr.length + '개',
+  ].join('\n');
+
+  const total = wArr.length + uArr.length + fArr.length + hArr.length;
+  if(total > 0){
+    if(confirm(msg + '\n\n이 데이터를 Firebase에 저장하시겠습니까?')){
+      // localStorage 데이터를 메모리에 강제 로드
+      allWrong = new Map(wArr.map(v=>[v.en,{word:{en:v.en,ko:v.ko},count:v.count}]));
+      userAnswers = new Map(uArr.map(v=>[v.en,new Set(v.answers||[])]));
+      favorites = new Set(fArr);
+      hArr.forEach(v=>{
+        if(!allHistory.has(v.en)) allHistory.set(v.en,{word:{en:v.en,ko:v.ko||[]},results:v.results||[],ts:v.ts||0});
+      });
+      dbSave();
+      alert('Firebase에 저장했습니다. 잠시 후 새로고침해주세요.');
+    }
+  } else {
+    alert(msg + '\n\n이 기기에 저장된 데이터가 없습니다.\n다른 기기에서 시도해보세요.');
+  }
 }
 </script>
 </body>
