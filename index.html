@@ -4947,18 +4947,10 @@ document.getElementById('word-search-overlay').addEventListener('click',function
     <div style="font-size:.85em;color:var(--muted);font-weight:600;margin-bottom:.2em">💬 AI 질문</div>
     <div id="aichat-word" style="font-size:1.1em;font-weight:800;color:var(--primary);margin-bottom:.75em"></div>
     <div id="aichat-msgs" style="flex:1;overflow-y:auto;min-height:5em;max-height:48vh;margin-bottom:.625em"></div>
-    <div id="aichat-key-area" style="display:none;margin-bottom:.625em;padding:.75em;background:var(--bg);border-radius:.5em;border:1px solid var(--border)">
-      <div style="font-size:.8em;color:var(--muted);margin-bottom:.4em">OpenAI API 키 입력 (한 번만)</div>
-      <input id="aichat-key-input" type="password" placeholder="sk-..." style="width:100%;padding:.45em .65em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')saveOaiKey()">
-      <button onclick="saveOaiKey()" style="margin-top:.4em;width:100%;padding:.45em;border:none;background:var(--primary);color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">저장</button>
-    </div>
     <div id="aichat-notes" style="display:none;max-height:40vh;overflow-y:auto;margin-bottom:.5em"></div>
     <div style="display:flex;gap:.4em">
       <input id="aichat-input" type="text" placeholder="질문하세요 (발음, 예문, 어원, 관련 단어...)" style="flex:1;padding:.5em .75em;border:1.5px solid var(--border);border-radius:.5em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAiChat()}">
       <button onclick="sendAiChat()" style="padding:.5em .9em;border:none;background:var(--primary);color:#fff;border-radius:.5em;cursor:pointer;font-size:.85em;font-weight:600;flex-shrink:0">전송</button>
-    </div>
-    <div style="margin-top:.35em;text-align:right">
-      <button onclick="document.getElementById('aichat-key-area').style.display='block'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72em;padding:0">⚙️ API 키 변경</button>
     </div>
   </div>
 </div>
@@ -5059,27 +5051,18 @@ function closeRelatedModal(){document.getElementById('rel-modal').style.display=
 
 // ── AI 채팅 ──
 let _chatHist=[],_chatWord='';
+const CHAT_API='https://vocabit-six.vercel.app/api/chat';
 function openAiChat(en,ko){
   if(!en)return;
   _chatWord=en;_chatHist=[];
   document.getElementById('aichat-word').textContent=en;
   document.getElementById('aichat-msgs').innerHTML='';
   document.getElementById('aichat-input').value='';
-  const key=localStorage.getItem('vocabit-oai-key')||'';
-  document.getElementById('aichat-key-area').style.display=key?'none':'block';
   document.getElementById('aichat-modal').style.display='flex';
   renderChatNotes();
-  if(key)setTimeout(()=>document.getElementById('aichat-input').focus(),80);
-}
-function closeAiChat(){document.getElementById('aichat-modal').style.display='none';}
-function saveOaiKey(){
-  const k=document.getElementById('aichat-key-input').value.trim();
-  if(!k)return;
-  localStorage.setItem('vocabit-oai-key',k);
-  DOC.set({oaiKey:k},{merge:true}).catch(e=>console.error('oaiKey save error',e));
-  document.getElementById('aichat-key-area').style.display='none';
   setTimeout(()=>document.getElementById('aichat-input').focus(),80);
 }
+function closeAiChat(){document.getElementById('aichat-modal').style.display='none';}
 function _chatBubble(role,text){
   const c=document.getElementById('aichat-msgs');
   const d=document.createElement('div');
@@ -5097,8 +5080,6 @@ function _chatBubble(role,text){
 async function sendAiChat(){
   const input=document.getElementById('aichat-input');
   const text=input.value.trim();if(!text)return;
-  const key=localStorage.getItem('vocabit-oai-key')||'';
-  if(!key){document.getElementById('aichat-key-area').style.display='block';return;}
   input.value='';input.disabled=true;
   _chatBubble('user',text);
   _chatHist.push({role:'user',content:text});
@@ -5107,28 +5088,19 @@ async function sendAiChat(){
   document.getElementById('aichat-msgs').appendChild(load);
   document.getElementById('aichat-msgs').scrollTop=999999;
   try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+    const res=await fetch(CHAT_API,{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({
-        model:'gpt-4o-mini',
-        messages:[
-          {role:'system',content:'너는 한국인 영어 학습자를 위한 영어 튜터야. 지금 학습 중인 단어는 "'+_chatWord+'"이야.\n- 반드시 한국어로만 답해 (영어 단어/문장 자체는 제외)\n- 발음은 한글로만 표기해 (예: force → 포스)\n- 연상법은 어원(접두사·어근·접미사) 기반으로만 설명해\n- 간결하게 핵심만 답해'},
-          ..._chatHist
-        ],
-        max_tokens:600
-      })
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({word:_chatWord,messages:_chatHist})
     });
     document.getElementById('aichat-load')?.remove();
     if(!res.ok){
       const e=await res.json().catch(()=>({}));
-      if(res.status===401){localStorage.removeItem('vocabit-oai-key');document.getElementById('aichat-key-area').style.display='block';}
-      _chatBubble('assistant','오류: '+(e.error?.message||'요청 실패 ('+res.status+')'));
+      _chatBubble('assistant','오류: '+(e.error||'요청 실패 ('+res.status+')'));
     }else{
       const d=await res.json();
-      const reply=d.choices[0].message.content;
-      _chatHist.push({role:'assistant',content:reply});
-      _chatBubble('assistant',reply);
+      _chatHist.push({role:'assistant',content:d.reply});
+      _chatBubble('assistant',d.reply);
     }
   }catch(e){
     document.getElementById('aichat-load')?.remove();

@@ -1,0 +1,35 @@
+const ALLOWED_ORIGIN = 'https://llldroplet0524.github.io';
+
+async function callOpenAI(messages, apiKey) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: 'gpt-4o-mini', messages, max_tokens: 600, temperature: 0.7 })
+  });
+  if (!r.ok) throw new Error(`OpenAI ${r.status}: ${await r.text()}`);
+  const data = await r.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { word, messages } = req.body || {};
+  if (!word || !messages) return res.status(400).json({ error: 'word and messages required' });
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  const system = `너는 한국인 영어 학습자를 위한 영어 튜터야. 지금 학습 중인 단어는 "${word}"이야.\n- 반드시 한국어로만 답해 (영어 단어/문장 자체는 제외)\n- 발음은 한글로만 표기해 (예: force → 포스)\n- 연상법은 어원(접두사·어근·접미사) 기반으로만 설명해\n- 간결하게 핵심만 답해`;
+
+  try {
+    const reply = await callOpenAI([{ role: 'system', content: system }, ...messages], apiKey);
+    res.status(200).json({ reply });
+  } catch (e) {
+    console.error('chat handler error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
