@@ -5066,7 +5066,8 @@ function _renderRelList(en){
   });
 
   const list=document.getElementById('rel-list');
-  const undoBtn=_lastExcluded&&_lastExcluded.base===en?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기</button>`:'';
+  const _stackForEn=_excludeStack.filter(x=>x.base===en);
+  const undoBtn=_stackForEn.length?`<button onclick="undoExcludeRelWord()" style="font-size:.75em;color:#2563eb;background:none;border:1px solid #2563eb;border-radius:.35em;padding:.15em .5em;cursor:pointer;margin-left:.4em">↩ 되돌리기 (${_stackForEn.length})</button>`:'';
   const allVisible=[...aiFound,...addedWords];
 
   function _wordRow(w){
@@ -5096,24 +5097,23 @@ function openRelatedWords(en){
   document.getElementById('rel-modal').style.display='flex';
   _renderRelList(en);
 }
-let _lastExcluded=null; // 되돌리기용
+let _excludeStack=[]; // 되돌리기 스택
 function excludeRelWord(base,target){
   const excKey='rel-excl-'+base.toLowerCase();
   let excluded=new Set();
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
-  _lastExcluded={base,target,excKey};
+  _excludeStack.push({base,target,excKey});
   excluded.add(target);
   try{localStorage.setItem(excKey,JSON.stringify([...excluded]));}catch(e){}
   openRelatedWords(base);
 }
 function undoExcludeRelWord(){
-  if(!_lastExcluded)return;
-  const {base,target,excKey}=_lastExcluded;
+  if(!_excludeStack.length)return;
+  const {base,target,excKey}=_excludeStack.pop();
   let excluded=new Set();
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
   excluded.delete(target);
   try{localStorage.setItem(excKey,JSON.stringify([...excluded]));}catch(e){}
-  _lastExcluded=null;
   openRelatedWords(base);
 }
 function addRelWord(base){
