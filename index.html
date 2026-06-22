@@ -356,6 +356,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
         </div>
         <div id="st-ai-note-body"></div>
       </div>
+      <div id="st-chat-notes"></div>
       <div class="memo-row">
         <textarea id="st-memo" data-memo-en="" placeholder="📝 연상 메모를 입력하세요..." rows="1"
           oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
@@ -2595,7 +2596,7 @@ function toggleFcReveal(){
   hint.style.display='none';
   const ma=document.getElementById('st-memo-area');
   if(ma){ma.style.display='';requestAnimationFrame(()=>{const ta=document.getElementById('st-memo');if(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';}});}
-  const w=stWords[stIdx];if(w)_showSavedAiNote(w.en,'study');
+  const w=stWords[stIdx];if(w){_showSavedAiNote(w.en,'study');renderStudyChatNotes(w.en);}
 }
 function openFcExpand(){
   fcExpanded=true;
@@ -5231,6 +5232,7 @@ function saveChatNote(text){
   chatNotes.get(k).push({id:Date.now().toString(),text:text.trim(),ts:Date.now()});
   _saveChatNotes();
   renderChatNotes();
+  renderStudyChatNotes(_chatWord);
 }
 function deleteChatNote(en,id){
   const k=en.toLowerCase().trim();
@@ -5239,6 +5241,7 @@ function deleteChatNote(en,id){
   if(filtered.length===0)chatNotes.delete(k); else chatNotes.set(k,filtered);
   _saveChatNotes();
   renderChatNotes();
+  renderStudyChatNotes(en);
 }
 function startEditChatNote(en,id){
   const el=document.getElementById('cnote-'+id);
@@ -5262,16 +5265,28 @@ function saveEditedNote(en,id,btn){
   _saveChatNotes();
   renderChatNotes();
 }
+function _chatNotesHtml(en, items){
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const enEsc=esc(en);
+  return `<div style="font-size:.78em;font-weight:700;color:var(--muted);margin-bottom:.4em">💬 AI 답변 저장 (${items.length}개)</div>`+
+  items.map(item=>`<div id="cnote-${item.id}" style="background:var(--bg);border:1px solid var(--border);border-radius:.5em;padding:.5em .65em;margin-bottom:.35em"><div class="cnote-text" style="font-size:.83em;line-height:1.65;white-space:pre-wrap;word-break:break-word;margin-bottom:.35em">${esc(item.text)}</div><div class="cnote-btns" style="display:flex;justify-content:flex-end;gap:.35em"><button onclick="startEditChatNote('${enEsc}','${item.id}')" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--text)">✏️ 수정</button><button onclick="deleteChatNote('${enEsc}','${item.id}')" style="background:none;border:1px solid var(--danger);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--danger)">🗑 삭제</button></div></div>`).join('');
+}
 function renderChatNotes(){
   const container=document.getElementById('aichat-notes');
   if(!container)return;
   const k=_chatWord?_chatWord.toLowerCase().trim():'';
   const items=k?chatNotes.get(k)||[]:[];
   if(items.length===0){container.style.display='none';container.innerHTML='';return;}
-  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   container.style.display='block';
-  container.innerHTML=`<div style="font-size:.78em;font-weight:700;color:var(--muted);margin-bottom:.4em;padding-top:.6em;border-top:1px solid var(--border)">💾 저장된 메모 (${items.length}개)</div>`+
-  items.map(item=>`<div id="cnote-${item.id}" style="background:var(--bg);border:1px solid var(--border);border-radius:.5em;padding:.5em .65em;margin-bottom:.35em"><div class="cnote-text" style="font-size:.83em;line-height:1.65;white-space:pre-wrap;word-break:break-word;margin-bottom:.35em">${esc(item.text)}</div><div class="cnote-btns" style="display:flex;justify-content:flex-end;gap:.35em"><button onclick="startEditChatNote('${esc(_chatWord)}','${item.id}')" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--text)">✏️ 수정</button><button onclick="deleteChatNote('${esc(_chatWord)}','${item.id}')" style="background:none;border:1px solid var(--danger);border-radius:.35em;padding:.2em .5em;font-size:.75em;cursor:pointer;color:var(--danger)">🗑 삭제</button></div></div>`).join('');
+  container.innerHTML=`<div style="padding-top:.6em;border-top:1px solid var(--border)">`+_chatNotesHtml(_chatWord,items)+`</div>`;
+}
+function renderStudyChatNotes(en){
+  const el=document.getElementById('st-chat-notes');
+  if(!el)return;
+  const k=(en||'').toLowerCase().trim();
+  const items=k?chatNotes.get(k)||[]:[];
+  if(items.length===0){el.innerHTML='';return;}
+  el.innerHTML=`<div style="margin-bottom:.4em;padding:.45em .6em;background:var(--bg);border:1px solid var(--border);border-radius:.45em">`+_chatNotesHtml(en,items)+`</div>`;
 }
 </script>
 </body>
