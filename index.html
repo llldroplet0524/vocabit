@@ -215,15 +215,15 @@ h1{text-align:left;padding:1.25em 0 .875em}
 
 <!-- HOME -->
 <div id="sc-home" class="screen active">
-  〈!-- 탭 스위처 --〉
+  <!-- 탭 스위처 -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4em;margin-bottom:.75em">
     <button id="tab-study-btn" class="btn btn-p home-btn" onclick="switchHomeTab('study')">📚 학습</button>
     <button id="tab-browse-btn" class="btn btn-s home-btn" onclick="switchHomeTab('browse')">🔍 탐색</button>
   </div>
 
-  〈!-- 학습 탭 --〉
+  <!-- 학습 탭 -->
   <div id="home-tab-study">
-    〈!-- 단어학습 + 단어장 (4열, 각 2칸 span, 높이 2배) --〉
+    <!-- 단어학습 + 단어장 (4열, 각 2칸 span, 높이 2배) -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.4em">
       <button class="btn btn-p home-hero" style="grid-column:span 2;min-height:5.5em" onclick="goStudy()">📖 단어 학습</button>
       <button class="btn btn-fav home-hero" id="home-fav-btn" style="grid-column:span 2;min-height:5.5em" onclick="goFavorites()">⭐ 단어장</button>
@@ -232,12 +232,12 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-btn" style="font-size:.85em;min-height:2.6em" onclick="openLocalSearch()">🔍 단어 검색</button>
       <button class="btn btn-s home-btn" style="font-size:.85em;min-height:2.6em" onclick="openWordSearch()">✨ AI 단어 검색</button>
     </div>
-    〈!-- 이어하기 --〉
+    <!-- 이어하기 -->
     <div id="home-resume" style="display:none;margin-bottom:.75em">
       <div class="home-sec-label">이어하기</div>
       <div id="home-resume-list" style="display:grid;grid-template-columns:1fr 1fr;gap:.4em"></div>
     </div>
-    〈!-- 퀴즈 4열 --〉
+    <!-- 퀴즈 4열 -->
     <div style="display:flex;align-items:center;justify-content:space-between;font-size:.72em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:.75em 0 .35em;border-bottom:1px solid var(--border);margin-bottom:.4em">
       <span>퀴즈</span>
       <div style="display:flex;align-items:center;gap:.4em">
@@ -251,7 +251,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('en-ko')">🎯 영어→한글</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;min-height:2.8em" onclick="goQuiz('ko-en')">🎯 한글→영어</button>
     </div>
-    〈!-- 복습 4열 --〉
+    <!-- 복습 4열 -->
     <div class="home-sec-label">복습</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
       <button class="btn btn-danger home-btn" style="font-size:.78em;padding:.75em .4em" id="home-wrong-btn" onclick="goWrongFromHome()">❌ 오답 복습</button>
@@ -260,7 +260,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goMemos()">📝 연상메모</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em;grid-column:span 4" onclick="manualSync(this)">☁️ 지금 동기화</button>
     </div>
-    〈!-- 섹션 선택 카드 --〉
+    <!-- 섹션 선택 카드 -->
     <div class="card">
       <div class="src-title" style="display:flex;align-items:center;justify-content:space-between">
         <span>켈리지텔프 독해 단어</span>
@@ -296,7 +296,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     </div>
   </div>
 
-  〈!-- 탐색 탭 --〉
+  <!-- 탐색 탭 -->
   <div id="home-tab-browse" style="display:none">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4em;margin-bottom:.75em">
       <button class="btn btn-s home-hero" style="min-height:5.5em" onclick="goEtymBrowse()">🌿 어원학습</button>
@@ -471,7 +471,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div style="font-size:1.05em;font-weight:700">📊 회독 체크</div>
     <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
   </div>
-  〈!-- 4열: 오답만 / 전체 | 학습 / 퀴즈 --〉
+  <!-- 4열: 오답만 / 전체 | 학습 / 퀴즈 -->
   <div id="history-action-area" style="display:none;margin-bottom:.6em">
     <div style="display:flex;gap:.375em;margin-bottom:.375em;align-items:stretch">
       <button id="hist-seg-wrong" class="btn btn-p" style="flex:1;font-size:.85em" onclick="setHistSeg('wrong')">오답만</button>
@@ -485,7 +485,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button id="hist-qt-type" class="btn btn-s" onclick="setHistQuizType('type')">✏️ 직접입력</button>
     </div>
   </div>
-  〈!-- 범례 + 설명 --〉
+  <!-- 범례 + 설명 -->
   <div style="display:flex;align-items:center;justify-content:space-between;font-size:.75em;color:var(--muted);margin-bottom:.5em">
     <span>
       <span style="display:inline-block;width:.8em;height:.8em;background:var(--danger);border-radius:.2em;vertical-align:middle"></span> 오답 &nbsp;
@@ -542,7 +542,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div style="font-size:1.05em;font-weight:700">❌ 오답 복습</div>
     <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
   </div>
-  〈!-- 요약 카드 --〉
+  <!-- 요약 카드 -->
   <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:var(--radius);padding:1em 1.25em;margin-bottom:.6em;display:flex;align-items:center;justify-content:space-between;gap:1em">
     <div>
       <div style="font-size:.75em;font-weight:600;color:#e11d48;margin-bottom:.3em">현재 오답 단어</div>
@@ -556,16 +556,16 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button id="wrong-quiz-btn" class="btn btn-danger" style="font-size:.78em;padding:.4em .75em;visibility:hidden" onclick="goWrongQuiz()">🎯 퀴즈 풀기</button>
     </div>
   </div>
-  〈!-- 퀴즈 유형 선택 --〉
+  <!-- 퀴즈 유형 선택 -->
   <div id="wrong-mode-picker" style="display:none;grid-template-columns:1fr 1fr;gap:.375em;margin-bottom:.5em">
     <button class="btn btn-s" style="font-size:.85em" onclick="startWrongQuiz('en-ko')">📝 객관식</button>
     <button class="btn btn-s" style="font-size:.85em" onclick="startWrongQuiz('type')">✏️ 직접입력</button>
   </div>
-  〈!-- 오답 횟수 필터 (칩 스타일) --〉
+  <!-- 오답 횟수 필터 (칩 스타일) -->
   <div id="wrong-count-filter-area" style="display:none;margin-bottom:.6em">
     <div id="wrong-count-filter-btns" style="display:flex;gap:.3em;flex-wrap:wrap"></div>
   </div>
-  〈!-- 오답 목록 헤더 --〉
+  <!-- 오답 목록 헤더 -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5em">
     <div style="font-size:.9em;font-weight:700;color:var(--text)">오답 목록</div>
     <span style="display:flex;align-items:center;gap:.5em">
@@ -599,7 +599,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <button class="btn btn-s" style="font-size:.78em;padding:.3em .7em" onclick="goHome()">← 홈</button>
   </div>
 
-  〈!-- 직접 추가 --〉
+  <!-- 직접 추가 -->
   <div class="card" style="margin-bottom:.75em;padding:1em">
     <div style="font-size:.82em;font-weight:700;color:var(--primary);margin-bottom:.5em">단어 직접 추가</div>
     <div style="position:relative;margin-bottom:.4em">
@@ -621,7 +621,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     </div>
   </div>
 
-  〈!-- 등록된 목록 --〉
+  <!-- 등록된 목록 -->
   <div style="border-top:1px solid #e2e8f0;margin:1.5em 0"></div>
   <div id="useranswers-list"></div>
 </div>
@@ -4833,7 +4833,7 @@ function speak(t){
 〈button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로"〉↑</button>
 
 
-〈!-- 저장 단어 검색 모달 --〉
+<!-- 저장 단어 검색 모달 -->
 <div id="local-search-overlay" onclick="if(event.target===this)closeLocalSearch()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto">
   <div style="background:var(--card);border-radius:1em;padding:1.2em;width:min(94vw,440px);max-height:85vh;overflow-y:auto;margin-bottom:2em">
     <div style="display:flex;gap:.5em;margin-bottom:.75em">
@@ -4846,7 +4846,7 @@ function speak(t){
   </div>
 </div>
 
-〈!-- 단어 검색 모달 --〉
+<!-- 단어 검색 모달 -->
 <div id="word-search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto">
   <div style="background:var(--card);border-radius:1em;padding:1.2em;width:min(94vw,440px);max-height:85vh;overflow-y:auto;margin-bottom:2em">
     <div style="display:flex;gap:.5em;margin-bottom:.5em">
@@ -4983,7 +4983,7 @@ document.getElementById('word-search-overlay').addEventListener('click',function
 </script>
 
 
-〈!-- 관련 단어 모달 --〉
+<!-- 관련 단어 모달 -->
 <div id="rel-modal" onclick="if(event.target===this)closeRelatedModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1em">
   <div style="background:var(--card);border-radius:1em;padding:1.25em;max-width:440px;width:100%;max-height:75vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.18)">
     <button onclick="closeRelatedModal()" style="position:absolute;top:.75em;right:.75em;background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted)">✕</button>
@@ -4993,7 +4993,7 @@ document.getElementById('word-search-overlay').addEventListener('click',function
   </div>
 </div>
 
-〈!-- AI 채팅 모달 --〉
+<!-- AI 채팅 모달 -->
 <div id="aichat-modal" onclick="if(event.target===this)closeAiChat()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:1em">
   <div style="background:var(--card);border-radius:1em;padding:1.25em;max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.18)">
     <button onclick="closeAiChat()" style="position:absolute;top:.75em;right:.75em;background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--muted)">✕</button>
