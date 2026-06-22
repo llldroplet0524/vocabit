@@ -5025,7 +5025,7 @@ function _dedupeKo(koArr){
     return true;
   });
 }
-function _renderRelList(en, aiWords){
+function _renderRelList(en){
   const s=en.toLowerCase();
   const excKey='rel-excl-'+s;
   const addKey='rel-add-'+s;
@@ -5034,13 +5034,23 @@ function _renderRelList(en, aiWords){
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
   try{manualAdded=JSON.parse(localStorage.getItem(addKey)||'[]');}catch(e){}
 
-  // AI 어원 관련 단어 (저장된 단어 중에서 필터)
-  const aiSet=new Set((aiWords||[]).map(w=>w.toLowerCase()));
+  // substring 매칭 (4자 이상 공통 부분)
+  const stem=s.replace(/[^a-z]/g,'');
   const aiFound=[],seen=new Set([s]);
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
-    const k=w.en.toLowerCase();
-    if(seen.has(k)||excluded.has(k))return;
-    if(aiSet.has(k)){seen.add(k);aiFound.push(w);}
+    const k=w.en.toLowerCase().replace(/[^a-z]/g,'');
+    const key=w.en.toLowerCase();
+    if(seen.has(key)||excluded.has(key))return;
+    let match=false;
+    if(stem.length>=4&&k.includes(stem))match=true;
+    else if(k.length>=4&&stem.includes(k))match=true;
+    else if(stem.length>=4&&k.length>=4){
+      for(let i=0;i<=stem.length-4;i++){
+        const sub=stem.slice(i,i+4);
+        if(k.includes(sub)){match=true;break;}
+      }
+    }
+    if(match){seen.add(key);aiFound.push(w);}
   }));
 
   // 수동 추가 단어
@@ -5063,14 +5073,13 @@ function _renderRelList(en, aiWords){
   }
 
   if(allVisible.length===0){
-    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">저장된 어원 관련 단어가 없습니다.</div>';
+    list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1em 0;font-size:.88em">관련 단어가 없습니다.</div>';
   } else {
     list.innerHTML=(undoBtn?`<div style="padding:.3em 0;font-size:.8em">${undoBtn}</div>`:'')+allVisible.map(_wordRow).join('');
   }
   list.innerHTML+=`<div style="margin-top:.75em;padding-top:.6em;border-top:1px solid var(--border);display:flex;gap:.4em"><input id="rel-add-input" type="text" placeholder="단어 직접 추가..." style="flex:1;padding:.4em .6em;border:1.5px solid var(--border);border-radius:.45em;font-size:.85em;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')addRelWord('${en}')"><button onclick="addRelWord('${en}')" style="padding:.4em .75em;border:none;background:#2563eb;color:#fff;border-radius:.45em;cursor:pointer;font-size:.85em;font-weight:600">추가</button></div>`;
 }
-const RELATED_API='https://vocabit-six.vercel.app/api/related';
-async function openRelatedWords(en){
+function openRelatedWords(en){
   if(!en)return;
   const s=en.toLowerCase();
 
@@ -5080,16 +5089,8 @@ async function openRelatedWords(en){
   const titleEl=document.getElementById('rel-word-title');
   titleEl.innerHTML=`<span>${en}</span>${baseKo.length?`<span style="font-size:.75em;font-weight:400;color:var(--muted);margin-left:.5em">${_dedupeKo(baseKo).join(' / ')}</span>`:''}`;
 
-  document.getElementById('rel-list').innerHTML='<div style="color:var(--muted);font-size:.85em;padding:.75em 0">🔍 AI로 어원 분석 중...</div>';
   document.getElementById('rel-modal').style.display='flex';
-
-  try{
-    const r=await fetch(RELATED_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word:en})});
-    const d=r.ok?await r.json():{related:[]};
-    _renderRelList(en, d.related||[]);
-  }catch(e){
-    _renderRelList(en,[]);
-  }
+  _renderRelList(en);
 }
 let _lastExcluded=null; // 되돌리기용
 function excludeRelWord(base,target){
