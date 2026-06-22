@@ -1860,7 +1860,8 @@ function dbSave(){
           favorites:[...mFav],wrongData:mergedWrongArr,historyData:histArr,
           userAnswersData:mergedUaArr,typeHistoryData:typeHistArr,resumeData:resumeArr,
           resumeDeleted:[...mResumeDel],deletedHistData:deletedHistArr,deletedWrongData:deletedWrongArr,
-          quizLogData:mergedQuizLog,notesData:notesArr
+          quizLogData:mergedQuizLog,notesData:notesArr,
+          oaiKey:r.oaiKey||'',aiNotesData:r.aiNotesData||[]
         });
         // apply merged state back to globals (after t.set, before transaction commits)
         mHist.forEach((v,en)=>{if(!allHistory.has(en)||v.ts>allHistory.get(en).ts){allHistory.set(en,v);}});
