@@ -2002,6 +2002,9 @@ function dbLoad(){
       });
       try{localStorage.setItem('vocabit-ai-notes',JSON.stringify([...aiNotes.entries()].map(([en,v])=>({en,data:v.data,ts:v.ts}))));}catch(e){}
     }
+    if(d.oaiKey&&!localStorage.getItem('vocabit-oai-key')){
+      localStorage.setItem('vocabit-oai-key',d.oaiKey);
+    }
     if(d.chatNotesData&&d.chatNotesData.length){
       d.chatNotesData.forEach(v=>{
         const k=v.en;
@@ -5025,6 +5028,7 @@ function saveOaiKey(){
   const k=document.getElementById('aichat-key-input').value.trim();
   if(!k)return;
   localStorage.setItem('vocabit-oai-key',k);
+  DOC.set({oaiKey:k},{merge:true}).catch(e=>console.error('oaiKey save error',e));
   document.getElementById('aichat-key-area').style.display='none';
   setTimeout(()=>document.getElementById('aichat-input').focus(),80);
 }
