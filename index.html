@@ -228,6 +228,10 @@ h1{text-align:left;padding:1.25em 0 .875em}
       <button class="btn btn-p home-hero" style="grid-column:span 2;min-height:5.5em" onclick="goStudy()">📖 단어 학습</button>
       <button class="btn btn-fav home-hero" id="home-fav-btn" style="grid-column:span 2;min-height:5.5em" onclick="goFavorites()">⭐ 단어장</button>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4em;margin-bottom:.75em">
+      <button class="btn btn-s home-btn" style="font-size:.85em;min-height:2.6em" onclick="switchHomeTab('browse')">🔍 단어 검색</button>
+      <button class="btn btn-s home-btn" style="font-size:.85em;min-height:2.6em" onclick="openWordSearch()">✨ AI 단어 검색</button>
+    </div>
     <!-- 이어하기 -->
     <div id="home-resume" style="display:none;margin-bottom:.75em">
       <div class="home-sec-label">이어하기</div>
@@ -4831,8 +4835,6 @@ function speak(t){
 </div>
 <button id="scroll-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</button>
 
-<!-- 단어 검색 플로팅 버튼 -->
-<button id="word-search-btn" onclick="openWordSearch()" title="단어 검색" style="position:fixed;bottom:4.5em;right:1em;z-index:800;width:3em;height:3em;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:1.2em;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)">🔍</button>
 
 <!-- 단어 검색 모달 -->
 <div id="word-search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto">
