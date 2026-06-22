@@ -4956,16 +4956,14 @@ document.getElementById('word-search-overlay').addEventListener('click',function
 function openRelatedWords(en){
   if(!en)return;
   const s=en.toLowerCase();
-  if(s.length<4){document.getElementById('rel-word-title').textContent=en;document.getElementById('rel-list').innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">단어가 너무 짧아 관련 단어를 검색할 수 없습니다.</div>';document.getElementById('rel-modal').style.display='flex';return;}
   const found=[],seen=new Set();
   SECTIONS.forEach(sec=>sec.words.forEach(w=>{
     const k=w.en.toLowerCase();
     if(seen.has(k)||k===s)return;
-    // 현재 단어가 DB 단어에 포함되는 경우만 (단방향, 최소 4글자)
-    if(k.includes(s)){seen.add(k);found.push(w);}
+    if(k.includes(s)||s.includes(k)){seen.add(k);found.push(w);}
   }));
   // 제외 목록 적용
-  const excKey='rel-excl-'+en.toLowerCase();
+  const excKey='rel-excl-'+s;
   let excluded=new Set();
   try{excluded=new Set(JSON.parse(localStorage.getItem(excKey)||'[]'));}catch(e){}
   const visible=found.filter(w=>!excluded.has(w.en.toLowerCase()));
@@ -4977,7 +4975,20 @@ function openRelatedWords(en){
   } else if(visible.length===0){
     list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1.5em 0;font-size:.88em">모든 단어가 제외됐습니다. <button onclick="clearRelExcluded(\''+en+'\')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:1em;text-decoration:underline">초기화</button></div>';
   } else {
-    list.innerHTML=visible.map(w=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${w.en}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`).join('');
+    list.innerHTML=visible.map(w=>{
+      // 매칭 부분 강조
+      const k=w.en.toLowerCase();
+      const matchStr=k.includes(s)?s:k; // 어느 쪽이 포함되는지
+      const idx=w.en.toLowerCase().indexOf(matchStr);
+      let highlighted=w.en;
+      if(idx>=0){
+        const before=w.en.slice(0,idx);
+        const match=w.en.slice(idx,idx+matchStr.length);
+        const after=w.en.slice(idx+matchStr.length);
+        highlighted=`${before}<span style="color:var(--primary);font-weight:800">${match}</span>${after}`;
+      }
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-bottom:1px solid var(--border)"><div><span style="font-weight:700">${highlighted}</span> <span style="color:var(--muted);font-size:.85em">— ${w.ko.slice(0,2).join(', ')}</span></div><button onclick="excludeRelWord('${en}','${w.en.toLowerCase()}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1em;flex-shrink:0;padding:.2em .3em" title="제외">✕</button></div>`;
+    }).join('');
   }
   document.getElementById('rel-modal').style.display='flex';
 }
