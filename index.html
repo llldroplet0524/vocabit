@@ -252,6 +252,7 @@ h1{text-align:left;padding:1.25em 0 .875em}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4em;margin-bottom:.875em">
       <button class="btn btn-danger home-btn" style="font-size:.78em;padding:.75em .4em" id="home-wrong-btn" onclick="goWrongFromHome()">❌ 오답 복습</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goHistory()">📊 회독 체크</button>
+      <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em;color:var(--muted)" onclick="showDataCount()">🔍 데이터 확인</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" id="home-ua-btn" onclick="goUserAnswers()">📝 추가 정답</button>
       <button class="btn btn-s home-btn" style="font-size:.78em;padding:.75em .4em" onclick="goMemos()">📝 연상메모</button>
     </div>
@@ -2164,6 +2165,17 @@ window.addEventListener('hashchange',()=>{
   navigateToHash(h);
 });
 function goHome(){showSc('home');updateHomeResume();refreshSectionStats();}
+function showDataCount(){
+  DOC.get().then(snap=>{
+    const d=snap.exists?snap.data():{};
+    const wrong=(d.wrongData||[]).length;
+    const hist=(d.historyData||[]).length;
+    const fav=(d.favorites||[]).length;
+    const notes=(d.notesData||[]).length;
+    const ua=(d.userAnswersData||[]).length;
+    alert(`📊 Firebase 저장 데이터\n\n오답 단어: ${wrong}개\n회독 기록: ${hist}개\n단어장: ${fav}개\nAI 메모: ${notes}개\n추가 정답: ${ua}개`);
+  }).catch(e=>alert('오류: '+e.message));
+}
 function switchHomeTab(tab){
   document.getElementById('home-tab-study').style.display=tab==='study'?'':'none';
   document.getElementById('home-tab-browse').style.display=tab==='browse'?'':'none';
