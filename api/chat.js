@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   if (!word || !messages) return res.status(400).json({ error: 'word and messages required' });
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const system = `너는 한국인 영어 학습자를 위한 영어 튜터야. 지금 학습 중인 단어는 "${word}"이야.\n- 설명은 한국어로 해\n- 예문 요청 시: 영어 문장을 먼저 쓰고 바로 아래 줄에 한국어 번역을 써. 예) "She earns a high salary.\\n→ 그녀는 높은 월급을 받는다."\n- 발음은 한글로 표기해 (예: salary → 샐러리)\n- 연상법/어원은 접두사·어근·접미사 기반으로 설명해\n- 간결하게 핵심만 답해`;
+  const system = `너는 한국인 영어 학습자를 위한 영어 튜터야. 지금 학습 중인 단어는 "${word}"이야.\n- 설명은 한국어로 해\n- 예문 요청 시: 영어 문장을 먼저 쓰고 바로 아래 줄에 한국어 번역을 써. 예) "She earns a high salary.\\n→ 그녀는 높은 월급을 받는다."\n- 발음 요청 시: 반드시 아래 형식의 표로만 답해 (다른 설명 없이):\n한글 발음 | 영어 발음 | 강세\n-------|---------|-----\n샐러리 | SAL-uh-ree | 첫째 음절\n- 연상법/어원은 접두사·어근·접미사 기반으로 설명해\n- 간결하게 핵심만 답해`;
 
   try {
     const reply = await callOpenAI([{ role: 'system', content: system }, ...messages], apiKey);

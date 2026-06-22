@@ -5119,14 +5119,38 @@ function openAiChat(en,ko){
   setTimeout(()=>document.getElementById('aichat-input').focus(),80);
 }
 function closeAiChat(){document.getElementById('aichat-modal').style.display='none';}
+function _renderChatText(text){
+  const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines=text.split('\n');
+  // 마크다운 표 감지: 헤더|셀|셀 형태 2줄 이상
+  let html='';let i=0;
+  while(i<lines.length){
+    if(i+1<lines.length&&lines[i].includes('|')&&lines[i+1].replace(/[\s\-|]/g,'')===''){
+      // 표 시작
+      html+='<table style="border-collapse:collapse;font-size:.9em;margin:.3em 0;width:100%">';
+      const headers=lines[i].split('|').map(s=>s.trim()).filter(s=>s);
+      html+='<tr>'+headers.map(h=>`<th style="border:1px solid var(--border);padding:.3em .55em;background:var(--border);font-weight:700;text-align:left">${esc(h)}</th>`).join('')+'</tr>';
+      i+=2;
+      while(i<lines.length&&lines[i].includes('|')){
+        const cells=lines[i].split('|').map(s=>s.trim()).filter(s=>s);
+        if(cells.length)html+='<tr>'+cells.map(c=>`<td style="border:1px solid var(--border);padding:.3em .55em">${esc(c)}</td>`).join('')+'</tr>';
+        i++;
+      }
+      html+='</table>';
+    }else{
+      html+=esc(lines[i])+'\n';i++;
+    }
+  }
+  return html;
+}
 function _chatBubble(role,text){
   const c=document.getElementById('aichat-msgs');
   const d=document.createElement('div');
   const u=role==='user';
   d.style.cssText=`margin-bottom:.5em;display:flex;${u?'justify-content:flex-end':''}`;
-  const esc=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const saveBtn=u?'':'<div style="text-align:right;margin-top:.3em"><button class="chat-save-btn" style="background:none;border:1px solid var(--border);border-radius:.35em;padding:.2em .55em;font-size:.72em;cursor:pointer;color:var(--muted)">💾 저장</button></div>';
-  d.innerHTML=`<div style="max-width:88%;padding:.45em .7em;border-radius:.7em;font-size:.85em;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:${u?'var(--primary)':'var(--bg)'};color:${u?'#fff':'var(--text)'};border:${u?'none':'1px solid var(--border)'}">${esc}${saveBtn}</div>`;
+  const content=u?text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):_renderChatText(text);
+  d.innerHTML=`<div style="max-width:88%;padding:.45em .7em;border-radius:.7em;font-size:.85em;line-height:1.65;white-space:pre-wrap;word-break:break-word;background:${u?'var(--primary)':'var(--bg)'};color:${u?'#fff':'var(--text)'};border:${u?'none':'1px solid var(--border)'}">${content}${saveBtn}</div>`;
   if(!u){
     const btn=d.querySelector('.chat-save-btn');
     if(btn) btn.addEventListener('click',()=>saveChatNote(text));
